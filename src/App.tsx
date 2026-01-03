@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -5,19 +6,41 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import Landing from "./pages/Landing";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Dashboard from "./pages/Dashboard";
-import ProductCopy from "./pages/ProductCopy";
-import AdsCopy from "./pages/AdsCopy";
-import CampaignPlanner from "./pages/CampaignPlanner";
-import DesignAdvisor from "./pages/DesignAdvisor";
-import CompetitorAnalysis from "./pages/CompetitorAnalysis";
-import History from "./pages/History";
-import NotFound from "./pages/NotFound";
+import { SecurityHeaders } from "@/components/security/SecurityHeaders";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 
-const queryClient = new QueryClient();
+// Lazy load pages for better performance
+const Landing = lazy(() => import("./pages/Landing"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ProductCopy = lazy(() => import("./pages/ProductCopy"));
+const AdsCopy = lazy(() => import("./pages/AdsCopy"));
+const CampaignPlanner = lazy(() => import("./pages/CampaignPlanner"));
+const DesignAdvisor = lazy(() => import("./pages/DesignAdvisor"));
+const CompetitorAnalysis = lazy(() => import("./pages/CompetitorAnalysis"));
+const History = lazy(() => import("./pages/History"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -57,99 +80,106 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<Landing />} />
-      <Route
-        path="/login"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/signup"
-        element={
-          <PublicRoute>
-            <Signup />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/product-copy"
-        element={
-          <ProtectedRoute>
-            <ProductCopy />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/ads-copy"
-        element={
-          <ProtectedRoute>
-            <AdsCopy />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/campaign"
-        element={
-          <ProtectedRoute>
-            <CampaignPlanner />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/design"
-        element={
-          <ProtectedRoute>
-            <DesignAdvisor />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/competitor"
-        element={
-          <ProtectedRoute>
-            <CompetitorAnalysis />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/history"
-        element={
-          <ProtectedRoute>
-            <History />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PublicRoute>
+              <Signup />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/product-copy"
+          element={
+            <ProtectedRoute>
+              <ProductCopy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/ads-copy"
+          element={
+            <ProtectedRoute>
+              <AdsCopy />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/campaign"
+          element={
+            <ProtectedRoute>
+              <CampaignPlanner />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/design"
+          element={
+            <ProtectedRoute>
+              <DesignAdvisor />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/competitor"
+          element={
+            <ProtectedRoute>
+              <CompetitorAnalysis />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/history"
+          element={
+            <ProtectedRoute>
+              <History />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <SecurityHeaders />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
