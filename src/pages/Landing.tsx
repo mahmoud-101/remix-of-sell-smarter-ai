@@ -11,58 +11,60 @@ import {
   Zap,
   Shield,
   BarChart3,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const features = [
-  {
-    icon: FileText,
-    title: "AI Product Copy",
-    description:
-      "Generate compelling product titles, descriptions, and bullet points optimized for conversions and SEO.",
-  },
-  {
-    icon: Megaphone,
-    title: "AI Ads Generator",
-    description:
-      "Create ready-to-publish ads for Facebook, Instagram, Google, and TikTok with multiple A/B variations.",
-  },
-  {
-    icon: Calendar,
-    title: "Campaign Planner",
-    description:
-      "Build complete marketing campaigns with funnel strategies, content calendars, and budget distribution.",
-  },
-  {
-    icon: Palette,
-    title: "Design Advisor",
-    description:
-      "Get expert UX recommendations for product pages including colors, layouts, and CTA optimization.",
-  },
-  {
-    icon: Target,
-    title: "Competitor Analysis",
-    description:
-      "Analyze competitors to identify opportunities, pricing strategies, and messaging differentiation.",
-  },
-  {
-    icon: BarChart3,
-    title: "Growth Insights",
-    description:
-      "Track your content performance and get AI-powered recommendations for continuous improvement.",
-  },
-];
-
-const benefits = [
-  "Save 10+ hours per week on copywriting",
-  "Increase conversion rates by up to 40%",
-  "Launch campaigns 5x faster",
-  "Get expert-level marketing advice 24/7",
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Landing() {
+  const { t, isRTL, language, setLanguage } = useLanguage();
+
+  const features = [
+    {
+      icon: FileText,
+      title: t("featureProductCopy"),
+      description: t("featureProductCopyDesc"),
+    },
+    {
+      icon: Megaphone,
+      title: t("featureAds"),
+      description: t("featureAdsDesc"),
+    },
+    {
+      icon: Calendar,
+      title: t("featureCampaign"),
+      description: t("featureCampaignDesc"),
+    },
+    {
+      icon: Palette,
+      title: t("featureDesign"),
+      description: t("featureDesignDesc"),
+    },
+    {
+      icon: Target,
+      title: t("featureCompetitor"),
+      description: t("featureCompetitorDesc"),
+    },
+    {
+      icon: BarChart3,
+      title: t("featureGrowth"),
+      description: t("featureGrowthDesc"),
+    },
+  ];
+
+  const benefits = [
+    t("benefit1"),
+    t("benefit2"),
+    t("benefit3"),
+    t("benefit4"),
+  ];
+
+  const toggleLanguage = () => {
+    setLanguage(language === "ar" ? "en" : "ar");
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -70,38 +72,53 @@ export default function Landing() {
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl gradient-text">SellGenius</span>
+            <span className="font-bold text-xl gradient-text">{t("appName")}</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="#features"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Features
+              {t("features")}
             </a>
             <a
               href="#pricing"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Pricing
+              {t("pricing")}
             </a>
+            <button
+              onClick={toggleLanguage}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Globe className="w-4 h-4" />
+              {language === "ar" ? "EN" : "ع"}
+            </button>
             <Link
               to="/login"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Login
+              {t("login")}
             </Link>
             <Link to="/signup">
               <Button variant="hero" size="sm">
-                Get Started
+                {t("getStarted")}
               </Button>
             </Link>
           </nav>
-          <Link to="/signup" className="md:hidden">
-            <Button variant="hero" size="sm">
-              Get Started
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={toggleLanguage}
+              className="p-2 text-muted-foreground hover:text-foreground"
+            >
+              <Globe className="w-5 h-5" />
+            </button>
+            <Link to="/signup">
+              <Button variant="hero" size="sm">
+                {t("getStarted")}
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -117,32 +134,30 @@ export default function Landing() {
           <div className="text-center space-y-6 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
               <Zap className="w-4 h-4" />
-              AI-Powered E-commerce Growth Platform
+              {t("heroTagline")}
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance">
-              Supercharge Your
-              <span className="gradient-text"> E-commerce Sales</span> with AI
+              {t("heroTitle")}
+              <span className="gradient-text"> {t("heroTitleHighlight")}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-              Generate compelling product copy, create high-converting ads, plan
-              marketing campaigns, and outperform competitors—all powered by
-              advanced AI.
+              {t("heroDescription")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link to="/signup">
                 <Button variant="hero" size="xl" className="group">
-                  Start Free Trial
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  {t("startFreeTrialBtn")}
+                  <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                 </Button>
               </Link>
               <Link to="/dashboard">
                 <Button variant="hero-outline" size="xl">
-                  View Demo
+                  {t("viewDemo")}
                 </Button>
               </Link>
             </div>
             <p className="text-sm text-muted-foreground">
-              No credit card required • 14-day free trial • Cancel anytime
+              {t("noCreditCard")}
             </p>
           </div>
 
@@ -168,12 +183,22 @@ export default function Landing() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need to
-              <span className="gradient-text"> Scale Your Business</span>
+              {isRTL ? (
+                <>
+                  كل ما تحتاجه
+                  <span className="gradient-text"> لتنمية أعمالك</span>
+                </>
+              ) : (
+                <>
+                  Everything You Need to
+                  <span className="gradient-text"> Scale Your Business</span>
+                </>
+              )}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Powerful AI tools designed specifically for e-commerce sellers,
-              agencies, and marketers.
+              {isRTL
+                ? "أدوات ذكاء اصطناعي قوية مصممة خصيصاً لبائعي التجارة الإلكترونية والوكالات والمسوقين."
+                : "Powerful AI tools designed specifically for e-commerce sellers, agencies, and marketers."}
             </p>
           </div>
 
@@ -207,17 +232,16 @@ export default function Landing() {
                 <Shield className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Ready to Transform Your E-commerce Business?
+                {t("ctaTitle")}
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                Join thousands of sellers who are already using SellGenius to
-                grow their online business faster than ever.
+                {t("ctaDescription")}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/signup">
                   <Button variant="gradient" size="xl" className="group">
-                    Get Started Free
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    {t("getStartedFree")}
+                    <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                   </Button>
                 </Link>
               </div>
@@ -234,10 +258,10 @@ export default function Landing() {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Sparkles className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-bold gradient-text">SellGenius</span>
+              <span className="font-bold gradient-text">{t("appName")}</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2024 SellGenius. All rights reserved.
+              © 2024 {t("appName")}. {isRTL ? "جميع الحقوق محفوظة." : "All rights reserved."}
             </p>
           </div>
         </div>

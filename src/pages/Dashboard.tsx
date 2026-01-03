@@ -7,58 +7,64 @@ import {
   Target,
   ArrowRight,
   Sparkles,
-  TrendingUp,
   Clock,
   Zap,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-
-const tools = [
-  {
-    icon: FileText,
-    title: "Product Copy Generator",
-    description: "Create compelling product descriptions and titles",
-    path: "/dashboard/product-copy",
-    color: "from-blue-500 to-indigo-500",
-  },
-  {
-    icon: Megaphone,
-    title: "Ads Copy Generator",
-    description: "Generate high-converting ad copy for all platforms",
-    path: "/dashboard/ads-copy",
-    color: "from-pink-500 to-rose-500",
-  },
-  {
-    icon: Calendar,
-    title: "Campaign Planner",
-    description: "Plan complete marketing campaigns with AI",
-    path: "/dashboard/campaign",
-    color: "from-amber-500 to-orange-500",
-  },
-  {
-    icon: Palette,
-    title: "Design Advisor",
-    description: "Get UX and design recommendations",
-    path: "/dashboard/design",
-    color: "from-emerald-500 to-teal-500",
-  },
-  {
-    icon: Target,
-    title: "Competitor Analysis",
-    description: "Analyze competitors and find opportunities",
-    path: "/dashboard/competitor",
-    color: "from-violet-500 to-purple-500",
-  },
-];
-
-const stats = [
-  { label: "Content Generated", value: "0", icon: FileText },
-  { label: "Campaigns Created", value: "0", icon: Calendar },
-  { label: "Time Saved", value: "0h", icon: Clock },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
+  const { t, isRTL } = useLanguage();
+  const { user } = useAuth();
+
+  const tools = [
+    {
+      icon: FileText,
+      title: t("featureProductCopy"),
+      description: isRTL ? "أنشئ وصف منتجات مقنع" : "Create compelling product descriptions",
+      path: "/dashboard/product-copy",
+      color: "from-blue-500 to-indigo-500",
+    },
+    {
+      icon: Megaphone,
+      title: t("featureAds"),
+      description: isRTL ? "أنشئ إعلانات عالية التحويل" : "Generate high-converting ad copy",
+      path: "/dashboard/ads-copy",
+      color: "from-pink-500 to-rose-500",
+    },
+    {
+      icon: Calendar,
+      title: t("featureCampaign"),
+      description: isRTL ? "خطط حملات تسويقية كاملة" : "Plan complete marketing campaigns",
+      path: "/dashboard/campaign",
+      color: "from-amber-500 to-orange-500",
+    },
+    {
+      icon: Palette,
+      title: t("featureDesign"),
+      description: isRTL ? "احصل على توصيات التصميم" : "Get UX and design recommendations",
+      path: "/dashboard/design",
+      color: "from-emerald-500 to-teal-500",
+    },
+    {
+      icon: Target,
+      title: t("featureCompetitor"),
+      description: isRTL ? "حلل منافسيك" : "Analyze competitors and find opportunities",
+      path: "/dashboard/competitor",
+      color: "from-violet-500 to-purple-500",
+    },
+  ];
+
+  const stats = [
+    { label: t("contentGenerated"), value: "0", icon: FileText },
+    { label: t("campaignsCreated"), value: "0", icon: Calendar },
+    { label: t("timeSaved"), value: "0h", icon: Clock },
+  ];
+
+  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -70,21 +76,20 @@ export default function Dashboard() {
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  Welcome to SellGenius
+                  {t("welcomeToDashboard")}
                 </span>
               </div>
               <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                Ready to supercharge your sales?
+                {isRTL ? `مرحباً${firstName ? ` ${firstName}` : ""}! 👋` : `Welcome${firstName ? ` ${firstName}` : ""}! 👋`}
               </h1>
               <p className="text-muted-foreground">
-                Choose a tool below to get started with AI-powered content
-                generation.
+                {t("chooseToolBelow")}
               </p>
             </div>
             <Link to="/dashboard/product-copy">
               <Button variant="hero" className="group">
-                Generate Content
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                {t("generateContent")}
+                <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
               </Button>
             </Link>
           </div>
@@ -110,7 +115,7 @@ export default function Dashboard() {
 
         {/* Tools Grid */}
         <div>
-          <h2 className="text-xl font-semibold mb-4">AI Tools</h2>
+          <h2 className="text-xl font-semibold mb-4">{t("aiTools")}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tools.map((tool, index) => (
               <Link
@@ -130,8 +135,8 @@ export default function Dashboard() {
                   {tool.description}
                 </p>
                 <div className="flex items-center text-sm text-primary font-medium">
-                  Get Started
-                  <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  {isRTL ? "ابدأ الآن" : "Get Started"}
+                  <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
                 </div>
               </Link>
             ))}
@@ -142,21 +147,19 @@ export default function Dashboard() {
         <div className="glass-card rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-4">
             <Zap className="w-5 h-5 text-accent" />
-            <h2 className="text-lg font-semibold">Quick Tips</h2>
+            <h2 className="text-lg font-semibold">{t("quickTips")}</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-secondary/50">
-              <h3 className="font-medium mb-1">Be Specific</h3>
+              <h3 className="font-medium mb-1">{t("beSpecific")}</h3>
               <p className="text-sm text-muted-foreground">
-                The more details you provide about your product and target
-                audience, the better the AI-generated content will be.
+                {t("beSpecificDesc")}
               </p>
             </div>
             <div className="p-4 rounded-xl bg-secondary/50">
-              <h3 className="font-medium mb-1">Iterate & Refine</h3>
+              <h3 className="font-medium mb-1">{t("iterateRefine")}</h3>
               <p className="text-sm text-muted-foreground">
-                Generate multiple variations and combine the best elements to
-                create the perfect copy.
+                {t("iterateRefineDesc")}
               </p>
             </div>
           </div>

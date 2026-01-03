@@ -4,7 +4,6 @@ import {
   Sparkles,
   Copy,
   RotateCcw,
-  ChevronDown,
   Check,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -20,22 +19,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-
-const tones = [
-  { value: "professional", label: "Professional" },
-  { value: "friendly", label: "Friendly & Casual" },
-  { value: "luxury", label: "Luxury & Premium" },
-  { value: "aggressive", label: "Urgent & Aggressive" },
-  { value: "playful", label: "Playful & Fun" },
-];
-
-const outputTypes = [
-  { id: "title", label: "Product Title", icon: "🏷️" },
-  { id: "description", label: "Description", icon: "📝" },
-  { id: "bullets", label: "Bullet Points", icon: "✅" },
-  { id: "benefits", label: "Key Benefits", icon: "⭐" },
-  { id: "cta", label: "Call to Action", icon: "🎯" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAI } from "@/hooks/useAI";
+import { useHistory } from "@/hooks/useHistory";
 
 export default function ProductCopy() {
   const [productName, setProductName] = useState("");
@@ -47,9 +33,27 @@ export default function ProductCopy() {
     "description",
     "bullets",
   ]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
+  const { generate, isLoading } = useAI("product-copy");
+  const { saveToHistory } = useHistory();
+
+  const tones = [
+    { value: "professional", label: t("toneProfessional") },
+    { value: "friendly", label: t("toneFriendly") },
+    { value: "luxury", label: t("toneLuxury") },
+    { value: "aggressive", label: t("toneAggressive") },
+    { value: "playful", label: t("tonePlayful") },
+  ];
+
+  const outputTypes = [
+    { id: "title", label: t("outputTitle"), icon: "🏷️" },
+    { id: "description", label: t("outputDescription"), icon: "📝" },
+    { id: "bullets", label: t("outputBullets"), icon: "✅" },
+    { id: "benefits", label: t("outputBenefits"), icon: "⭐" },
+    { id: "cta", label: t("outputCTA"), icon: "🎯" },
+  ];
 
   const toggleOutput = (id: string) => {
     setSelectedOutputs((prev) =>
@@ -60,53 +64,42 @@ export default function ProductCopy() {
   const handleGenerate = async () => {
     if (!productName || !productDescription) {
       toast({
-        title: "Missing information",
-        description: "Please fill in the product name and description.",
+        title: t("missingInfo"),
+        description: t("pleaseFilRequired"),
         variant: "destructive",
       });
       return;
     }
 
-    setIsGenerating(true);
+    const input = {
+      productName,
+      productDescription,
+      targetAudience,
+      tone,
+      outputTypes: selectedOutputs,
+    };
 
-    // Simulate AI generation - replace with actual AI call
-    setTimeout(() => {
-      const mockContent: Record<string, string> = {
-        title: `${productName} - Premium Quality Solution for ${targetAudience || "Everyone"}`,
-        description: `Discover the revolutionary ${productName} that transforms how you ${productDescription.slice(0, 50)}... Crafted with precision and designed for excellence, this product delivers exceptional value and performance that exceeds expectations.`,
-        bullets: `• Premium quality materials for lasting durability
-• Designed with user comfort and convenience in mind
-• Perfect for ${targetAudience || "everyday use"}
-• Easy to use with intuitive features
-• Backed by our satisfaction guarantee`,
-        benefits: `✨ Save time and effort with streamlined functionality
-✨ Experience superior quality that lasts
-✨ Join thousands of satisfied customers
-✨ Invest in a solution that truly delivers`,
-        cta: `🛒 Get Your ${productName} Today - Limited Stock Available!\n\n💫 Order now and experience the difference. Free shipping on orders over $50!`,
-      };
+    const result = await generate(input);
 
-      const filtered: Record<string, string> = {};
+    if (result) {
+      const content: Record<string, string> = {};
       selectedOutputs.forEach((key) => {
-        if (mockContent[key]) {
-          filtered[key] = mockContent[key];
+        if (result[key]) {
+          content[key] = result[key];
         }
       });
-
-      setGeneratedContent(filtered);
-      setIsGenerating(false);
-      toast({
-        title: "Content generated!",
-        description: "Your product copy is ready to use.",
-      });
-    }, 2000);
+      setGeneratedContent(content);
+      
+      // Save to history
+      await saveToHistory("product", input, result);
+    }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "Copied!",
-      description: "Content copied to clipboard.",
+      title: t("copied"),
+      description: t("copiedToClipboard"),
     });
   };
 
@@ -119,10 +112,10 @@ export default function ProductCopy() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
               <FileText className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">AI Product Copy Generator</h1>
+            <h1 className="text-2xl font-bold">{t("productCopyGenerator")}</h1>
           </div>
           <p className="text-muted-foreground">
-            Generate compelling product copy that converts browsers into buyers.
+            {t("productCopyDesc")}
           </p>
         </div>
 
@@ -134,14 +127,14 @@ export default function ProductCopy() {
                 <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center">
                   1
                 </span>
-                Product Details
+                {t("productDetails")}
               </h2>
 
               <div className="space-y-2">
-                <Label htmlFor="productName">Product Name *</Label>
+                <Label htmlFor="productName">{t("productName")} *</Label>
                 <Input
                   id="productName"
-                  placeholder="e.g., Wireless Bluetooth Headphones"
+                  placeholder={t("productNamePlaceholder")}
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
                   className="input-field"
@@ -150,11 +143,11 @@ export default function ProductCopy() {
 
               <div className="space-y-2">
                 <Label htmlFor="productDescription">
-                  Product Description *
+                  {t("productDescription")} *
                 </Label>
                 <Textarea
                   id="productDescription"
-                  placeholder="Describe your product features, what it does, and what makes it special..."
+                  placeholder={t("productDescPlaceholder")}
                   value={productDescription}
                   onChange={(e) => setProductDescription(e.target.value)}
                   className="input-field min-h-[120px]"
@@ -162,10 +155,10 @@ export default function ProductCopy() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="targetAudience">Target Audience</Label>
+                <Label htmlFor="targetAudience">{t("targetAudience")}</Label>
                 <Input
                   id="targetAudience"
-                  placeholder="e.g., fitness enthusiasts, busy professionals"
+                  placeholder={t("targetAudiencePlaceholder")}
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
                   className="input-field"
@@ -173,7 +166,7 @@ export default function ProductCopy() {
               </div>
 
               <div className="space-y-2">
-                <Label>Tone of Voice</Label>
+                <Label>{t("toneOfVoice")}</Label>
                 <Select value={tone} onValueChange={setTone}>
                   <SelectTrigger className="input-field">
                     <SelectValue />
@@ -194,7 +187,7 @@ export default function ProductCopy() {
                 <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs flex items-center justify-center">
                   2
                 </span>
-                Output Types
+                {t("outputTypes")}
               </h2>
 
               <div className="grid grid-cols-2 gap-3">
@@ -202,7 +195,7 @@ export default function ProductCopy() {
                   <button
                     key={type.id}
                     onClick={() => toggleOutput(type.id)}
-                    className={`p-3 rounded-xl border-2 transition-all duration-200 text-left ${
+                    className={`p-3 rounded-xl border-2 transition-all duration-200 text-${isRTL ? "right" : "left"} ${
                       selectedOutputs.includes(type.id)
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
@@ -212,7 +205,7 @@ export default function ProductCopy() {
                       <span>{type.icon}</span>
                       <span className="text-sm font-medium">{type.label}</span>
                       {selectedOutputs.includes(type.id) && (
-                        <Check className="w-4 h-4 text-primary ml-auto" />
+                        <Check className={`w-4 h-4 text-primary ${isRTL ? "mr-auto" : "ml-auto"}`} />
                       )}
                     </div>
                   </button>
@@ -225,17 +218,17 @@ export default function ProductCopy() {
               size="lg"
               className="w-full"
               onClick={handleGenerate}
-              disabled={isGenerating}
+              disabled={isLoading}
             >
-              {isGenerating ? (
+              {isLoading ? (
                 <>
                   <RotateCcw className="w-4 h-4 animate-spin" />
-                  Generating...
+                  {t("generating")}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Generate Copy
+                  {t("generateCopy")}
                 </>
               )}
             </Button>
@@ -243,17 +236,16 @@ export default function ProductCopy() {
 
           {/* Output Section */}
           <div className="space-y-4">
-            <h2 className="font-semibold">Generated Content</h2>
+            <h2 className="font-semibold">{t("generatedContent")}</h2>
 
             {Object.keys(generatedContent).length === 0 ? (
               <div className="glass-card rounded-2xl p-8 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium mb-2">No content yet</h3>
+                <h3 className="font-medium mb-2">{t("noContentYet")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Fill in your product details and click generate to create
-                  AI-powered copy.
+                  {t("noContentDesc")}
                 </p>
               </div>
             ) : (
