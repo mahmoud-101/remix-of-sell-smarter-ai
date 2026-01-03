@@ -1,8 +1,12 @@
+# SellGenius Robots.txt
+
 User-agent: Googlebot
 Allow: /
+Disallow: /dashboard/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /dashboard/
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +16,11 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://sellgenius.app/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1

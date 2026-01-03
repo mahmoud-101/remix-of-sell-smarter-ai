@@ -253,16 +253,29 @@ export default function Landing() {
       {/* Footer */}
       <footer className="py-12 px-4 border-t border-border">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="font-bold gradient-text">{t("appName")}</span>
               </div>
-              <span className="font-bold gradient-text">{t("appName")}</span>
+              <nav className="flex items-center gap-6 text-sm text-muted-foreground">
+                <Link to="/privacy" className="hover:text-foreground transition-colors">
+                  {isRTL ? "سياسة الخصوصية" : "Privacy Policy"}
+                </Link>
+                <Link to="/terms" className="hover:text-foreground transition-colors">
+                  {isRTL ? "الشروط والأحكام" : "Terms of Service"}
+                </Link>
+                <a href="mailto:support@sellgenius.app" className="hover:text-foreground transition-colors">
+                  {isRTL ? "الدعم" : "Support"}
+                </a>
+              </nav>
             </div>
-            <p className="text-sm text-muted-foreground">
-              © 2024 {t("appName")}. {isRTL ? "جميع الحقوق محفوظة." : "All rights reserved."}
-            </p>
+            <div className="text-center text-sm text-muted-foreground">
+              © 2026 {t("appName")}. {isRTL ? "جميع الحقوق محفوظة." : "All rights reserved."}
+            </div>
           </div>
         </div>
       </footer>

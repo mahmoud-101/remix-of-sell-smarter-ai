@@ -1,18 +1,21 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Sparkles, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
+import { Sparkles, Mail, Lock, User, ArrowRight, Check, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { emailSchema, passwordSchema, fullNameSchema, authRateLimiter } from "@/lib/validation";
 
 export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signUp } = useAuth();
@@ -25,11 +28,64 @@ export default function Signup() {
     t("featureCompetitor"),
   ];
 
+  // Password strength indicator
+  const passwordStrength = useMemo(() => {
+    if (password.length === 0) return { score: 0, label: "" };
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    
+    const labels = ["", "ضعيف", "متوسط", "جيد", "قوي", "ممتاز"];
+    return { score, label: labels[score] || "" };
+  }, [password]);
+
+  const validateForm = (): boolean => {
+    const newErrors: { name?: string; email?: string; password?: string } = {};
+    
+    const nameResult = fullNameSchema.safeParse(name);
+    if (!nameResult.success) {
+      newErrors.name = nameResult.error.errors[0]?.message;
+    }
+    
+    const emailResult = emailSchema.safeParse(email);
+    if (!emailResult.success) {
+      newErrors.email = emailResult.error.errors[0]?.message;
+    }
+    
+    const passwordResult = passwordSchema.safeParse(password);
+    if (!passwordResult.success) {
+      newErrors.password = passwordResult.error.errors[0]?.message;
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Rate limiting check
+    if (authRateLimiter.isRateLimited(email)) {
+      const remaining = authRateLimiter.getRemainingTime(email);
+      toast({
+        title: "محاولات كثيرة جداً",
+        description: `يرجى الانتظار ${remaining} ثانية`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setIsLoading(true);
+    authRateLimiter.recordAttempt(email);
 
-    const { error } = await signUp(email, password, name);
+    const { error } = await signUp(email.trim().toLowerCase(), password, name.trim());
 
     if (error) {
       setIsLoading(false);
@@ -113,7 +169,6 @@ export default function Signup() {
               </p>
             </div>
 
-            {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">{t("fullName")}</Label>
@@ -125,10 +180,12 @@ export default function Signup() {
                     placeholder={isRTL ? "أحمد محمد" : "John Doe"}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
+                    className={`${isRTL ? "pr-10" : "pl-10"} input-field ${errors.name ? "border-destructive" : ""}`}
                     required
+                    autoComplete="name"
                   />
                 </div>
+                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div className="space-y-2">
@@ -141,10 +198,12 @@ export default function Signup() {
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
+                    className={`${isRTL ? "pr-10" : "pl-10"} input-field ${errors.email ? "border-destructive" : ""}`}
                     required
+                    autoComplete="email"
                   />
                 </div>
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
               </div>
 
               <div className="space-y-2">
@@ -153,18 +212,50 @@ export default function Signup() {
                   <Lock className={`absolute ${isRTL ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground`} />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
+                    className={`${isRTL ? "pr-10 pl-10" : "pl-10 pr-10"} input-field ${errors.password ? "border-destructive" : ""}`}
                     required
                     minLength={8}
+                    autoComplete="new-password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className={`absolute ${isRTL ? "left-3" : "right-3"} top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground`}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {t("passwordMinLength")}
-                </p>
+                {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+                {password.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((level) => (
+                        <div
+                          key={level}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            level <= passwordStrength.score
+                              ? passwordStrength.score <= 2
+                                ? "bg-destructive"
+                                : passwordStrength.score <= 3
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                              : "bg-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("passwordMinLength")} - <span className={
+                        passwordStrength.score <= 2 ? "text-destructive" :
+                        passwordStrength.score <= 3 ? "text-yellow-500" : "text-green-500"
+                      }>{passwordStrength.label}</span>
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Button
