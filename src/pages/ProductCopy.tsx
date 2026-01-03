@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAI } from "@/hooks/useAI";
 import { useHistory } from "@/hooks/useHistory";
+import { TemplatePicker, ProductTemplate } from "@/components/templates/ProductTemplates";
+import { ExportButtons } from "@/components/export/ExportButtons";
 
 export default function ProductCopy() {
   const [productName, setProductName] = useState("");
@@ -61,6 +63,17 @@ export default function ProductCopy() {
     );
   };
 
+  const handleTemplateSelect = (template: ProductTemplate) => {
+    setProductName(isRTL ? template.productNameAr : template.productName);
+    setProductDescription(isRTL ? template.productDescriptionAr : template.productDescription);
+    setTargetAudience(isRTL ? template.targetAudienceAr : template.targetAudience);
+    setTone(template.tone);
+    toast({
+      title: isRTL ? "تم تحميل القالب" : "Template loaded",
+      description: isRTL ? `تم تحميل قالب ${template.nameAr}` : `Loaded ${template.name} template`,
+    });
+  };
+
   const handleGenerate = async () => {
     if (!productName || !productDescription) {
       toast({
@@ -90,7 +103,6 @@ export default function ProductCopy() {
       });
       setGeneratedContent(content);
       
-      // Save to history
       await saveToHistory("product", input, result);
     }
   };
@@ -129,6 +141,9 @@ export default function ProductCopy() {
                 </span>
                 {t("productDetails")}
               </h2>
+
+              {/* Templates */}
+              <TemplatePicker onSelect={handleTemplateSelect} />
 
               <div className="space-y-2">
                 <Label htmlFor="productName">{t("productName")} *</Label>
@@ -236,7 +251,12 @@ export default function ProductCopy() {
 
           {/* Output Section */}
           <div className="space-y-4">
-            <h2 className="font-semibold">{t("generatedContent")}</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">{t("generatedContent")}</h2>
+              {Object.keys(generatedContent).length > 0 && (
+                <ExportButtons content={generatedContent} filename="product-copy" />
+              )}
+            </div>
 
             {Object.keys(generatedContent).length === 0 ? (
               <div className="glass-card rounded-2xl p-8 text-center">

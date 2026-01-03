@@ -23,144 +23,82 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-
-const pageTypes = [
-  { value: "product", label: "Product Page" },
-  { value: "landing", label: "Landing Page" },
-  { value: "homepage", label: "Homepage" },
-  { value: "checkout", label: "Checkout Page" },
-  { value: "ad", label: "Ad Creative" },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAI } from "@/hooks/useAI";
+import { useHistory } from "@/hooks/useHistory";
+import { ExportButtons } from "@/components/export/ExportButtons";
 
 export default function DesignAdvisor() {
   const [pageUrl, setPageUrl] = useState("");
   const [pageType, setPageType] = useState("product");
   const [pageDescription, setPageDescription] = useState("");
   const [businessGoal, setBusinessGoal] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
   const { toast } = useToast();
+  const { t, isRTL } = useLanguage();
+  const { generate, isLoading } = useAI("design");
+  const { saveToHistory } = useHistory();
+
+  const pageTypes = [
+    { value: "product", label: t("productPage") },
+    { value: "landing", label: t("landingPage") },
+    { value: "homepage", label: t("homePage") },
+    { value: "category", label: t("categoryPage") },
+  ];
 
   const handleAnalyze = async () => {
     if (!pageDescription && !pageUrl) {
       toast({
-        title: "Missing information",
-        description: "Please provide a page URL or description.",
+        title: t("missingInfo"),
+        description: t("pleaseFilRequired"),
         variant: "destructive",
       });
       return;
     }
 
-    setIsAnalyzing(true);
+    const input = {
+      pageUrl,
+      pageType,
+      description: pageDescription,
+      businessGoal,
+    };
 
-    // Simulate AI analysis
-    setTimeout(() => {
-      const mockAnalysis = {
-        score: 72,
-        summary:
-          "Your page has good fundamentals but could benefit from improved visual hierarchy and stronger CTAs.",
-        categories: [
-          {
-            name: "Layout & Structure",
-            icon: Layout,
-            score: 75,
-            recommendations: [
-              {
-                type: "improvement",
-                title: "Add more white space",
-                description:
-                  "Increase padding between sections to improve readability and reduce visual clutter.",
-              },
-              {
-                type: "warning",
-                title: "Hero section too crowded",
-                description:
-                  "Consider reducing the amount of text in your hero. Focus on one clear value proposition.",
-              },
-              {
-                type: "success",
-                title: "Good mobile responsiveness",
-                description: "Your layout adapts well to different screen sizes.",
-              },
-            ],
-          },
-          {
-            name: "Call-to-Action",
-            icon: MousePointer,
-            score: 65,
-            recommendations: [
-              {
-                type: "warning",
-                title: "CTA buttons not prominent enough",
-                description:
-                  "Use contrasting colors and larger buttons. Consider adding urgency or value proposition to button text.",
-              },
-              {
-                type: "improvement",
-                title: "Add multiple CTAs",
-                description:
-                  "Place secondary CTAs throughout the page for users who scroll past the first one.",
-              },
-            ],
-          },
-          {
-            name: "Visual Elements",
-            icon: Image,
-            score: 80,
-            recommendations: [
-              {
-                type: "success",
-                title: "High-quality product images",
-                description: "Your images are crisp and professional.",
-              },
-              {
-                type: "improvement",
-                title: "Add lifestyle images",
-                description:
-                  "Include images showing the product in use to help customers visualize ownership.",
-              },
-            ],
-          },
-          {
-            name: "Typography",
-            icon: Type,
-            score: 70,
-            recommendations: [
-              {
-                type: "improvement",
-                title: "Improve text hierarchy",
-                description:
-                  "Create clearer distinction between headings, subheadings, and body text using size and weight.",
-              },
-              {
-                type: "warning",
-                title: "Line length too long",
-                description:
-                  "Limit text width to 60-80 characters per line for optimal readability.",
-              },
-            ],
-          },
-        ],
-        colorSuggestions: [
-          { color: "#4F46E5", name: "Trust Blue", usage: "Primary CTA" },
-          { color: "#F97316", name: "Action Orange", usage: "Urgency elements" },
-          { color: "#10B981", name: "Success Green", usage: "Trust badges" },
-        ],
-        quickWins: [
-          "Add social proof near CTAs (reviews count, ratings)",
-          "Include trust badges (secure checkout, guarantees)",
-          "Add urgency elements (limited stock, sale timer)",
-          "Improve button text: 'Buy Now' → 'Get Yours Today'",
-        ],
-      };
+    const result = await generate(input);
 
-      setAnalysis(mockAnalysis);
-      setIsAnalyzing(false);
-      toast({
-        title: "Analysis complete!",
-        description: "Your design recommendations are ready.",
+    if (result) {
+      setAnalysis(result);
+      await saveToHistory("design", input, result);
+    }
+  };
+
+  const getAnalysisAsText = () => {
+    if (!analysis) return "";
+    let text = `${isRTL ? "تحليل التصميم" : "Design Analysis"}\n`;
+    text += `${isRTL ? "التقييم" : "Score"}: ${analysis.score || 0}/100\n\n`;
+    
+    if (analysis.colorRecommendations) {
+      text += `${t("colorRecommendations")}:\n`;
+      analysis.colorRecommendations.forEach((rec: string) => {
+        text += `- ${rec}\n`;
       });
-    }, 2500);
+    }
+    
+    if (analysis.layoutRecommendations) {
+      text += `\n${t("layoutRecommendations")}:\n`;
+      analysis.layoutRecommendations.forEach((rec: string) => {
+        text += `- ${rec}\n`;
+      });
+    }
+    
+    return text;
+  };
+
+  const categoryIcons: Record<string, any> = {
+    colors: Palette,
+    layout: Layout,
+    cta: MousePointer,
+    images: Image,
+    typography: Type,
   };
 
   return (
@@ -172,10 +110,10 @@ export default function DesignAdvisor() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
               <Palette className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">AI Design Advisor</h1>
+            <h1 className="text-2xl font-bold">{t("designAdvisor")}</h1>
           </div>
           <p className="text-muted-foreground">
-            Get expert UX and design recommendations to improve conversions.
+            {t("designAdvisorDesc")}
           </p>
         </div>
 
@@ -183,13 +121,13 @@ export default function DesignAdvisor() {
           {/* Input Section */}
           <div className="lg:col-span-2 space-y-6">
             <div className="glass-card rounded-2xl p-6 space-y-5">
-              <h2 className="font-semibold">Page Details</h2>
+              <h2 className="font-semibold">{t("pageToAnalyze")}</h2>
 
               <div className="space-y-2">
-                <Label htmlFor="pageUrl">Page URL (optional)</Label>
+                <Label htmlFor="pageUrl">{t("pageUrl")}</Label>
                 <Input
                   id="pageUrl"
-                  placeholder="https://yourstore.com/product"
+                  placeholder={t("pageUrlPlaceholder")}
                   value={pageUrl}
                   onChange={(e) => setPageUrl(e.target.value)}
                   className="input-field"
@@ -197,7 +135,7 @@ export default function DesignAdvisor() {
               </div>
 
               <div className="space-y-2">
-                <Label>Page Type</Label>
+                <Label>{t("pageType")}</Label>
                 <Select value={pageType} onValueChange={setPageType}>
                   <SelectTrigger className="input-field">
                     <SelectValue />
@@ -214,11 +152,14 @@ export default function DesignAdvisor() {
 
               <div className="space-y-2">
                 <Label htmlFor="pageDescription">
-                  Describe Your Page/Ad *
+                  {isRTL ? "صف صفحتك *" : "Describe Your Page *"}
                 </Label>
                 <Textarea
                   id="pageDescription"
-                  placeholder="Describe your current page layout, elements, colors used, and any specific concerns..."
+                  placeholder={isRTL 
+                    ? "صف تخطيط صفحتك، العناصر، الألوان المستخدمة..."
+                    : "Describe your current page layout, elements, colors used..."
+                  }
                   value={pageDescription}
                   onChange={(e) => setPageDescription(e.target.value)}
                   className="input-field min-h-[120px]"
@@ -226,10 +167,10 @@ export default function DesignAdvisor() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="businessGoal">Business Goal</Label>
+                <Label htmlFor="businessGoal">{t("mainGoal")}</Label>
                 <Input
                   id="businessGoal"
-                  placeholder="e.g., increase add-to-cart rate, reduce bounce rate"
+                  placeholder={isRTL ? "مثال: زيادة معدل الإضافة للسلة" : "e.g., increase add-to-cart rate"}
                   value={businessGoal}
                   onChange={(e) => setBusinessGoal(e.target.value)}
                   className="input-field"
@@ -242,17 +183,17 @@ export default function DesignAdvisor() {
               size="lg"
               className="w-full"
               onClick={handleAnalyze}
-              disabled={isAnalyzing}
+              disabled={isLoading}
             >
-              {isAnalyzing ? (
+              {isLoading ? (
                 <>
                   <RotateCcw className="w-4 h-4 animate-spin" />
-                  Analyzing Design...
+                  {t("analyzing")}
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  Get Recommendations
+                  {t("analyzeDesign")}
                 </>
               )}
             </Button>
@@ -265,13 +206,18 @@ export default function DesignAdvisor() {
                 <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
                   <Palette className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium mb-2">No analysis yet</h3>
+                <h3 className="font-medium mb-2">{t("noContentYet")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Describe your page or provide a URL to get AI-powered design recommendations.
+                  {t("noContentDesc")}
                 </p>
               </div>
             ) : (
               <div className="space-y-6 animate-fade-in">
+                {/* Export */}
+                <div className="flex justify-end">
+                  <ExportButtons content={getAnalysisAsText()} filename="design-analysis" />
+                </div>
+
                 {/* Score Card */}
                 <div className="glass-card rounded-2xl p-6">
                   <div className="flex items-center gap-6">
@@ -290,89 +236,102 @@ export default function DesignAdvisor() {
                           r="40"
                           className="fill-none stroke-primary"
                           strokeWidth="8"
-                          strokeDasharray={`${(analysis.score / 100) * 251} 251`}
+                          strokeDasharray={`${((analysis.score || 75) / 100) * 251} 251`}
                           strokeLinecap="round"
                         />
                       </svg>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-2xl font-bold">{analysis.score}</span>
+                        <span className="text-2xl font-bold">{analysis.score || 75}</span>
                       </div>
                     </div>
                     <div>
-                      <h2 className="font-semibold text-lg mb-1">Design Score</h2>
+                      <h2 className="font-semibold text-lg mb-1">{t("overallScore")}</h2>
                       <p className="text-sm text-muted-foreground">
-                        {analysis.summary}
+                        {isRTL 
+                          ? "صفحتك لديها أساسيات جيدة مع مجال للتحسين"
+                          : "Your page has good fundamentals with room for improvement"
+                        }
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Categories */}
-                {analysis.categories.map((category: any, index: number) => (
-                  <div key={index} className="glass-card rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <category.icon className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{category.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Score: {category.score}/100
-                          </p>
-                        </div>
+                {/* Recommendations */}
+                {analysis.colorRecommendations && (
+                  <div className="glass-card rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Palette className="w-5 h-5 text-primary" />
                       </div>
+                      <h3 className="font-semibold">{t("colorRecommendations")}</h3>
                     </div>
-                    <div className="space-y-3">
-                      {category.recommendations.map((rec: any, i: number) => (
-                        <div
-                          key={i}
-                          className={`p-4 rounded-xl border ${
-                            rec.type === "success"
-                              ? "border-green-500/20 bg-green-500/5"
-                              : rec.type === "warning"
-                              ? "border-amber-500/20 bg-amber-500/5"
-                              : "border-border bg-secondary/30"
-                          }`}
-                        >
-                          <div className="flex items-start gap-3">
-                            {rec.type === "success" ? (
-                              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
-                            ) : rec.type === "warning" ? (
-                              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
-                            ) : (
-                              <Sparkles className="w-5 h-5 text-primary mt-0.5" />
-                            )}
-                            <div>
-                              <h4 className="font-medium text-sm">{rec.title}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {rec.description}
-                              </p>
-                            </div>
-                          </div>
+                    <div className="space-y-2">
+                      {analysis.colorRecommendations.map((rec: string, i: number) => (
+                        <div key={i} className="p-3 rounded-lg bg-secondary/50 flex items-start gap-3">
+                          <CheckCircle className="w-4 h-4 text-primary mt-0.5" />
+                          <p className="text-sm">{rec}</p>
                         </div>
                       ))}
                     </div>
                   </div>
-                ))}
+                )}
 
-                {/* Quick Wins */}
-                <div className="glass-card rounded-2xl p-6">
-                  <h2 className="font-semibold mb-4">Quick Wins</h2>
-                  <div className="space-y-2">
-                    {analysis.quickWins.map((win: string, index: number) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50"
-                      >
-                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                          {index + 1}
-                        </div>
-                        <p className="text-sm">{win}</p>
+                {analysis.layoutRecommendations && (
+                  <div className="glass-card rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Layout className="w-5 h-5 text-primary" />
                       </div>
-                    ))}
+                      <h3 className="font-semibold">{t("layoutRecommendations")}</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {analysis.layoutRecommendations.map((rec: string, i: number) => (
+                        <div key={i} className="p-3 rounded-lg bg-secondary/50 flex items-start gap-3">
+                          <Sparkles className="w-4 h-4 text-primary mt-0.5" />
+                          <p className="text-sm">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {analysis.ctaRecommendations && (
+                  <div className="glass-card rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <MousePointer className="w-5 h-5 text-primary" />
+                      </div>
+                      <h3 className="font-semibold">{t("ctaRecommendations")}</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {analysis.ctaRecommendations.map((rec: string, i: number) => (
+                        <div key={i} className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
+                          <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5" />
+                          <p className="text-sm">{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {analysis.mistakesToAvoid && (
+                  <div className="glass-card rounded-2xl p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                        <AlertTriangle className="w-5 h-5 text-red-500" />
+                      </div>
+                      <h3 className="font-semibold">{t("commonMistakes")}</h3>
+                    </div>
+                    <div className="space-y-2">
+                      {analysis.mistakesToAvoid.map((mistake: string, i: number) => (
+                        <div key={i} className="p-3 rounded-lg bg-red-500/5 border border-red-500/20 flex items-start gap-3">
+                          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5" />
+                          <p className="text-sm">{mistake}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
