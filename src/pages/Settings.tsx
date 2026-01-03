@@ -1,0 +1,229 @@
+import { useState, useEffect } from "react";
+import { User, Mail, Globe, Bell, Shield, Save, Loader2 } from "lucide-react";
+import DashboardLayout from "@/components/layout/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+export default function Settings() {
+  const { t, isRTL, language, setLanguage } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [preferredLanguage, setPreferredLanguage] = useState<"ar" | "en">(language);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [marketingEmails, setMarketingEmails] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.user_metadata?.full_name || "");
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, preferred_language")
+      .eq("id", user.id)
+      .single();
+    
+    if (data) {
+      setFullName(data.full_name || "");
+      setPreferredLanguage((data.preferred_language as "ar" | "en") || language);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          preferred_language: preferredLanguage,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+
+      // Update language context
+      setLanguage(preferredLanguage as "ar" | "en");
+
+      toast({
+        title: isRTL ? "تم الحفظ!" : "Saved!",
+        description: isRTL ? "تم تحديث الإعدادات بنجاح." : "Settings updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: isRTL ? "فشل حفظ الإعدادات." : "Failed to save settings.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-8 max-w-4xl">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">
+            {isRTL ? "الإعدادات" : "Settings"}
+          </h1>
+          <p className="text-muted-foreground">
+            {isRTL ? "إدارة حسابك وتفضيلاتك" : "Manage your account and preferences"}
+          </p>
+        </div>
+
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              {isRTL ? "الملف الشخصي" : "Profile"}
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2">
+              <Globe className="w-4 h-4" />
+              {isRTL ? "التفضيلات" : "Preferences"}
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              {isRTL ? "الإشعارات" : "Notifications"}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6 space-y-6">
+              <div className="flex items-center gap-4 pb-6 border-b border-border">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-10 h-10 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{fullName || (isRTL ? "المستخدم" : "User")}</h3>
+                  <p className="text-muted-foreground text-sm">{user?.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">{isRTL ? "الاسم الكامل" : "Full Name"}</Label>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder={isRTL ? "أدخل اسمك الكامل" : "Enter your full name"}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">{isRTL ? "البريد الإلكتروني" : "Email"}</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      value={user?.email || ""}
+                      disabled
+                      className="pl-10 bg-muted"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {isRTL ? "لا يمكن تغيير البريد الإلكتروني" : "Email cannot be changed"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Preferences Tab */}
+          <TabsContent value="preferences" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="language">{isRTL ? "اللغة المفضلة" : "Preferred Language"}</Label>
+                  <Select value={preferredLanguage} onValueChange={(value) => setPreferredLanguage(value as "ar" | "en")}>
+                    <SelectTrigger id="language">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ar">العربية</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{isRTL ? "إشعارات البريد الإلكتروني" : "Email Notifications"}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {isRTL ? "استلم إشعارات عن نشاط حسابك" : "Receive notifications about your account activity"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={emailNotifications}
+                    onCheckedChange={setEmailNotifications}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>{isRTL ? "رسائل التسويق" : "Marketing Emails"}</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {isRTL ? "استلم نصائح ومنتجات جديدة" : "Receive tips, updates and new features"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={marketingEmails}
+                    onCheckedChange={setMarketingEmails}
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Save Button */}
+        <div className="flex justify-end">
+          <Button onClick={handleSaveProfile} disabled={loading} className="min-w-[120px]">
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                {isRTL ? "حفظ التغييرات" : "Save Changes"}
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
