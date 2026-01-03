@@ -1,4 +1,4 @@
 project_id = "swhexasdtwumyblssiyu"
 
 [functions.ai-generate]
-verify_jwt = true
+verify_jwt = false
