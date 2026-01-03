@@ -5,13 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-
-const benefits = [
-  "AI Product Copy Generator",
-  "Ads Copy for All Platforms",
-  "Campaign Planning Tools",
-  "Competitor Analysis",
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -20,24 +15,47 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
+  const { t, isRTL } = useLanguage();
+
+  const benefits = [
+    t("featureProductCopy"),
+    t("featureAds"),
+    t("featureCampaign"),
+    t("featureCompetitor"),
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate signup - replace with actual auth
-    setTimeout(() => {
+    const { error } = await signUp(email, password, name);
+
+    if (error) {
       setIsLoading(false);
+      let message = t("tryAgain");
+      if (error.message.includes("already registered")) {
+        message = t("userExists");
+      } else if (error.message.includes("weak")) {
+        message = t("weakPassword");
+      }
       toast({
-        title: "Account created!",
-        description: "Welcome to SellGenius. Let's grow your business.",
+        title: t("errorOccurred"),
+        description: message,
+        variant: "destructive",
       });
-      navigate("/dashboard");
-    }, 1000);
+      return;
+    }
+
+    toast({
+      title: t("signupSuccess"),
+      description: t("signupSuccessDesc"),
+    });
+    navigate("/dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-background flex relative overflow-hidden">
+    <div className="min-h-screen bg-background flex relative overflow-hidden" dir={isRTL ? "rtl" : "ltr"}>
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
@@ -51,14 +69,13 @@ export default function Signup() {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-xl gradient-text">SellGenius</span>
+            <span className="font-bold text-xl gradient-text">{t("appName")}</span>
           </div>
           <h2 className="text-3xl font-bold mb-4">
-            Start your free trial today
+            {t("startFreeTrial")}
           </h2>
           <p className="text-muted-foreground mb-8">
-            Join thousands of sellers using AI to grow their e-commerce
-            business.
+            {t("ctaDescription")}
           </p>
           <div className="space-y-4">
             {benefits.map((benefit, index) => (
@@ -85,68 +102,68 @@ export default function Signup() {
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
                 <Sparkles className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-xl gradient-text">SellGenius</span>
+              <span className="font-bold text-xl gradient-text">{t("appName")}</span>
             </Link>
 
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold mb-2">Create your account</h1>
+              <h1 className="text-2xl font-bold mb-2">{t("createAccount")}</h1>
               <p className="text-muted-foreground">
-                Start your 14-day free trial
+                {t("startFreeTrial")}
               </p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">{t("fullName")}</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <User className={`absolute ${isRTL ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground`} />
                   <Input
                     id="name"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder={isRTL ? "أحمد محمد" : "John Doe"}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-10 input-field"
+                    className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("email")}</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Mail className={`absolute ${isRTL ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground`} />
                   <Input
                     id="email"
                     type="email"
                     placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 input-field"
+                    className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("password")}</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Lock className={`absolute ${isRTL ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground`} />
                   <Input
                     id="password"
                     type="password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 input-field"
+                    className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
                     required
                     minLength={8}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Must be at least 8 characters
+                  {t("passwordMinLength")}
                 </p>
               </div>
 
@@ -157,26 +174,25 @@ export default function Signup() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  "Creating account..."
+                  t("creatingAccount")
                 ) : (
                   <>
-                    Create Account
-                    <ArrowRight className="w-4 h-4" />
+                    {t("createAccount")}
+                    <ArrowRight className={`w-4 h-4 ${isRTL ? "rotate-180" : ""}`} />
                   </>
                 )}
               </Button>
             </form>
 
             <p className="text-xs text-muted-foreground text-center mt-4">
-              By signing up, you agree to our Terms of Service and Privacy
-              Policy
+              {t("termsAgreement")}
             </p>
 
             {/* Footer */}
             <p className="text-center text-sm text-muted-foreground mt-6">
-              Already have an account?{" "}
+              {t("hasAccount")}{" "}
               <Link to="/login" className="text-primary hover:underline font-medium">
-                Sign in
+                {t("signIn")}
               </Link>
             </p>
           </div>

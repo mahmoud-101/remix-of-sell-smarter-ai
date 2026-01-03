@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
@@ -12,23 +12,12 @@ import {
   ChevronLeft,
   Sparkles,
   LogOut,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-  { icon: FileText, label: "Product Copy", path: "/dashboard/product-copy" },
-  { icon: Megaphone, label: "Ads Copy", path: "/dashboard/ads-copy" },
-  { icon: Calendar, label: "Campaign Planner", path: "/dashboard/campaign" },
-  { icon: Palette, label: "Design Advisor", path: "/dashboard/design" },
-  { icon: Target, label: "Competitor Analysis", path: "/dashboard/competitor" },
-  { icon: History, label: "History", path: "/dashboard/history" },
-];
-
-const bottomNavItems = [
-  { icon: Settings, label: "Settings", path: "/dashboard/settings" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -37,13 +26,36 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+  const { t, isRTL, language, setLanguage } = useLanguage();
+
+  const navItems = [
+    { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
+    { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
+    { icon: Megaphone, label: t("navigation.adsCopy"), path: "/dashboard/ads-copy" },
+    { icon: Calendar, label: t("navigation.campaign"), path: "/dashboard/campaign" },
+    { icon: Palette, label: t("navigation.design"), path: "/dashboard/design" },
+    { icon: Target, label: t("navigation.competitor"), path: "/dashboard/competitor" },
+    { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
+  ];
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const toggleLanguage = () => {
+    setLanguage(language === "ar" ? "en" : "ar");
+  };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex" dir={isRTL ? "rtl" : "ltr"}>
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 h-full bg-card border-r border-border z-50 transition-all duration-300 flex flex-col",
+          "fixed top-0 h-full bg-card border-border z-50 transition-all duration-300 flex flex-col",
+          isRTL ? "right-0 border-l" : "left-0 border-r",
           collapsed ? "w-[72px]" : "w-[260px]"
         )}
       >
@@ -54,7 +66,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
             {!collapsed && (
-              <span className="font-bold text-lg gradient-text">SellGenius</span>
+              <span className="font-bold text-lg gradient-text">{t("appName")}</span>
             )}
           </Link>
           <Button
@@ -63,7 +75,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
               "transition-transform duration-300",
-              collapsed && "rotate-180"
+              collapsed && "rotate-180",
+              isRTL && !collapsed && "rotate-180",
+              isRTL && collapsed && "rotate-0"
             )}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -101,33 +115,26 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Bottom Navigation */}
         <div className="py-4 px-3 border-t border-border space-y-1">
-          {bottomNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                )}
-              >
-                <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && (
-                  <span className="text-sm font-medium">{item.label}</span>
-                )}
-              </Link>
-            );
-          })}
-          <Link
-            to="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+          {/* Language Toggle */}
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-all duration-200 w-full"
+          >
+            <Globe className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="text-sm font-medium">
+                {language === "ar" ? "English" : "العربية"}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200 w-full"
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span className="text-sm font-medium">Logout</span>}
-          </Link>
+            {!collapsed && <span className="text-sm font-medium">{t("logout")}</span>}
+          </button>
         </div>
       </aside>
 
@@ -135,7 +142,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <main
         className={cn(
           "flex-1 transition-all duration-300",
-          collapsed ? "ml-[72px]" : "ml-[260px]"
+          isRTL
+            ? collapsed ? "mr-[72px]" : "mr-[260px]"
+            : collapsed ? "ml-[72px]" : "ml-[260px]"
         )}
       >
         <div className="p-6 lg:p-8">{children}</div>

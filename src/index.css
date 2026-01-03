@@ -110,6 +110,11 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+
+  /* RTL Support */
+  [dir="rtl"] {
+    font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  }
 }
 
 @layer components {
