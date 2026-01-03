@@ -13,6 +13,7 @@ import {
   Sparkles,
   LogOut,
   Globe,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Palette, label: t("navigation.design"), path: "/dashboard/design" },
     { icon: Target, label: t("navigation.competitor"), path: "/dashboard/competitor" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
+  ];
+
+  const bottomNavItems = [
+    { icon: Settings, label: t("navigation.settings"), path: "/dashboard/settings" },
   ];
 
   const handleLogout = async () => {
@@ -115,6 +120,46 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Bottom Navigation */}
         <div className="py-4 px-3 border-t border-border space-y-1">
+          {/* Settings & Analytics */}
+          {bottomNavItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && (
+                  <span className="text-sm font-medium">{item.label}</span>
+                )}
+              </Link>
+            );
+          })}
+
+          {/* Analytics Link */}
+          <Link
+            to="/dashboard/analytics"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
+              location.pathname === "/dashboard/analytics"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            )}
+          >
+            <BarChart3 className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="text-sm font-medium">
+                {isRTL ? "الإحصائيات" : "Analytics"}
+              </span>
+            )}
+          </Link>
+
           {/* Language Toggle */}
           <button
             onClick={toggleLanguage}

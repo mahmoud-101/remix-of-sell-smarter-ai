@@ -20,6 +20,8 @@ const CampaignPlanner = lazy(() => import("./pages/CampaignPlanner"));
 const DesignAdvisor = lazy(() => import("./pages/DesignAdvisor"));
 const CompetitorAnalysis = lazy(() => import("./pages/CompetitorAnalysis"));
 const History = lazy(() => import("./pages/History"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Analytics = lazy(() => import("./pages/Analytics"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -152,6 +154,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <History />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/analytics"
+          element={
+            <ProtectedRoute>
+              <Analytics />
             </ProtectedRoute>
           }
         />
