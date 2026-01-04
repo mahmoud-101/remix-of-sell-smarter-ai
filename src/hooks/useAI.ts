@@ -14,7 +14,7 @@ export function useAI(toolType: AIToolType, options?: UseAIOptions) {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const { t, language, isRTL } = useLanguage();
 
   const generate = async (input: Record<string, any>) => {
     setIsLoading(true);
@@ -22,7 +22,7 @@ export function useAI(toolType: AIToolType, options?: UseAIOptions) {
 
     try {
       const { data, error } = await supabase.functions.invoke("ai-generate", {
-        body: { toolType, input },
+        body: { toolType, input, language },
       });
 
       if (error) {
@@ -32,14 +32,14 @@ export function useAI(toolType: AIToolType, options?: UseAIOptions) {
       if (data.error) {
         if (data.status === 429) {
           toast({
-            title: t("aiRateLimited"),
-            description: t("aiRateLimitedDesc"),
+            title: isRTL ? "تجاوز الحد المسموح" : "Rate Limited",
+            description: isRTL ? "يرجى الانتظار قليلاً ثم المحاولة مرة أخرى" : "Please wait a moment and try again",
             variant: "destructive",
           });
         } else if (data.status === 402) {
           toast({
-            title: t("aiPaymentRequired"),
-            description: t("aiPaymentRequiredDesc"),
+            title: isRTL ? "الرصيد غير كافي" : "Payment Required",
+            description: isRTL ? "يرجى إضافة رصيد لمتابعة الاستخدام" : "Please add credits to continue",
             variant: "destructive",
           });
         } else {
@@ -52,16 +52,16 @@ export function useAI(toolType: AIToolType, options?: UseAIOptions) {
       options?.onSuccess?.(data.result);
       
       toast({
-        title: t("contentGeneratedSuccess"),
-        description: t("contentReady"),
+        title: isRTL ? "تم بنجاح! ✨" : "Success! ✨",
+        description: isRTL ? "تم إنشاء المحتوى بنجاح" : "Content generated successfully",
       });
 
       return data.result;
     } catch (error: any) {
       console.error("AI generation error:", error);
       toast({
-        title: t("errorOccurred"),
-        description: error.message || t("tryAgain"),
+        title: isRTL ? "حدث خطأ" : "Error",
+        description: error.message || (isRTL ? "يرجى المحاولة مرة أخرى" : "Please try again"),
         variant: "destructive",
       });
       options?.onError?.(error);

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   FileText,
@@ -9,17 +10,59 @@ import {
   Sparkles,
   Clock,
   Zap,
+  Image,
+  Wand2,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import SalesChatbot from "@/components/chat/SalesChatbot";
 import { UsageBanner } from "@/components/usage/UsageBanner";
 
 export default function Dashboard() {
   const { t, isRTL } = useLanguage();
   const { user } = useAuth();
+  const [stats, setStats] = useState({
+    contentGenerated: 0,
+    leadsCount: 0,
+    timeSaved: 0,
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch history count
+      const { count: historyCount } = await supabase
+        .from("history")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      // Fetch leads count
+      const { count: leadsCount } = await supabase
+        .from("leads")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      setStats({
+        contentGenerated: historyCount || 0,
+        leadsCount: leadsCount || 0,
+        timeSaved: Math.round((historyCount || 0) * 0.5),
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  };
 
   const tools = [
     {
@@ -35,6 +78,27 @@ export default function Dashboard() {
       description: isRTL ? "أنشئ إعلانات عالية التحويل" : "Generate high-converting ad copy",
       path: "/dashboard/ads-copy",
       color: "from-pink-500 to-rose-500",
+    },
+    {
+      icon: Image,
+      title: isRTL ? "صور المنتجات" : "Product Images",
+      description: isRTL ? "ولد صور منتجات احترافية" : "Generate professional product images",
+      path: "/dashboard/image-generator",
+      color: "from-purple-500 to-pink-500",
+    },
+    {
+      icon: Wand2,
+      title: isRTL ? "مصمم الإعلانات" : "Ad Designer",
+      description: isRTL ? "صمم إعلانات بالذكاء الاصطناعي" : "Design ads with AI",
+      path: "/dashboard/ad-designer",
+      color: "from-red-500 to-orange-500",
+    },
+    {
+      icon: TrendingUp,
+      title: isRTL ? "منصات الإعلانات" : "Ad Platforms",
+      description: isRTL ? "ربط وتحليل حملاتك" : "Connect and analyze your campaigns",
+      path: "/dashboard/ads-platforms",
+      color: "from-green-500 to-emerald-500",
     },
     {
       icon: Calendar,
@@ -59,10 +123,10 @@ export default function Dashboard() {
     },
   ];
 
-  const stats = [
-    { label: t("contentGenerated"), value: "0", icon: FileText },
-    { label: t("campaignsCreated"), value: "0", icon: Calendar },
-    { label: t("timeSaved"), value: "0h", icon: Clock },
+  const statsData = [
+    { label: isRTL ? "محتوى مولد" : "Content Generated", value: stats.contentGenerated.toString(), icon: FileText },
+    { label: isRTL ? "العملاء المحتملين" : "Leads", value: stats.leadsCount.toString(), icon: Users },
+    { label: isRTL ? "وقت موفر" : "Time Saved", value: `${stats.timeSaved}h`, icon: Clock },
   ];
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
@@ -102,7 +166,7 @@ export default function Dashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <div
               key={index}
               className="glass-card rounded-xl p-5 flex items-center gap-4"
@@ -121,7 +185,7 @@ export default function Dashboard() {
         {/* Tools Grid */}
         <div>
           <h2 className="text-xl font-semibold mb-4">{t("aiTools")}</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             {tools.map((tool, index) => (
               <Link
                 key={index}
@@ -154,7 +218,7 @@ export default function Dashboard() {
             <Zap className="w-5 h-5 text-accent" />
             <h2 className="text-lg font-semibold">{t("quickTips")}</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-secondary/50">
               <h3 className="font-medium mb-1">{t("beSpecific")}</h3>
               <p className="text-sm text-muted-foreground">
@@ -165,6 +229,12 @@ export default function Dashboard() {
               <h3 className="font-medium mb-1">{t("iterateRefine")}</h3>
               <p className="text-sm text-muted-foreground">
                 {t("iterateRefineDesc")}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-secondary/50">
+              <h3 className="font-medium mb-1">{isRTL ? "استخدم القوالب" : "Use Templates"}</h3>
+              <p className="text-sm text-muted-foreground">
+                {isRTL ? "استخدم القوالب الجاهزة للبدء بسرعة" : "Use ready templates to start quickly"}
               </p>
             </div>
           </div>
