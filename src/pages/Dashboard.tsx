@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import SalesChatbot from "@/components/chat/SalesChatbot";
+import { UsageBanner } from "@/components/usage/UsageBanner";
 
 export default function Dashboard() {
   const { t, isRTL } = useLanguage();
@@ -69,6 +70,9 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
+        {/* Usage Banner */}
+        <UsageBanner />
+        
         {/* Welcome Section */}
         <div className="glass-card rounded-2xl p-6 md:p-8 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />

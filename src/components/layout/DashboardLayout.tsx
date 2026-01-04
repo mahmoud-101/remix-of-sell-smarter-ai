@@ -41,6 +41,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Target, label: t("navigation.competitor"), path: "/dashboard/competitor" },
     { icon: Users, label: isRTL ? "العملاء" : "Leads", path: "/dashboard/leads" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
+    { icon: BarChart3, label: isRTL ? "الإحصائيات" : "Analytics", path: "/dashboard/analytics" },
   ];
 
   const bottomNavItems = [
@@ -144,20 +145,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             );
           })}
 
-          {/* Analytics Link */}
+          {/* Admin Link */}
           <Link
-            to="/dashboard/analytics"
+            to="/dashboard/admin"
             className={cn(
               "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
-              location.pathname === "/dashboard/analytics"
+              location.pathname === "/dashboard/admin"
                 ? "bg-primary text-primary-foreground shadow-md"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
           >
-            <BarChart3 className="w-5 h-5 flex-shrink-0" />
+            <Settings className="w-5 h-5 flex-shrink-0" />
             {!collapsed && (
               <span className="text-sm font-medium">
-                {isRTL ? "الإحصائيات" : "Analytics"}
+                {isRTL ? "لوحة التحكم" : "Admin"}
               </span>
             )}
           </Link>

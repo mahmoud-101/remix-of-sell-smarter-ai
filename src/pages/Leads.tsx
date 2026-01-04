@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Users,
@@ -11,6 +12,8 @@ import {
   Filter,
   Trash2,
   MoreVertical,
+  Eye,
+  MessageCircle,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -334,6 +337,20 @@ export default function Leads() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/dashboard/leads/${lead.id}`}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              {language === "ar" ? "عرض" : "View"}
+                            </Link>
+                          </DropdownMenuItem>
+                          {lead.phone && (
+                            <DropdownMenuItem asChild>
+                              <a href={`https://wa.me/${lead.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer">
+                                <MessageCircle className="h-4 w-4 mr-2 text-green-500" />
+                                {language === "ar" ? "واتساب" : "WhatsApp"}
+                              </a>
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => handleDelete(lead.id)}
                             className="text-destructive"
