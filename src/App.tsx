@@ -27,6 +27,7 @@ const CustomerProfile = lazy(() => import("./pages/CustomerProfile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const ImageGenerator = lazy(() => import("./pages/ImageGenerator"));
 const AdsPlatforms = lazy(() => import("./pages/AdsPlatforms"));
+const AdDesigner = lazy(() => import("./pages/AdDesigner"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -215,6 +216,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <AdsPlatforms />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/ad-designer"
+          element={
+            <ProtectedRoute>
+              <AdDesigner />
             </ProtectedRoute>
           }
         />
