@@ -41,6 +41,48 @@ export type Database = {
         }
         Relationships: []
       }
+      leads: {
+        Row: {
+          address: string | null
+          created_at: string
+          customer_name: string | null
+          id: string
+          notes: string | null
+          order_value: number | null
+          phone: string | null
+          source: string | null
+          status: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_value?: number | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          customer_name?: string | null
+          id?: string
+          notes?: string | null
+          order_value?: number | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
