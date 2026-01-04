@@ -55,12 +55,13 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
         messages: [
           { role: 'system', content: `${systemPrompt}\n\n${langInstruction}` },
           ...messages,
         ],
-        max_tokens: 1024,
+        max_tokens: 2048,
+        temperature: 0.8,
       }),
     });
 

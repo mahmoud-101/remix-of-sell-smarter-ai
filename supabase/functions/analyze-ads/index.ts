@@ -45,11 +45,12 @@ Be specific and practical in your recommendations.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-pro',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: JSON.stringify(campaignData) }
         ],
+        temperature: 0.6,
       }),
     });
 
