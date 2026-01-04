@@ -88,6 +88,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          plan: string | null
           preferred_language: string | null
           updated_at: string
         }
@@ -95,6 +96,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          plan?: string | null
           preferred_language?: string | null
           updated_at?: string
         }
@@ -102,8 +104,39 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          plan?: string | null
           preferred_language?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      usage: {
+        Row: {
+          created_at: string
+          generations_count: number
+          id: string
+          month_year: string
+          plan: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generations_count?: number
+          id?: string
+          month_year: string
+          plan?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generations_count?: number
+          id?: string
+          month_year?: string
+          plan?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
