@@ -14,6 +14,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import SalesChatbot from "@/components/chat/SalesChatbot";
 
 export default function Dashboard() {
   const { t, isRTL } = useLanguage();
@@ -165,6 +166,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Sales Chatbot */}
+      <SalesChatbot />
     </DashboardLayout>
   );
 }
