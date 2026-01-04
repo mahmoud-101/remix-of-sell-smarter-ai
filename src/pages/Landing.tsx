@@ -20,6 +20,9 @@ import PricingSection from "@/components/pricing/PricingSection";
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import TrustedBySection from "@/components/landing/TrustedBySection";
 import FAQSection from "@/components/landing/FAQSection";
+import ComparisonSection from "@/components/landing/ComparisonSection";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import UniqueFeatures from "@/components/landing/UniqueFeatures";
 import WhatsAppChatbot from "@/components/chat/WhatsAppChatbot";
 
 export default function Landing() {
@@ -93,6 +96,18 @@ export default function Landing() {
             >
               {t("pricing")}
             </a>
+            <Link
+              to="/use-cases"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isRTL ? "حالات الاستخدام" : "Use Cases"}
+            </Link>
+            <Link
+              to="/about"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {isRTL ? "من نحن" : "About"}
+            </Link>
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -143,16 +158,35 @@ export default function Landing() {
               {t("heroTagline")}
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance">
-              {t("heroTitle")}
-              <span className="gradient-text"> {t("heroTitleHighlight")}</span>
+              {isRTL ? (
+                <>
+                  ضاعف مبيعاتك
+                  <span className="gradient-text"> بالذكاء الاصطناعي</span>
+                  <br />
+                  <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-normal mt-2 block">
+                    محتوى تسويقي احترافي في ثوانٍ
+                  </span>
+                </>
+              ) : (
+                <>
+                  Double Your Sales
+                  <span className="gradient-text"> With AI</span>
+                  <br />
+                  <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-normal mt-2 block">
+                    Professional Marketing Content in Seconds
+                  </span>
+                </>
+              )}
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-              {t("heroDescription")}
+              {isRTL 
+                ? "أنشئ وصف منتجات جذاب، إعلانات عالية التحويل، وتصاميم مذهلة - كل ذلك بالذكاء الاصطناعي. وفر ساعات من العمل وزد مبيعاتك حتى 40%."
+                : "Create engaging product descriptions, high-converting ads, and stunning designs - all powered by AI. Save hours of work and increase your sales by up to 40%."}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link to="/signup">
                 <Button variant="hero" size="xl" className="group">
-                  {t("startFreeTrialBtn")}
+                  {isRTL ? "ابدأ مجاناً - بدون بطاقة ائتمان" : "Start Free - No Credit Card"}
                   <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                 </Button>
               </Link>
@@ -188,8 +222,11 @@ export default function Landing() {
       {/* Trusted By Section */}
       <TrustedBySection />
 
+      {/* How It Works Section */}
+      <HowItWorksSection />
+
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 bg-secondary/30">
+      <section id="features" className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -207,8 +244,8 @@ export default function Landing() {
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {isRTL
-                ? "أدوات ذكاء اصطناعي قوية مصممة خصيصاً لبائعي التجارة الإلكترونية والوكالات والمسوقين."
-                : "Powerful AI tools designed specifically for e-commerce sellers, agencies, and marketers."}
+                ? "8 أدوات ذكاء اصطناعي قوية مصممة خصيصاً لبائعي التجارة الإلكترونية والوكالات والمسوقين."
+                : "8 powerful AI tools designed specifically for e-commerce sellers, agencies, and marketers."}
             </p>
           </div>
 
@@ -232,6 +269,12 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Unique Features */}
+      <UniqueFeatures />
+
+      {/* Comparison Section */}
+      <ComparisonSection />
+
       {/* Pricing Section */}
       <PricingSection />
 
@@ -251,10 +294,12 @@ export default function Landing() {
                 <Shield className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {t("ctaTitle")}
+                {isRTL ? "مستعد لتضاعف مبيعاتك؟" : "Ready to Double Your Sales?"}
               </h2>
               <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-                {t("ctaDescription")}
+                {isRTL 
+                  ? "انضم لأكثر من 10,000 بائع ومسوق يستخدمون سيل جينيوس لتنمية أعمالهم. ابدأ تجربتك المجانية اليوم."
+                  : "Join over 10,000 sellers and marketers using SellGenius to grow their businesses. Start your free trial today."}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/signup">
@@ -273,26 +318,59 @@ export default function Landing() {
       <footer className="py-12 px-4 border-t border-border">
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col gap-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-primary-foreground" />
+            <div className="grid md:grid-cols-4 gap-8">
+              {/* Logo & Description */}
+              <div className="md:col-span-2">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <span className="font-bold gradient-text">{t("appName")}</span>
                 </div>
-                <span className="font-bold gradient-text">{t("appName")}</span>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {isRTL 
+                    ? "منصة ذكاء اصطناعي متخصصة في التجارة الإلكترونية. نساعدك على إنشاء محتوى تسويقي احترافي يزيد مبيعاتك."
+                    : "AI platform specialized in e-commerce. We help you create professional marketing content that increases your sales."}
+                </p>
               </div>
-              <nav className="flex items-center gap-6 text-sm text-muted-foreground">
-                <Link to="/privacy" className="hover:text-foreground transition-colors">
-                  {isRTL ? "سياسة الخصوصية" : "Privacy Policy"}
-                </Link>
-                <Link to="/terms" className="hover:text-foreground transition-colors">
-                  {isRTL ? "الشروط والأحكام" : "Terms of Service"}
-                </Link>
-                <a href="mailto:support@sellgenius.app" className="hover:text-foreground transition-colors">
-                  {isRTL ? "الدعم" : "Support"}
-                </a>
-              </nav>
+
+              {/* Links */}
+              <div>
+                <h4 className="font-semibold mb-4">{isRTL ? "روابط سريعة" : "Quick Links"}</h4>
+                <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
+                  <Link to="/about" className="hover:text-foreground transition-colors">
+                    {isRTL ? "من نحن" : "About Us"}
+                  </Link>
+                  <Link to="/use-cases" className="hover:text-foreground transition-colors">
+                    {isRTL ? "حالات الاستخدام" : "Use Cases"}
+                  </Link>
+                  <a href="#pricing" className="hover:text-foreground transition-colors">
+                    {isRTL ? "الأسعار" : "Pricing"}
+                  </a>
+                  <a href="#features" className="hover:text-foreground transition-colors">
+                    {isRTL ? "المميزات" : "Features"}
+                  </a>
+                </nav>
+              </div>
+
+              {/* Legal */}
+              <div>
+                <h4 className="font-semibold mb-4">{isRTL ? "قانوني" : "Legal"}</h4>
+                <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
+                  <Link to="/privacy" className="hover:text-foreground transition-colors">
+                    {isRTL ? "سياسة الخصوصية" : "Privacy Policy"}
+                  </Link>
+                  <Link to="/terms" className="hover:text-foreground transition-colors">
+                    {isRTL ? "الشروط والأحكام" : "Terms of Service"}
+                  </Link>
+                  <a href="mailto:support@sellgenius.app" className="hover:text-foreground transition-colors">
+                    {isRTL ? "الدعم" : "Support"}
+                  </a>
+                </nav>
+              </div>
             </div>
-            <div className="text-center text-sm text-muted-foreground">
+
+            <div className="text-center text-sm text-muted-foreground pt-8 border-t border-border">
               © 2026 {t("appName")}. {isRTL ? "جميع الحقوق محفوظة." : "All rights reserved."}
             </div>
           </div>
