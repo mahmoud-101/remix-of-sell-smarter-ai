@@ -16,6 +16,7 @@ import {
   BarChart3,
   Users,
   Image,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
     { icon: Megaphone, label: t("navigation.adsCopy"), path: "/dashboard/ads-copy" },
     { icon: Image, label: isRTL ? "صور المنتجات" : "Image Gen", path: "/dashboard/image-generator" },
+    { icon: TrendingUp, label: isRTL ? "منصات الإعلانات" : "Ad Platforms", path: "/dashboard/ads-platforms" },
     { icon: Calendar, label: t("navigation.campaign"), path: "/dashboard/campaign" },
     { icon: Palette, label: t("navigation.design"), path: "/dashboard/design" },
     { icon: Target, label: t("navigation.competitor"), path: "/dashboard/competitor" },

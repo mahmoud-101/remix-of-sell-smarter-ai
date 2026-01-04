@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 import BrandVoiceSettings from "@/components/settings/BrandVoiceSettings";
 import RealWhatsAppIntegration from "@/components/whatsapp/RealWhatsAppIntegration";
+import WhatsAppBusinessSetup from "@/components/whatsapp/WhatsAppBusinessSetup";
 import {
   Select,
   SelectContent,
@@ -102,7 +103,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-6 lg:w-[700px]">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">{isRTL ? "الملف" : "Profile"}</span>
@@ -118,6 +119,10 @@ export default function Settings() {
             <TabsTrigger value="whatsapp" className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               <span className="hidden sm:inline">{isRTL ? "واتساب" : "WhatsApp"}</span>
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp-api" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">{isRTL ? "API" : "API"}</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
@@ -232,6 +237,11 @@ export default function Settings() {
             <div className="glass-card rounded-2xl p-6">
               <RealWhatsAppIntegration />
             </div>
+          </TabsContent>
+
+          {/* WhatsApp Business API Tab */}
+          <TabsContent value="whatsapp-api" className="space-y-6">
+            <WhatsAppBusinessSetup />
           </TabsContent>
 
           {/* Notifications Tab */}
