@@ -28,6 +28,8 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const ImageGenerator = lazy(() => import("./pages/ImageGenerator"));
 const AdsPlatforms = lazy(() => import("./pages/AdsPlatforms"));
 const AdDesigner = lazy(() => import("./pages/AdDesigner"));
+const About = lazy(() => import("./pages/About"));
+const UseCases = lazy(() => import("./pages/UseCases"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -227,6 +229,8 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="/about" element={<About />} />
+        <Route path="/use-cases" element={<UseCases />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
