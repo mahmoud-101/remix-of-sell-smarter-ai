@@ -3,9 +3,13 @@ import { useEffect } from "react";
 // Security headers component that adds meta tags for security
 export function SecurityHeaders() {
   useEffect(() => {
-    // Prevent clickjacking
-    if (window.top !== window.self) {
-      window.top?.location.replace(window.location.href);
+    // Prevent clickjacking - only in production, not in iframe preview
+    try {
+      if (window.top !== window.self && !window.location.hostname.includes('lovableproject.com')) {
+        window.top?.location.replace(window.location.href);
+      }
+    } catch {
+      // Ignore cross-origin errors in development/preview
     }
 
     // Add CSP meta tag
