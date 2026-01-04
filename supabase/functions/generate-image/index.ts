@@ -18,7 +18,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Build enhanced prompt based on style
+    // Build enhanced prompt based on style with Arabic support
     let enhancedPrompt = prompt;
     
     const stylePrompts: Record<string, string> = {
@@ -37,7 +37,10 @@ serve(async (req) => {
       abstract: "abstract artistic background",
     };
 
-    enhancedPrompt = `${stylePrompts[style] || stylePrompts.product}. ${prompt}. ${backgroundStyles[background] || backgroundStyles.white}. Ultra high quality, 4K resolution.`;
+    // Enhanced prompt with explicit Arabic text support instructions
+    const arabicTextInstructions = "IMPORTANT: If the prompt contains Arabic text, render it correctly with proper right-to-left direction. Arabic typography must be clear, readable, and beautifully styled. Use elegant Arabic fonts.";
+    
+    enhancedPrompt = `${arabicTextInstructions}. ${stylePrompts[style] || stylePrompts.product}. ${prompt}. ${backgroundStyles[background] || backgroundStyles.white}. Ultra high quality, 4K resolution.`;
 
     console.log("Generating image with prompt:", enhancedPrompt);
 
