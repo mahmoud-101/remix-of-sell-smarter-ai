@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Facebook,
   Instagram,
@@ -27,8 +35,12 @@ import {
   Sparkles,
   Settings,
   BarChart3,
+  Link,
+  Unlink,
+  AlertCircle,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CampaignData {
   name: string;
@@ -50,6 +62,14 @@ interface PlatformConfig {
   icon: React.ReactNode;
   color: string;
   connected: boolean;
+  instructions: string;
+  instructionsAr: string;
+}
+
+interface ConnectedPlatform {
+  id: string;
+  connectedAt: string;
+  accountName?: string;
 }
 
 export default function AdsPlatforms() {
@@ -59,16 +79,83 @@ export default function AdsPlatforms() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  const [showConnectDialog, setShowConnectDialog] = useState(false);
+  const [connectingPlatform, setConnectingPlatform] = useState<PlatformConfig | null>(null);
+  const [accountName, setAccountName] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<ConnectedPlatform[]>([]);
+  
+  // Load connected platforms from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("connected_ad_platforms");
+    if (saved) {
+      try {
+        setConnectedPlatforms(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error loading connected platforms:", e);
+      }
+    }
+  }, []);
 
-  const platforms: PlatformConfig[] = [
-    { id: "facebook", name: "Facebook Ads", nameAr: "إعلانات فيسبوك", icon: <Facebook className="w-6 h-6" />, color: "bg-blue-600", connected: false },
-    { id: "instagram", name: "Instagram Ads", nameAr: "إعلانات إنستغرام", icon: <Instagram className="w-6 h-6" />, color: "bg-gradient-to-br from-purple-600 to-pink-500", connected: false },
-    { id: "google", name: "Google Ads", nameAr: "إعلانات جوجل", icon: <Target className="w-6 h-6" />, color: "bg-red-500", connected: false },
-    { id: "tiktok", name: "TikTok Ads", nameAr: "إعلانات تيك توك", icon: <Sparkles className="w-6 h-6" />, color: "bg-black", connected: false },
-    { id: "snapchat", name: "Snapchat Ads", nameAr: "إعلانات سناب شات", icon: <Eye className="w-6 h-6" />, color: "bg-yellow-400", connected: false },
-    { id: "twitter", name: "X (Twitter) Ads", nameAr: "إعلانات تويتر", icon: <Twitter className="w-6 h-6" />, color: "bg-black", connected: false },
-    { id: "youtube", name: "YouTube Ads", nameAr: "إعلانات يوتيوب", icon: <Youtube className="w-6 h-6" />, color: "bg-red-600", connected: false },
+  // Save connected platforms to localStorage
+  const saveConnectedPlatforms = (platforms: ConnectedPlatform[]) => {
+    localStorage.setItem("connected_ad_platforms", JSON.stringify(platforms));
+    setConnectedPlatforms(platforms);
+  };
+
+  const getPlatformInstructions = (platformId: string): { en: string; ar: string } => {
+    const instructions: Record<string, { en: string; ar: string }> = {
+      facebook: {
+        en: "Enter your Facebook Business account name or Ad Account ID to connect.",
+        ar: "أدخل اسم حساب فيسبوك للأعمال أو معرف حساب الإعلانات للربط.",
+      },
+      instagram: {
+        en: "Connect through your Facebook Business account that manages your Instagram.",
+        ar: "الربط من خلال حساب فيسبوك للأعمال الذي يدير حساب إنستغرام الخاص بك.",
+      },
+      google: {
+        en: "Enter your Google Ads Customer ID (found in your Google Ads dashboard).",
+        ar: "أدخل معرف عميل Google Ads (موجود في لوحة تحكم Google Ads).",
+      },
+      tiktok: {
+        en: "Enter your TikTok Ads Manager account name or Business Center ID.",
+        ar: "أدخل اسم حساب TikTok Ads Manager أو معرف Business Center.",
+      },
+      snapchat: {
+        en: "Enter your Snapchat Ads Manager organization name.",
+        ar: "أدخل اسم منظمة Snapchat Ads Manager.",
+      },
+      twitter: {
+        en: "Enter your X (Twitter) Ads account handle or ID.",
+        ar: "أدخل معرف حساب إعلانات X (تويتر).",
+      },
+      youtube: {
+        en: "Enter your YouTube channel name or connect through Google Ads.",
+        ar: "أدخل اسم قناة يوتيوب أو قم بالربط من خلال Google Ads.",
+      },
+    };
+    return instructions[platformId] || { en: "Enter your account details.", ar: "أدخل تفاصيل حسابك." };
+  };
+
+  const basePlatforms: Omit<PlatformConfig, 'connected' | 'instructions' | 'instructionsAr'>[] = [
+    { id: "facebook", name: "Facebook Ads", nameAr: "إعلانات فيسبوك", icon: <Facebook className="w-6 h-6" />, color: "bg-blue-600" },
+    { id: "instagram", name: "Instagram Ads", nameAr: "إعلانات إنستغرام", icon: <Instagram className="w-6 h-6" />, color: "bg-gradient-to-br from-purple-600 to-pink-500" },
+    { id: "google", name: "Google Ads", nameAr: "إعلانات جوجل", icon: <Target className="w-6 h-6" />, color: "bg-red-500" },
+    { id: "tiktok", name: "TikTok Ads", nameAr: "إعلانات تيك توك", icon: <Sparkles className="w-6 h-6" />, color: "bg-black" },
+    { id: "snapchat", name: "Snapchat Ads", nameAr: "إعلانات سناب شات", icon: <Eye className="w-6 h-6" />, color: "bg-yellow-400" },
+    { id: "twitter", name: "X (Twitter) Ads", nameAr: "إعلانات تويتر", icon: <Twitter className="w-6 h-6" />, color: "bg-black" },
+    { id: "youtube", name: "YouTube Ads", nameAr: "إعلانات يوتيوب", icon: <Youtube className="w-6 h-6" />, color: "bg-red-600" },
   ];
+
+  const platforms: PlatformConfig[] = basePlatforms.map(p => {
+    const instr = getPlatformInstructions(p.id);
+    return {
+      ...p,
+      connected: connectedPlatforms.some(cp => cp.id === p.id),
+      instructions: instr.en,
+      instructionsAr: instr.ar,
+    };
+  });
 
   // Mock campaign data for demonstration
   const mockCampaigns: CampaignData[] = [
@@ -109,17 +196,27 @@ export default function AdsPlatforms() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Analyze error:", error);
+        throw new Error(error.message || "Failed to analyze campaign");
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      
       setAnalysis(data.analysis);
+      setActiveTab("analysis");
       
       toast({
         title: isRTL ? "تم التحليل بنجاح" : "Analysis Complete",
         description: isRTL ? "تم تحليل بيانات الحملة" : "Campaign data analyzed",
       });
     } catch (error: any) {
+      console.error("Analysis error:", error);
       toast({
-        title: isRTL ? "خطأ" : "Error",
-        description: error.message,
+        title: isRTL ? "خطأ في التحليل" : "Analysis Error",
+        description: error.message || (isRTL ? "حدث خطأ أثناء التحليل" : "An error occurred during analysis"),
         variant: "destructive",
       });
     } finally {
@@ -127,14 +224,64 @@ export default function AdsPlatforms() {
     }
   };
 
-  const handleConnectPlatform = (platformId: string) => {
-    setSelectedPlatform(platformId);
+  const handleConnectPlatform = (platform: PlatformConfig) => {
+    setConnectingPlatform(platform);
+    setAccountName("");
+    setShowConnectDialog(true);
+  };
+
+  const handleConfirmConnect = async () => {
+    if (!connectingPlatform || !accountName.trim()) {
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: isRTL ? "يرجى إدخال اسم الحساب" : "Please enter account name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsConnecting(true);
+    
+    // Simulate connection process
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const newConnection: ConnectedPlatform = {
+      id: connectingPlatform.id,
+      connectedAt: new Date().toISOString(),
+      accountName: accountName.trim(),
+    };
+    
+    const updatedPlatforms = [...connectedPlatforms.filter(p => p.id !== connectingPlatform.id), newConnection];
+    saveConnectedPlatforms(updatedPlatforms);
+    
+    setIsConnecting(false);
+    setShowConnectDialog(false);
+    setConnectingPlatform(null);
+    setAccountName("");
+    
     toast({
-      title: isRTL ? "ربط المنصة" : "Connect Platform",
+      title: isRTL ? "تم الربط بنجاح" : "Connected Successfully",
       description: isRTL 
-        ? "سيتم توجيهك لربط حسابك الإعلاني" 
-        : "You will be redirected to connect your ad account",
+        ? `تم ربط حساب ${connectingPlatform.nameAr} بنجاح`
+        : `${connectingPlatform.name} account connected successfully`,
     });
+  };
+
+  const handleDisconnectPlatform = (platformId: string) => {
+    const platform = platforms.find(p => p.id === platformId);
+    const updatedPlatforms = connectedPlatforms.filter(p => p.id !== platformId);
+    saveConnectedPlatforms(updatedPlatforms);
+    
+    toast({
+      title: isRTL ? "تم إلغاء الربط" : "Disconnected",
+      description: isRTL 
+        ? `تم إلغاء ربط ${platform?.nameAr}`
+        : `${platform?.name} disconnected`,
+    });
+  };
+
+  const getConnectedPlatformInfo = (platformId: string): ConnectedPlatform | undefined => {
+    return connectedPlatforms.find(p => p.id === platformId);
   };
 
   return (
@@ -358,25 +505,46 @@ export default function AdsPlatforms() {
                     </div>
                   </CardHeader>
                   <CardContent>
+                    {platform.connected && (
+                      <div className="mb-3 p-2 rounded-lg bg-green-50 dark:bg-green-900/20">
+                        <p className="text-xs text-green-700 dark:text-green-300">
+                          {getConnectedPlatformInfo(platform.id)?.accountName}
+                        </p>
+                      </div>
+                    )}
                     <p className="text-sm text-muted-foreground mb-4">
                       {isRTL 
                         ? `ربط حسابك في ${platform.nameAr} لاستيراد بيانات الحملات وتحليلها`
                         : `Connect your ${platform.name} account to import and analyze campaign data`}
                     </p>
-                    <Button 
-                      variant={platform.connected ? "outline" : "default"}
-                      className="w-full"
-                      onClick={() => handleConnectPlatform(platform.id)}
-                    >
-                      {platform.connected ? (
-                        <>
-                          <Settings className="w-4 h-4 mr-2" />
-                          {isRTL ? "إعدادات" : "Settings"}
-                        </>
-                      ) : (
-                        isRTL ? "ربط الحساب" : "Connect Account"
+                    <div className="flex gap-2">
+                      <Button 
+                        variant={platform.connected ? "outline" : "default"}
+                        className="flex-1"
+                        onClick={() => handleConnectPlatform(platform)}
+                      >
+                        {platform.connected ? (
+                          <>
+                            <Settings className="w-4 h-4 mr-2" />
+                            {isRTL ? "إعدادات" : "Settings"}
+                          </>
+                        ) : (
+                          <>
+                            <Link className="w-4 h-4 mr-2" />
+                            {isRTL ? "ربط الحساب" : "Connect"}
+                          </>
+                        )}
+                      </Button>
+                      {platform.connected && (
+                        <Button 
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleDisconnectPlatform(platform.id)}
+                        >
+                          <Unlink className="w-4 h-4" />
+                        </Button>
                       )}
-                    </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -468,6 +636,67 @@ export default function AdsPlatforms() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Connect Platform Dialog */}
+        <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                {connectingPlatform && (
+                  <div className={`w-10 h-10 rounded-xl ${connectingPlatform.color} flex items-center justify-center text-white`}>
+                    {connectingPlatform.icon}
+                  </div>
+                )}
+                {isRTL ? `ربط ${connectingPlatform?.nameAr}` : `Connect ${connectingPlatform?.name}`}
+              </DialogTitle>
+              <DialogDescription>
+                {connectingPlatform && (isRTL ? connectingPlatform.instructionsAr : connectingPlatform.instructions)}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 py-4">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {isRTL 
+                    ? "ملاحظة: هذا ربط محاكى للعرض. الربط الحقيقي يتطلب OAuth مع APIs المنصات."
+                    : "Note: This is a simulated connection for demo purposes. Real integration requires OAuth with platform APIs."}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="space-y-2">
+                <Label htmlFor="accountName">
+                  {isRTL ? "اسم الحساب / المعرف" : "Account Name / ID"}
+                </Label>
+                <Input
+                  id="accountName"
+                  placeholder={isRTL ? "أدخل اسم حسابك الإعلاني" : "Enter your ad account name"}
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowConnectDialog(false)}>
+                {isRTL ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button onClick={handleConfirmConnect} disabled={isConnecting || !accountName.trim()}>
+                {isConnecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    {isRTL ? "جاري الربط..." : "Connecting..."}
+                  </>
+                ) : (
+                  <>
+                    <Link className="w-4 h-4 mr-2" />
+                    {isRTL ? "ربط الحساب" : "Connect Account"}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
