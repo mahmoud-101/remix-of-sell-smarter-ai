@@ -23,6 +23,8 @@ const History = lazy(() => import("./pages/History"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Leads = lazy(() => import("./pages/Leads"));
+const CustomerProfile = lazy(() => import("./pages/CustomerProfile"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -179,6 +181,22 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Leads />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/leads/:id"
+          element={
+            <ProtectedRoute>
+              <CustomerProfile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboard />
             </ProtectedRoute>
           }
         />

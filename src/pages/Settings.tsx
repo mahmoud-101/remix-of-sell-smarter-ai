@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Globe, Bell, Shield, Save, Loader2 } from "lucide-react";
+import { User, Mail, Globe, Bell, Shield, Save, Loader2, Palette, MessageCircle, Moon, Sun } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
+import BrandVoiceSettings from "@/components/settings/BrandVoiceSettings";
+import RealWhatsAppIntegration from "@/components/whatsapp/RealWhatsAppIntegration";
 import {
   Select,
   SelectContent,
@@ -22,6 +25,7 @@ export default function Settings() {
   const { t, isRTL, language, setLanguage } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -98,18 +102,26 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+          <TabsList className="grid w-full grid-cols-5 lg:w-[600px]">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
-              {isRTL ? "الملف الشخصي" : "Profile"}
+              <span className="hidden sm:inline">{isRTL ? "الملف" : "Profile"}</span>
             </TabsTrigger>
             <TabsTrigger value="preferences" className="flex items-center gap-2">
               <Globe className="w-4 h-4" />
-              {isRTL ? "التفضيلات" : "Preferences"}
+              <span className="hidden sm:inline">{isRTL ? "التفضيلات" : "Prefs"}</span>
+            </TabsTrigger>
+            <TabsTrigger value="brand" className="flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              <span className="hidden sm:inline">{isRTL ? "العلامة" : "Brand"}</span>
+            </TabsTrigger>
+            <TabsTrigger value="whatsapp" className="flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />
+              <span className="hidden sm:inline">{isRTL ? "واتساب" : "WhatsApp"}</span>
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="w-4 h-4" />
-              {isRTL ? "الإشعارات" : "Notifications"}
+              <span className="hidden sm:inline">{isRTL ? "الإشعارات" : "Alerts"}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -172,7 +184,53 @@ export default function Settings() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-2">
+                  <Label>{isRTL ? "المظهر" : "Appearance"}</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={theme === "light" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme("light")}
+                      className="flex-1"
+                    >
+                      <Sun className="w-4 h-4 mr-2" />
+                      {isRTL ? "فاتح" : "Light"}
+                    </Button>
+                    <Button
+                      variant={theme === "dark" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme("dark")}
+                      className="flex-1"
+                    >
+                      <Moon className="w-4 h-4 mr-2" />
+                      {isRTL ? "داكن" : "Dark"}
+                    </Button>
+                    <Button
+                      variant={theme === "system" ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTheme("system")}
+                      className="flex-1"
+                    >
+                      {isRTL ? "تلقائي" : "System"}
+                    </Button>
+                  </div>
+                </div>
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Brand Voice Tab */}
+          <TabsContent value="brand" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6">
+              <BrandVoiceSettings />
+            </div>
+          </TabsContent>
+
+          {/* WhatsApp Tab */}
+          <TabsContent value="whatsapp" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6">
+              <RealWhatsAppIntegration />
             </div>
           </TabsContent>
 
