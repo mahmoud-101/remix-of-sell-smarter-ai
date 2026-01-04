@@ -14,6 +14,7 @@ import {
   Wand2,
   TrendingUp,
   Users,
+  Brain,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -65,6 +66,14 @@ export default function Dashboard() {
   };
 
   const tools = [
+    {
+      icon: Brain,
+      title: isRTL ? "مركز النمو الذكي" : "AI Growth Console",
+      description: isRTL ? "مستشار أعمالك - تحليل وتشخيص وتوصيات" : "Your business advisor - analyze, diagnose, recommend",
+      path: "/dashboard/growth-console",
+      color: "from-violet-500 to-purple-600",
+      featured: true,
+    },
     {
       icon: FileText,
       title: t("featureProductCopy"),
@@ -185,27 +194,31 @@ export default function Dashboard() {
         {/* Tools Grid */}
         <div>
           <h2 className="text-xl font-semibold mb-4">{t("aiTools")}</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tools.map((tool, index) => (
               <Link
                 key={index}
                 to={tool.path}
-                className="feature-card group"
+                className={`feature-card group ${tool.featured ? 'lg:col-span-3 md:col-span-2 bg-gradient-to-r from-violet-500/5 to-purple-500/5 border-violet-500/20' : ''}`}
               >
-                <div
-                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
-                >
-                  <tool.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
-                  {tool.title}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {tool.description}
-                </p>
-                <div className="flex items-center text-sm text-primary font-medium">
-                  {isRTL ? "ابدأ الآن" : "Get Started"}
-                  <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
+                <div className={`flex ${tool.featured ? 'flex-row items-center gap-6' : 'flex-col'}`}>
+                  <div
+                    className={`${tool.featured ? 'w-16 h-16' : 'w-12 h-12'} rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center ${tool.featured ? '' : 'mb-4'} group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <tool.icon className={`${tool.featured ? 'w-8 h-8' : 'w-6 h-6'} text-white`} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`${tool.featured ? 'text-xl' : 'text-lg'} font-semibold mb-2 group-hover:text-primary transition-colors`}>
+                      {tool.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {tool.description}
+                    </p>
+                    <div className="flex items-center text-sm text-primary font-medium">
+                      {isRTL ? "ابدأ الآن" : "Get Started"}
+                      <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
+                    </div>
+                  </div>
                 </div>
               </Link>
             ))}

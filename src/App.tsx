@@ -28,6 +28,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const ImageGenerator = lazy(() => import("./pages/ImageGenerator"));
 const AdsPlatforms = lazy(() => import("./pages/AdsPlatforms"));
 const AdDesigner = lazy(() => import("./pages/AdDesigner"));
+const GrowthConsole = lazy(() => import("./pages/GrowthConsole"));
 const About = lazy(() => import("./pages/About"));
 const UseCases = lazy(() => import("./pages/UseCases"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -226,6 +227,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <AdDesigner />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/growth-console"
+          element={
+            <ProtectedRoute>
+              <GrowthConsole />
             </ProtectedRoute>
           }
         />
