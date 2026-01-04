@@ -12,9 +12,15 @@ import {
   Shield,
   BarChart3,
   Globe,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PricingSection from "@/components/pricing/PricingSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import TrustedBySection from "@/components/landing/TrustedBySection";
+import FAQSection from "@/components/landing/FAQSection";
+import WhatsAppChatbot from "@/components/chat/WhatsAppChatbot";
 
 export default function Landing() {
   const { t, isRTL, language, setLanguage } = useLanguage();
@@ -151,7 +157,8 @@ export default function Landing() {
                 </Button>
               </Link>
               <Link to="/dashboard">
-                <Button variant="hero-outline" size="xl">
+                <Button variant="hero-outline" size="xl" className="group">
+                  <Play className="w-5 h-5" />
                   {t("viewDemo")}
                 </Button>
               </Link>
@@ -177,6 +184,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Trusted By Section */}
+      <TrustedBySection />
 
       {/* Features Section */}
       <section id="features" className="py-20 px-4 bg-secondary/30">
@@ -221,6 +231,15 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
+
+      {/* Testimonials Section */}
+      <TestimonialsSection />
+
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* CTA Section */}
       <section className="py-20 px-4">
@@ -279,6 +298,9 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* WhatsApp Chatbot */}
+      <WhatsAppChatbot />
     </div>
   );
 }
