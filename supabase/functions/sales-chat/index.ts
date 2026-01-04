@@ -61,7 +61,6 @@ serve(async (req) => {
           ...messages,
         ],
         max_tokens: 2048,
-        temperature: 0.8,
       }),
     });
 

@@ -50,7 +50,6 @@ Be specific and practical in your recommendations.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: JSON.stringify(campaignData) }
         ],
-        temperature: 0.6,
       }),
     });
 
