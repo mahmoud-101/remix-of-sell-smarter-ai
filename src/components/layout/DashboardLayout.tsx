@@ -14,6 +14,7 @@ import {
   LogOut,
   Globe,
   BarChart3,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Calendar, label: t("navigation.campaign"), path: "/dashboard/campaign" },
     { icon: Palette, label: t("navigation.design"), path: "/dashboard/design" },
     { icon: Target, label: t("navigation.competitor"), path: "/dashboard/competitor" },
+    { icon: Users, label: isRTL ? "العملاء" : "Leads", path: "/dashboard/leads" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
   ];
 

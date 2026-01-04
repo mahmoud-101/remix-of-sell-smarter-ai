@@ -22,6 +22,7 @@ const CompetitorAnalysis = lazy(() => import("./pages/CompetitorAnalysis"));
 const History = lazy(() => import("./pages/History"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const Leads = lazy(() => import("./pages/Leads"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -170,6 +171,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <Analytics />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/leads"
+          element={
+            <ProtectedRoute>
+              <Leads />
             </ProtectedRoute>
           }
         />
