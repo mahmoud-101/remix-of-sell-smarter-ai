@@ -1,15 +1,25 @@
 import { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, User, Sparkles, TrendingUp, Target, Lightbulb } from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Sparkles, TrendingUp, Target, Lightbulb, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
   text: string;
   isBot: boolean;
   timestamp: Date;
+}
+
+interface LeadData {
+  name?: string;
+  phone?: string;
+  address?: string;
+  order_value?: number;
 }
 
 const salesTips = {
@@ -27,42 +37,24 @@ const salesTips = {
   ],
 };
 
-const botResponses: Record<string, { ar: string; en: string }> = {
-  default: {
-    ar: "مرحباً! 👋 أنا مساعد المبيعات الذكي. كيف يمكنني مساعدتك في تعزيز مبيعاتك اليوم؟",
-    en: "Hello! 👋 I'm your AI Sales Assistant. How can I help boost your sales today?",
-  },
-  sales: {
-    ar: "إليك 5 استراتيجيات مجربة لزيادة المبيعات:\n\n🎯 **1. تحسين عناوين المنتجات** - استخدم كلمات قوية تثير العاطفة\n\n📸 **2. صور احترافية** - استثمر في تصوير عالي الجودة\n\n⭐ **3. المراجعات والتقييمات** - شجع العملاء على ترك تقييمات\n\n🏷️ **4. عروض محدودة الوقت** - خلق شعور بالإلحاح\n\n📱 **5. إعادة الاستهداف** - استهدف زوار موقعك السابقين\n\nهل تريد تفاصيل أكثر عن أي استراتيجية؟",
-    en: "Here are 5 proven strategies to increase sales:\n\n🎯 **1. Optimize product titles** - Use power words that evoke emotion\n\n📸 **2. Professional photos** - Invest in high-quality photography\n\n⭐ **3. Reviews & ratings** - Encourage customers to leave reviews\n\n🏷️ **4. Limited-time offers** - Create urgency\n\n📱 **5. Retargeting** - Target previous site visitors\n\nWant more details on any strategy?",
-  },
-  timing: {
-    ar: "أفضل أوقات نشر الإعلانات حسب المنصة:\n\n📘 **فيسبوك**: الثلاثاء-الخميس، 1-4 مساءً\n\n📸 **إنستغرام**: الإثنين-الجمعة، 11 صباحاً أو 7-9 مساءً\n\n🎵 **تيك توك**: الثلاثاء-الخميس، 7 مساءً\n\n🔍 **جوجل**: طوال الأسبوع، أوقات الذروة 6-9 مساءً\n\n💡 **نصيحة**: اختبر أوقات مختلفة وحلل النتائج باستخدام أدوات التحليل!",
-    en: "Best times to post ads by platform:\n\n📘 **Facebook**: Tue-Thu, 1-4 PM\n\n📸 **Instagram**: Mon-Fri, 11 AM or 7-9 PM\n\n🎵 **TikTok**: Tue-Thu, 7 PM\n\n🔍 **Google**: All week, peak hours 6-9 PM\n\n💡 **Tip**: Test different times and analyze results with analytics tools!",
-  },
-  product: {
-    ar: "لتحسين صفحة المنتج:\n\n✅ **عنوان جذاب** - اجعله واضحاً ومقنعاً\n\n✅ **صور متعددة** - 5-7 صور من زوايا مختلفة\n\n✅ **وصف مفصل** - اذكر الفوائد وليس فقط المميزات\n\n✅ **سعر واضح** - اعرض الخصومات بشكل بارز\n\n✅ **دعوة للعمل قوية** - زر \"اشتري الآن\" واضح\n\n✅ **المراجعات** - اعرض تقييمات العملاء\n\n🚀 استخدم أداة **مولد نصوص المنتجات** لإنشاء وصف احترافي!",
-    en: "To improve your product page:\n\n✅ **Compelling title** - Make it clear and persuasive\n\n✅ **Multiple images** - 5-7 photos from different angles\n\n✅ **Detailed description** - Focus on benefits, not just features\n\n✅ **Clear pricing** - Display discounts prominently\n\n✅ **Strong CTA** - Clear \"Buy Now\" button\n\n✅ **Reviews** - Display customer ratings\n\n🚀 Use the **Product Copy Generator** tool to create professional descriptions!",
-  },
-  pricing: {
-    ar: "استراتيجيات التسعير الذكية:\n\n💰 **التسعير النفسي** - استخدم 99 بدلاً من 100\n\n📦 **الحزم والباقات** - اجمع منتجات بسعر مخفض\n\n🎁 **الشحن المجاني** - ادمج تكلفة الشحن في السعر\n\n⏰ **عروض فلاش** - خصومات لفترة محدودة جداً\n\n🏆 **التسعير المتدرج** - قدم 3 خيارات (أساسي، متوسط، متميز)\n\n📊 **تحليل المنافسين** - راقب أسعار المنافسين باستمرار",
-    en: "Smart pricing strategies:\n\n💰 **Psychological pricing** - Use 99 instead of 100\n\n📦 **Bundles & packages** - Combine products at a discount\n\n🎁 **Free shipping** - Include shipping in the price\n\n⏰ **Flash sales** - Very limited-time discounts\n\n🏆 **Tiered pricing** - Offer 3 options (basic, standard, premium)\n\n📊 **Competitor analysis** - Monitor competitor prices regularly",
-  },
-};
-
 export default function SalesChatbot() {
   const { language, isRTL } = useLanguage();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: botResponses.default[language],
+      text: language === "ar" 
+        ? "مرحباً! 👋 أنا مساعد المبيعات الذكي. كيف يمكنني مساعدتك في تعزيز مبيعاتك اليوم؟" 
+        : "Hello! 👋 I'm your AI Sales Assistant. How can I help boost your sales today?",
       isBot: true,
       timestamp: new Date(),
     },
   ]);
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [collectedLeads, setCollectedLeads] = useState<LeadData>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -73,29 +65,45 @@ export default function SalesChatbot() {
     scrollToBottom();
   }, [messages]);
 
-  const getBotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
+  const saveLead = async (leadData: LeadData) => {
+    if (!user) return;
     
-    if (lowerMessage.includes("مبيع") || lowerMessage.includes("زياد") || lowerMessage.includes("sales") || lowerMessage.includes("increase")) {
-      return botResponses.sales[language];
+    // Merge with existing collected data
+    const mergedData = { ...collectedLeads, ...leadData };
+    setCollectedLeads(mergedData);
+
+    // Only save if we have at least a name or phone
+    if (mergedData.name || mergedData.phone) {
+      try {
+        const { error } = await supabase.from('leads').upsert({
+          user_id: user.id,
+          customer_name: mergedData.name,
+          phone: mergedData.phone,
+          address: mergedData.address,
+          order_value: mergedData.order_value,
+          notes: `Collected via chatbot on ${new Date().toLocaleDateString()}`,
+        }, {
+          onConflict: 'user_id'
+        });
+
+        if (error && error.code !== '23505') {
+          console.error('Error saving lead:', error);
+        } else {
+          toast({
+            title: language === "ar" ? "تم حفظ البيانات" : "Data saved",
+            description: language === "ar" 
+              ? "تم حفظ بيانات العميل بنجاح" 
+              : "Customer data saved successfully",
+          });
+        }
+      } catch (err) {
+        console.error('Error saving lead:', err);
+      }
     }
-    if (lowerMessage.includes("وقت") || lowerMessage.includes("إعلان") || lowerMessage.includes("time") || lowerMessage.includes("ads") || lowerMessage.includes("when")) {
-      return botResponses.timing[language];
-    }
-    if (lowerMessage.includes("صفحة") || lowerMessage.includes("منتج") || lowerMessage.includes("تحسين") || lowerMessage.includes("product") || lowerMessage.includes("page") || lowerMessage.includes("improve")) {
-      return botResponses.product[language];
-    }
-    if (lowerMessage.includes("سعر") || lowerMessage.includes("تسعير") || lowerMessage.includes("price") || lowerMessage.includes("pricing")) {
-      return botResponses.pricing[language];
-    }
-    
-    return language === "ar" 
-      ? "سؤال رائع! 🤔 للحصول على إجابة مخصصة، أنصحك باستخدام أدوات الذكاء الاصطناعي في لوحة التحكم. هل تريد نصائح عن موضوع معين؟\n\n• زيادة المبيعات\n• أفضل وقت للإعلانات\n• تحسين صفحة المنتج\n• استراتيجية التسعير"
-      : "Great question! 🤔 For a customized answer, I recommend using the AI tools in your dashboard. Want tips on a specific topic?\n\n• Increasing sales\n• Best time for ads\n• Improving product page\n• Pricing strategy";
   };
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -106,19 +114,59 @@ export default function SalesChatbot() {
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-    setIsTyping(true);
+    setIsLoading(true);
 
-    // Simulate bot typing delay
-    setTimeout(() => {
+    try {
+      // Prepare conversation history for API
+      const conversationHistory = messages.slice(-10).map(msg => ({
+        role: msg.isBot ? 'assistant' : 'user',
+        content: msg.text
+      }));
+      conversationHistory.push({ role: 'user', content: text });
+
+      const { data, error } = await supabase.functions.invoke('sales-chat', {
+        body: { 
+          messages: conversationHistory,
+          language 
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Save lead data if extracted
+      if (data.leadData) {
+        await saveLead(data.leadData);
+      }
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: getBotResponse(text),
+        text: data.content || (language === "ar" 
+          ? "عذراً، حدث خطأ. يرجى المحاولة مرة أخرى." 
+          : "Sorry, an error occurred. Please try again."),
         isBot: true,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 1000);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: language === "ar" 
+          ? "عذراً، حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى." 
+          : "Sorry, a connection error occurred. Please try again.",
+        isBot: true,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -158,7 +206,7 @@ export default function SalesChatbot() {
                 {language === "ar" ? "مساعد المبيعات الذكي" : "AI Sales Assistant"}
               </h3>
               <p className="text-xs text-white/80">
-                {language === "ar" ? "نصائح لتعزيز مبيعاتك" : "Tips to boost your sales"}
+                {language === "ar" ? "مدعوم بالذكاء الاصطناعي" : "Powered by AI"}
               </p>
             </div>
           </div>
@@ -214,16 +262,15 @@ export default function SalesChatbot() {
               </div>
             </div>
           ))}
-          {isTyping && (
+          {isLoading && (
             <div className="flex gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-primary to-purple-500 text-white">
                 <Bot className="h-4 w-4" />
               </div>
-              <div className="bg-secondary rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm">
-                <span className="flex gap-1">
-                  <span className="animate-bounce">●</span>
-                  <span className="animate-bounce" style={{ animationDelay: "0.1s" }}>●</span>
-                  <span className="animate-bounce" style={{ animationDelay: "0.2s" }}>●</span>
+              <div className="bg-secondary rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-muted-foreground">
+                  {language === "ar" ? "جاري التفكير..." : "Thinking..."}
                 </span>
               </div>
             </div>
@@ -237,7 +284,8 @@ export default function SalesChatbot() {
             <button
               key={index}
               onClick={() => sendMessage(tip)}
-              className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+              disabled={isLoading}
+              className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
             >
               {tip}
             </button>
@@ -250,15 +298,17 @@ export default function SalesChatbot() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && sendMessage(inputValue)}
-            placeholder={language === "ar" ? "اسأل عن المبيعات..." : "Ask about sales..."}
+            placeholder={language === "ar" ? "اسأل أي سؤال عن المبيعات..." : "Ask any sales question..."}
             className="flex-1 border-0 bg-secondary/50"
+            disabled={isLoading}
           />
           <Button
             size="icon"
             onClick={() => sendMessage(inputValue)}
             className="bg-primary hover:bg-primary/90"
+            disabled={isLoading || !inputValue.trim()}
           >
-            <Send className="h-4 w-4" />
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </div>
