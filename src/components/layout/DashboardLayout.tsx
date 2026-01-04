@@ -17,6 +17,7 @@ import {
   Users,
   Image,
   TrendingUp,
+  Wand2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
     { icon: Megaphone, label: t("navigation.adsCopy"), path: "/dashboard/ads-copy" },
     { icon: Image, label: isRTL ? "صور المنتجات" : "Image Gen", path: "/dashboard/image-generator" },
+    { icon: Wand2, label: isRTL ? "مصمم الإعلانات" : "Ad Designer", path: "/dashboard/ad-designer" },
     { icon: TrendingUp, label: isRTL ? "منصات الإعلانات" : "Ad Platforms", path: "/dashboard/ads-platforms" },
     { icon: Calendar, label: t("navigation.campaign"), path: "/dashboard/campaign" },
     { icon: Palette, label: t("navigation.design"), path: "/dashboard/design" },
