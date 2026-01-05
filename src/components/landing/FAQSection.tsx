@@ -83,13 +83,42 @@ const faqs: FAQ[] = [
       en: "Yes, we take your data security very seriously. We use 256-bit SSL encryption and comply with GDPR standards. We don't share your data with any third party and don't use your content to train our models.",
     },
   },
+  {
+    question: {
+      ar: "كم من الوقت يستغرق توليد المحتوى؟",
+      en: "How long does it take to generate content?",
+    },
+    answer: {
+      ar: "يتم توليد المحتوى في ثوانٍ معدودة! عادةً من 5-15 ثانية حسب نوع المحتوى وطوله. هذا يعني أنك تستطيع إنتاج محتوى لـ 50 منتج في أقل من ساعة واحدة.",
+      en: "Content is generated in just seconds! Usually 5-15 seconds depending on content type and length. This means you can produce content for 50 products in less than an hour.",
+    },
+  },
+  {
+    question: {
+      ar: "هل يمكنني استخدام المحتوى تجارياً؟",
+      en: "Can I use the content commercially?",
+    },
+    answer: {
+      ar: "نعم، بالتأكيد! جميع المحتوى المُولّد ملكك بالكامل ويمكنك استخدامه في أي غرض تجاري بدون قيود. لا نحتفظ بأي حقوق على المحتوى الذي تنشئه.",
+      en: "Yes, absolutely! All generated content is fully yours and you can use it for any commercial purpose without restrictions. We don't retain any rights to the content you create.",
+    },
+  },
+  {
+    question: {
+      ar: "هل تقدمون دعماً فنياً؟",
+      en: "Do you offer technical support?",
+    },
+    answer: {
+      ar: "نعم! نقدم دعماً عبر البريد الإلكتروني لجميع الخطط، ودعماً أولوية 24/7 للخطط المدفوعة. كما نوفر قاعدة معرفية شاملة ودروس فيديو تعليمية.",
+      en: "Yes! We offer email support for all plans, and 24/7 priority support for paid plans. We also provide a comprehensive knowledge base and tutorial videos.",
+    },
+  },
 ];
-
 export default function FAQSection() {
   const { language, isRTL } = useLanguage();
 
   return (
-    <section className="py-20 px-4">
+    <section id="faq" className="py-20 px-4">
       <div className="container mx-auto max-w-3xl">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4">

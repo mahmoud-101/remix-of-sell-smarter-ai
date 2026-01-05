@@ -1,9 +1,9 @@
+import { useState } from "react";
 import { Check, Sparkles, Zap, Crown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-
 interface PlanFeature {
   ar: string;
   en: string;
@@ -105,11 +105,20 @@ const plans: Plan[] = [
 
 export default function PricingSection() {
   const { language, isRTL } = useLanguage();
+  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+
+  const getPrice = (monthlyPrice: number | null) => {
+    if (monthlyPrice === null || monthlyPrice === 0) return monthlyPrice;
+    if (billingPeriod === "yearly") {
+      return Math.round(monthlyPrice * 0.8); // 20% discount
+    }
+    return monthlyPrice;
+  };
 
   return (
     <section id="pricing" className="py-20 px-4">
       <div className="container mx-auto max-w-7xl">
-        <div className="text-center mb-16">
+        <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             {isRTL ? (
               <>
@@ -123,11 +132,40 @@ export default function PricingSection() {
               </>
             )}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
             {isRTL
               ? "اختر الخطة المناسبة لحجم أعمالك وابدأ في تنمية مبيعاتك اليوم"
               : "Choose the right plan for your business size and start growing your sales today"}
           </p>
+
+          {/* Billing toggle */}
+          <div className="inline-flex items-center gap-4 p-1.5 rounded-full bg-secondary border border-border">
+            <button
+              onClick={() => setBillingPeriod("monthly")}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                billingPeriod === "monthly" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {isRTL ? "شهري" : "Monthly"}
+            </button>
+            <button
+              onClick={() => setBillingPeriod("yearly")}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-all relative",
+                billingPeriod === "yearly" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {isRTL ? "سنوي" : "Yearly"}
+              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded-full">
+                -20%
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -135,17 +173,17 @@ export default function PricingSection() {
             <div
               key={plan.id}
               className={cn(
-                "relative flex flex-col rounded-2xl border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl",
+                "relative flex flex-col rounded-2xl border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl animate-fade-in",
                 plan.popular 
-                  ? "border-primary shadow-lg shadow-primary/10" 
+                  ? "border-primary shadow-lg shadow-primary/10 scale-105 lg:scale-110 z-10" 
                   : "border-border hover:border-primary/50"
               )}
               style={{ animationDelay: `${index * 100}ms` }}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                    {isRTL ? "الأكثر شعبية" : "Most Popular"}
+                  <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full animate-pulse">
+                    {isRTL ? "الأكثر شعبية ⭐" : "⭐ Most Popular"}
                   </span>
                 </div>
               )}
@@ -169,11 +207,22 @@ export default function PricingSection() {
                     <span className="text-4xl font-bold">{isRTL ? "مجاني" : "Free"}</span>
                   ) : (
                     <>
-                      <span className="text-4xl font-bold">${plan.price}</span>
-                      <span className="text-muted-foreground">{plan.period[language]}</span>
+                      <span className="text-4xl font-bold">${getPrice(plan.price)}</span>
+                      <span className="text-muted-foreground">
+                        {billingPeriod === "yearly" 
+                          ? (isRTL ? "/شهر (سنوي)" : "/mo (billed yearly)")
+                          : plan.period[language]}
+                      </span>
                     </>
                   )}
                 </div>
+                {billingPeriod === "yearly" && plan.price && plan.price > 0 && (
+                  <p className="text-xs text-green-600 mt-1">
+                    {isRTL 
+                      ? `وفر $${Math.round(plan.price * 12 * 0.2)} سنوياً`
+                      : `Save $${Math.round(plan.price * 12 * 0.2)}/year`}
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-3 mb-8 flex-1">
