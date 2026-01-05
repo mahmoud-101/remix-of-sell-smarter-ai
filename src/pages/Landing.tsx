@@ -13,6 +13,8 @@ import {
   BarChart3,
   Globe,
   Play,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -24,9 +26,27 @@ import ComparisonSection from "@/components/landing/ComparisonSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import UniqueFeatures from "@/components/landing/UniqueFeatures";
 import WhatsAppChatbot from "@/components/chat/WhatsAppChatbot";
+import HeroMockup from "@/components/landing/HeroMockup";
+import BeforeAfterSection from "@/components/landing/BeforeAfterSection";
+import InteractiveDemo from "@/components/landing/InteractiveDemo";
+import StatsSection from "@/components/landing/StatsSection";
+import Footer from "@/components/layout/Footer";
+import SEOHead from "@/components/seo/SEOHead";
+import { useState, useEffect } from "react";
 
 export default function Landing() {
   const { t, isRTL, language, setLanguage } = useLanguage();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Handle scroll effect for header
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const features = [
     {
@@ -74,8 +94,12 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
+      <SEOHead />
+      
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-background/95 backdrop-blur-xl shadow-sm" : "bg-background/80 backdrop-blur-xl"
+      } border-b border-border/50`}>
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
@@ -83,6 +107,8 @@ export default function Landing() {
             </div>
             <span className="font-bold text-xl gradient-text">{t("appName")}</span>
           </Link>
+          
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             <a
               href="#features"
@@ -111,6 +137,7 @@ export default function Landing() {
             <button
               onClick={toggleLanguage}
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Toggle language"
             >
               <Globe className="w-4 h-4" />
               {language === "ar" ? "EN" : "ع"}
@@ -127,31 +154,84 @@ export default function Landing() {
               </Button>
             </Link>
           </nav>
+          
+          {/* Mobile Nav */}
           <div className="flex items-center gap-2 md:hidden">
             <button
               onClick={toggleLanguage}
               className="p-2 text-muted-foreground hover:text-foreground"
+              aria-label="Toggle language"
             >
               <Globe className="w-5 h-5" />
             </button>
-            <Link to="/signup">
-              <Button variant="hero" size="sm">
-                {t("getStarted")}
-              </Button>
-            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-muted-foreground hover:text-foreground"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
+        
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-background border-t border-border animate-fade-in">
+            <nav className="container mx-auto px-4 py-4 flex flex-col gap-4">
+              <a
+                href="#features"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-foreground hover:text-primary transition-colors"
+              >
+                {t("features")}
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-foreground hover:text-primary transition-colors"
+              >
+                {t("pricing")}
+              </a>
+              <Link
+                to="/use-cases"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-foreground hover:text-primary transition-colors"
+              >
+                {isRTL ? "حالات الاستخدام" : "Use Cases"}
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-foreground hover:text-primary transition-colors"
+              >
+                {isRTL ? "من نحن" : "About"}
+              </Link>
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-2 text-foreground hover:text-primary transition-colors"
+              >
+                {t("login")}
+              </Link>
+              <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="hero" className="w-full">
+                  {t("getStarted")}
+                </Button>
+              </Link>
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4 relative overflow-hidden">
+      <section className="pt-32 pb-12 px-4 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: "1s" }} />
         </div>
 
-        <div className="container mx-auto max-w-5xl relative">
+        <div className="container mx-auto max-w-6xl relative">
           <div className="text-center space-y-6 animate-fade-in">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
               <Zap className="w-4 h-4" />
@@ -185,17 +265,17 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link to="/signup">
-                <Button variant="hero" size="xl" className="group">
+                <Button variant="hero" size="xl" className="group min-w-[280px]">
                   {isRTL ? "ابدأ مجاناً - بدون بطاقة ائتمان" : "Start Free - No Credit Card"}
                   <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                 </Button>
               </Link>
-              <Link to="/dashboard">
-                <Button variant="hero-outline" size="xl" className="group">
+              <a href="#demo">
+                <Button variant="hero-outline" size="xl" className="group min-w-[200px]">
                   <Play className="w-5 h-5" />
                   {t("viewDemo")}
                 </Button>
-              </Link>
+              </a>
             </div>
             <p className="text-sm text-muted-foreground">
               {t("noCreditCard")}
@@ -203,11 +283,12 @@ export default function Landing() {
           </div>
 
           {/* Benefits list */}
-          <div className="mt-16 flex flex-wrap items-center justify-center gap-6">
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
             {benefits.map((benefit, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 text-sm text-muted-foreground"
+                className="flex items-center gap-2 text-sm text-muted-foreground animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
                   <Check className="w-3 h-3 text-primary" />
@@ -216,14 +297,25 @@ export default function Landing() {
               </div>
             ))}
           </div>
+
+          {/* Hero Mockup */}
+          <HeroMockup />
         </div>
       </section>
+
+      {/* Stats Section */}
+      <StatsSection />
 
       {/* Trusted By Section */}
       <TrustedBySection />
 
       {/* How It Works Section */}
       <HowItWorksSection />
+
+      {/* Interactive Demo Section */}
+      <div id="demo">
+        <InteractiveDemo />
+      </div>
 
       {/* Features Section */}
       <section id="features" className="py-20 px-4">
@@ -272,6 +364,9 @@ export default function Landing() {
       {/* Unique Features */}
       <UniqueFeatures />
 
+      {/* Before/After Section */}
+      <BeforeAfterSection />
+
       {/* Comparison Section */}
       <ComparisonSection />
 
@@ -290,7 +385,7 @@ export default function Landing() {
           <div className="glass-card rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 animate-bounce-in">
                 <Shield className="w-8 h-8 text-primary" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -315,67 +410,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t border-border">
-        <div className="container mx-auto max-w-6xl">
-          <div className="flex flex-col gap-8">
-            <div className="grid md:grid-cols-4 gap-8">
-              {/* Logo & Description */}
-              <div className="md:col-span-2">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                  <span className="font-bold gradient-text">{t("appName")}</span>
-                </div>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  {isRTL 
-                    ? "منصة ذكاء اصطناعي متخصصة في التجارة الإلكترونية. نساعدك على إنشاء محتوى تسويقي احترافي يزيد مبيعاتك."
-                    : "AI platform specialized in e-commerce. We help you create professional marketing content that increases your sales."}
-                </p>
-              </div>
-
-              {/* Links */}
-              <div>
-                <h4 className="font-semibold mb-4">{isRTL ? "روابط سريعة" : "Quick Links"}</h4>
-                <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
-                  <Link to="/about" className="hover:text-foreground transition-colors">
-                    {isRTL ? "من نحن" : "About Us"}
-                  </Link>
-                  <Link to="/use-cases" className="hover:text-foreground transition-colors">
-                    {isRTL ? "حالات الاستخدام" : "Use Cases"}
-                  </Link>
-                  <a href="#pricing" className="hover:text-foreground transition-colors">
-                    {isRTL ? "الأسعار" : "Pricing"}
-                  </a>
-                  <a href="#features" className="hover:text-foreground transition-colors">
-                    {isRTL ? "المميزات" : "Features"}
-                  </a>
-                </nav>
-              </div>
-
-              {/* Legal */}
-              <div>
-                <h4 className="font-semibold mb-4">{isRTL ? "قانوني" : "Legal"}</h4>
-                <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
-                  <Link to="/privacy" className="hover:text-foreground transition-colors">
-                    {isRTL ? "سياسة الخصوصية" : "Privacy Policy"}
-                  </Link>
-                  <Link to="/terms" className="hover:text-foreground transition-colors">
-                    {isRTL ? "الشروط والأحكام" : "Terms of Service"}
-                  </Link>
-                  <a href="mailto:support@sellgenius.app" className="hover:text-foreground transition-colors">
-                    {isRTL ? "الدعم" : "Support"}
-                  </a>
-                </nav>
-              </div>
-            </div>
-
-            <div className="text-center text-sm text-muted-foreground pt-8 border-t border-border">
-              © 2026 {t("appName")}. {isRTL ? "جميع الحقوق محفوظة." : "All rights reserved."}
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* WhatsApp Chatbot */}
       <WhatsAppChatbot />

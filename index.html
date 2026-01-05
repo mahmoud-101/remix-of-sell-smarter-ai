@@ -45,7 +45,28 @@
     <!-- Theme Color -->
     <meta name="theme-color" content="#6366f1" />
     
-    <!-- JSON-LD Structured Data -->
+    <!-- JSON-LD Structured Data - Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "SellGenius",
+        "url": "https://sellgenius.app",
+        "logo": "https://sellgenius.app/logo.png",
+        "sameAs": [
+          "https://twitter.com/sellgenius",
+          "https://instagram.com/sellgenius",
+          "https://linkedin.com/company/sellgenius"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "support@sellgenius.app",
+          "contactType": "customer support"
+        }
+      }
+    </script>
+    
+    <!-- JSON-LD Structured Data - SoftwareApplication -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -53,17 +74,55 @@
         "name": "SellGenius",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "description": "منصة كتابة المحتوى التسويقي بالذكاء الاصطناعي",
+        "description": "منصة كتابة المحتوى التسويقي بالذكاء الاصطناعي - AI Marketing Content Platform",
         "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
+          "@type": "AggregateOffer",
+          "lowPrice": "0",
+          "highPrice": "20",
+          "priceCurrency": "USD",
+          "offerCount": "4"
         },
         "aggregateRating": {
           "@type": "AggregateRating",
-          "ratingValue": "4.8",
-          "ratingCount": "1250"
+          "ratingValue": "4.9",
+          "ratingCount": "10000",
+          "bestRating": "5",
+          "worstRating": "1"
         }
+      }
+    </script>
+    
+    <!-- JSON-LD Structured Data - FAQ -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "ما هو سيل جينيوس؟",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "سيل جينيوس هو منصة ذكاء اصطناعي متخصصة في كتابة المحتوى التسويقي للتجارة الإلكترونية."
+            }
+          },
+          {
+            "@type": "Question", 
+            "name": "هل يمكنني تجربة المنصة مجاناً؟",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "نعم، نقدم خطة مجانية تتيح لك 5 توليدات شهرياً بدون الحاجة لبطاقة ائتمان."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "ما اللغات التي يدعمها سيل جينيوس؟",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "يدعم سيل جينيوس اللغة العربية والإنجليزية بشكل كامل مع فهم عميق للسوق العربي."
+            }
+          }
+        ]
       }
     </script>
   </head>
