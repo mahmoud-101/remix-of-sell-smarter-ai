@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.design-ad]
 verify_jwt = false
+
+[functions.business-advisor]
+verify_jwt = false
