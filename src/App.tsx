@@ -13,6 +13,8 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ProductCopy = lazy(() => import("./pages/ProductCopy"));
 const AdsCopy = lazy(() => import("./pages/AdsCopy"));
@@ -109,6 +111,18 @@ function AppRoutes() {
               <Signup />
             </PublicRoute>
           }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicRoute>
+              <ForgotPassword />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
         />
         <Route
           path="/dashboard"
