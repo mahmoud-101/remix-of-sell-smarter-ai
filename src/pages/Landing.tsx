@@ -30,6 +30,7 @@ import HeroMockup from "@/components/landing/HeroMockup";
 import BeforeAfterSection from "@/components/landing/BeforeAfterSection";
 import InteractiveDemo from "@/components/landing/InteractiveDemo";
 import StatsSection from "@/components/landing/StatsSection";
+import VideoSection from "@/components/landing/VideoSection";
 import Footer from "@/components/layout/Footer";
 import SEOHead from "@/components/seo/SEOHead";
 import { useState, useEffect } from "react";
@@ -363,6 +364,9 @@ export default function Landing() {
 
       {/* Unique Features */}
       <UniqueFeatures />
+
+      {/* Video Section */}
+      <VideoSection />
 
       {/* Before/After Section */}
       <BeforeAfterSection />
