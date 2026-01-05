@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { HelpCircle } from "lucide-react";
 
 interface FAQ {
   question: { ar: string; en: string };
@@ -18,8 +19,8 @@ const faqs: FAQ[] = [
       en: "What is SellGenius?",
     },
     answer: {
-      ar: "سيل جينيوس هي منصة ذكاء اصطناعي متخصصة في التجارة الإلكترونية. تساعدك على إنشاء نصوص منتجات، إعلانات، حملات تسويقية، وتحليل المنافسين بسرعة فائقة.",
-      en: "SellGenius is an AI platform specialized in e-commerce. It helps you create product copy, ads, marketing campaigns, and analyze competitors at lightning speed.",
+      ar: "سيل جينيوس هي منصة ذكاء اصطناعي متخصصة في التجارة الإلكترونية. تساعدك على إنشاء نصوص منتجات، إعلانات، حملات تسويقية، وتحليل المنافسين بسرعة فائقة. نستخدم أحدث تقنيات الذكاء الاصطناعي لفهم السوق العربي والخليجي بشكل عميق.",
+      en: "SellGenius is an AI platform specialized in e-commerce. It helps you create product copy, ads, marketing campaigns, and analyze competitors at lightning speed. We use the latest AI technologies to deeply understand the Arabic and Gulf market.",
     },
   },
   {
@@ -28,8 +29,8 @@ const faqs: FAQ[] = [
       en: "Can I try the platform for free?",
     },
     answer: {
-      ar: "نعم! نقدم خطة مجانية تتضمن 5 توليدات شهرياً. كما نقدم تجربة مجانية لمدة 14 يوماً للخطط المدفوعة بدون الحاجة لبطاقة ائتمان.",
-      en: "Yes! We offer a free plan with 5 generations per month. We also offer a 14-day free trial for paid plans without requiring a credit card.",
+      ar: "نعم! نقدم خطة مجانية تتضمن 5 توليدات شهرياً. كما نقدم تجربة مجانية لمدة 14 يوماً للخطط المدفوعة بدون الحاجة لبطاقة ائتمان. يمكنك البدء فوراً والترقية في أي وقت.",
+      en: "Yes! We offer a free plan with 5 generations per month. We also offer a 14-day free trial for paid plans without requiring a credit card. You can start immediately and upgrade anytime.",
     },
   },
   {
@@ -38,8 +39,8 @@ const faqs: FAQ[] = [
       en: "Does SellGenius support Arabic?",
     },
     answer: {
-      ar: "نعم! سيل جينيوس يدعم اللغة العربية بشكل كامل. الذكاء الاصطناعي مدرب خصيصاً لفهم السوق العربي وإنتاج محتوى عربي احترافي.",
-      en: "Yes! SellGenius fully supports Arabic. The AI is specially trained to understand the Arabic market and produce professional Arabic content.",
+      ar: "نعم! سيل جينيوس يدعم اللغة العربية بشكل كامل ومتقدم. الذكاء الاصطناعي مدرب خصيصاً لفهم السوق العربي والخليجي وإنتاج محتوى عربي احترافي يخاطب جمهورك مباشرة بلهجتهم وثقافتهم.",
+      en: "Yes! SellGenius fully supports Arabic at an advanced level. The AI is specially trained to understand the Arabic and Gulf market and produce professional Arabic content that speaks directly to your audience in their dialect and culture.",
     },
   },
   {
@@ -48,8 +49,8 @@ const faqs: FAQ[] = [
       en: "How does payment work?",
     },
     answer: {
-      ar: "نقبل جميع البطاقات الائتمانية والخصم المباشر. الدفع شهري ويمكنك إلغاء اشتراكك في أي وقت دون أي رسوم إضافية.",
-      en: "We accept all credit and debit cards. Payment is monthly and you can cancel your subscription at any time without any additional fees.",
+      ar: "نقبل جميع البطاقات الائتمانية والخصم المباشر (فيزا، ماستركارد، مدى). الدفع شهري ويمكنك إلغاء اشتراكك في أي وقت دون أي رسوم إضافية. نقدم أيضاً خصومات على الاشتراكات السنوية.",
+      en: "We accept all credit and debit cards (Visa, Mastercard, Mada). Payment is monthly and you can cancel your subscription at any time without any additional fees. We also offer discounts on annual subscriptions.",
     },
   },
   {
@@ -58,8 +59,28 @@ const faqs: FAQ[] = [
       en: "Can I upgrade or downgrade my plan?",
     },
     answer: {
-      ar: "بالتأكيد! يمكنك تغيير خطتك في أي وقت من إعدادات الحساب. التغييرات تسري فوراً ويتم احتساب الفرق بشكل تناسبي.",
-      en: "Absolutely! You can change your plan at any time from account settings. Changes take effect immediately and the difference is calculated proportionally.",
+      ar: "بالتأكيد! يمكنك تغيير خطتك في أي وقت من إعدادات الحساب. التغييرات تسري فوراً ويتم احتساب الفرق بشكل تناسبي. لن تخسر أي رصيد متبقي عند الترقية.",
+      en: "Absolutely! You can change your plan at any time from account settings. Changes take effect immediately and the difference is calculated proportionally. You won't lose any remaining balance when upgrading.",
+    },
+  },
+  {
+    question: {
+      ar: "ما هي جودة المحتوى المُولّد؟",
+      en: "What is the quality of generated content?",
+    },
+    answer: {
+      ar: "نستخدم أحدث نماذج الذكاء الاصطناعي (GPT-5 و Gemini Pro) المدربة خصيصاً على المحتوى التسويقي. المحتوى جاهز للنشر مباشرة، لكن يمكنك تعديله حسب رغبتك. عملاؤنا يحققون زيادة 40% في معدلات التحويل.",
+      en: "We use the latest AI models (GPT-5 and Gemini Pro) specially trained on marketing content. Content is ready to publish directly, but you can edit it as you wish. Our customers achieve 40% increase in conversion rates.",
+    },
+  },
+  {
+    question: {
+      ar: "هل بياناتي آمنة؟",
+      en: "Is my data secure?",
+    },
+    answer: {
+      ar: "نعم، نولي أمان بياناتك أهمية قصوى. نستخدم تشفير SSL 256-bit ونلتزم بمعايير GDPR. لا نشارك بياناتك مع أي طرف ثالث ولا نستخدم محتواك لتدريب نماذجنا.",
+      en: "Yes, we take your data security very seriously. We use 256-bit SSL encryption and comply with GDPR standards. We don't share your data with any third party and don't use your content to train our models.",
     },
   },
 ];
@@ -71,6 +92,10 @@ export default function FAQSection() {
     <section className="py-20 px-4">
       <div className="container mx-auto max-w-3xl">
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4">
+            <HelpCircle className="w-4 h-4" />
+            {isRTL ? "الدعم والمساعدة" : "Support & Help"}
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             {isRTL ? (
               <>
@@ -86,27 +111,41 @@ export default function FAQSection() {
           </h2>
           <p className="text-muted-foreground">
             {isRTL
-              ? "إجابات على أكثر الأسئلة شيوعاً"
-              : "Answers to the most common questions"}
+              ? "إجابات على أكثر الأسئلة شيوعاً. لم تجد إجابتك؟ تواصل معنا!"
+              : "Answers to the most common questions. Can't find your answer? Contact us!"}
           </p>
         </div>
 
-        <Accordion type="single" collapsible className="space-y-4">
+        <Accordion type="single" collapsible defaultValue="item-0" className="space-y-4">
           {faqs.map((faq, index) => (
             <AccordionItem
               key={index}
               value={`item-${index}`}
-              className="border border-border rounded-xl px-6 data-[state=open]:border-primary/50 transition-colors"
+              className="border border-border rounded-xl px-6 data-[state=open]:border-primary/50 data-[state=open]:bg-primary/5 transition-all duration-300 hover:border-primary/30 animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <AccordionTrigger className="text-start hover:no-underline py-4">
-                <span className="font-semibold">{faq.question[language]}</span>
+              <AccordionTrigger className="text-start hover:no-underline py-5 [&[data-state=open]>svg]:rotate-180">
+                <span className="font-semibold text-base">{faq.question[language]}</span>
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground pb-4">
+              <AccordionContent className="text-muted-foreground pb-5 leading-relaxed">
                 {faq.answer[language]}
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
+
+        {/* Contact CTA */}
+        <div className="mt-8 text-center p-6 rounded-2xl bg-secondary/50 border border-border">
+          <p className="text-muted-foreground mb-3">
+            {isRTL ? "لم تجد إجابة سؤالك؟" : "Didn't find your answer?"}
+          </p>
+          <a 
+            href="mailto:support@sellgenius.app" 
+            className="text-primary hover:underline font-medium"
+          >
+            {isRTL ? "تواصل مع فريق الدعم" : "Contact our support team"} →
+          </a>
+        </div>
       </div>
     </section>
   );

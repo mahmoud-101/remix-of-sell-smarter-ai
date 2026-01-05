@@ -1,4 +1,4 @@
-import { FileText, Wand2, Rocket, ArrowDown } from "lucide-react";
+import { FileText, Wand2, Rocket, ArrowDown, Zap } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const steps = [
@@ -9,7 +9,8 @@ const steps = [
     description: { 
       ar: "أضف اسم المنتج، الوصف، والجمهور المستهدف. كلما أضفت تفاصيل أكثر، كانت النتائج أفضل.", 
       en: "Add product name, description, and target audience. The more details you add, the better the results." 
-    }
+    },
+    color: "from-blue-500 to-indigo-500"
   },
   {
     icon: Wand2,
@@ -18,7 +19,8 @@ const steps = [
     description: { 
       ar: "حدد ما تريد: وصف منتج، إعلانات، حملة تسويقية، أو تصميم إعلان.", 
       en: "Select what you want: product description, ads, marketing campaign, or ad design." 
-    }
+    },
+    color: "from-purple-500 to-pink-500"
   },
   {
     icon: Rocket,
@@ -27,7 +29,8 @@ const steps = [
     description: { 
       ar: "في ثوانٍ، يولد الذكاء الاصطناعي محتوى احترافي جاهز للنشر والاستخدام.", 
       en: "In seconds, AI generates professional content ready for publishing and use." 
-    }
+    },
+    color: "from-green-500 to-emerald-500"
   }
 ];
 
@@ -35,9 +38,13 @@ export default function HowItWorksSection() {
   const { language, isRTL } = useLanguage();
 
   return (
-    <section className="py-20 px-4 bg-secondary/30">
+    <section className="py-20 px-4 bg-secondary/30 overflow-hidden">
       <div className="container mx-auto max-w-5xl">
         <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4">
+            <Zap className="w-4 h-4" />
+            {isRTL ? "سهولة الاستخدام" : "Easy to Use"}
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             {isRTL ? (
               <>
@@ -56,62 +63,73 @@ export default function HowItWorksSection() {
           </p>
         </div>
 
-        <div className="relative">
-          {/* Connection Line */}
-          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-gradient-to-b from-primary via-primary/50 to-primary hidden md:block" style={{ transform: 'translateX(-50%)' }} />
-
-          <div className="space-y-12 md:space-y-0">
-            {steps.map((step, index) => (
-              <div key={index} className="relative">
-                {/* Desktop Layout */}
-                <div className="hidden md:grid md:grid-cols-2 gap-8 items-center">
-                  {/* Content */}
-                  <div className={`${index % 2 === 0 ? 'md:text-end' : 'md:order-2'}`}>
-                    <div className={`inline-block ${index % 2 === 0 ? '' : 'text-start'}`}>
-                      <span className="text-5xl font-bold gradient-text opacity-50">{step.number}</span>
-                      <h3 className="text-xl font-bold mt-2 mb-3">{step.title[language]}</h3>
-                      <p className="text-muted-foreground max-w-sm">{step.description[language]}</p>
-                    </div>
-                  </div>
-
-                  {/* Icon (Center) */}
-                  <div className={`${index % 2 === 0 ? '' : 'md:order-1'} flex ${index % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
-                    <div className="relative">
-                      <div className="w-20 h-20 rounded-2xl bg-primary/10 border-2 border-primary flex items-center justify-center z-10 relative bg-background">
-                        <step.icon className="w-10 h-10 text-primary" />
-                      </div>
-                    </div>
-                  </div>
+        {/* Desktop Layout */}
+        <div className="hidden md:grid md:grid-cols-3 gap-8">
+          {steps.map((step, index) => (
+            <div
+              key={index}
+              className="relative group animate-fade-in"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              {/* Connector line */}
+              {index < steps.length - 1 && (
+                <div className={`absolute top-10 ${isRTL ? 'left-0 -translate-x-1/2' : 'right-0 translate-x-1/2'} w-full h-0.5 bg-gradient-to-r from-primary/50 to-transparent z-0`} />
+              )}
+              
+              <div className="glass-card rounded-2xl p-6 relative z-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl group-hover:border-primary/50">
+                {/* Number badge */}
+                <div className="absolute -top-4 -right-2 w-10 h-10 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                  <span className="text-sm font-bold text-primary">{step.number}</span>
                 </div>
-
-                {/* Mobile Layout */}
-                <div className="md:hidden glass-card rounded-2xl p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <step.icon className="w-8 h-8 text-primary" />
-                    </div>
-                    <div>
-                      <span className="text-3xl font-bold gradient-text opacity-50">{step.number}</span>
-                      <h3 className="text-lg font-bold mb-2">{step.title[language]}</h3>
-                      <p className="text-muted-foreground text-sm">{step.description[language]}</p>
-                    </div>
-                  </div>
+                
+                {/* Icon */}
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+                  <step.icon className="w-8 h-8 text-white" />
                 </div>
-
-                {/* Arrow between steps (mobile) */}
-                {index < steps.length - 1 && (
-                  <div className="flex justify-center my-4 md:hidden">
-                    <ArrowDown className="w-6 h-6 text-primary/50" />
-                  </div>
-                )}
-
-                {/* Spacing for desktop */}
-                {index < steps.length - 1 && (
-                  <div className="hidden md:block h-24" />
-                )}
+                
+                <h3 className="text-xl font-bold mb-3">{step.title[language]}</h3>
+                <p className="text-muted-foreground leading-relaxed">{step.description[language]}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-6">
+          {steps.map((step, index) => (
+            <div key={index}>
+              <div className="glass-card rounded-2xl p-6 animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+                <div className="flex items-start gap-4">
+                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0`}>
+                    <step.icon className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-2xl font-bold gradient-text">{step.number}</span>
+                    </div>
+                    <h3 className="text-lg font-bold mb-2">{step.title[language]}</h3>
+                    <p className="text-muted-foreground text-sm">{step.description[language]}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Arrow between steps */}
+              {index < steps.length - 1 && (
+                <div className="flex justify-center my-3">
+                  <ArrowDown className="w-6 h-6 text-primary/50 animate-bounce" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom CTA hint */}
+        <div className="text-center mt-12">
+          <p className="text-muted-foreground">
+            {isRTL 
+              ? "⏱️ متوسط وقت التوليد: 5-10 ثوانٍ فقط!" 
+              : "⏱️ Average generation time: Only 5-10 seconds!"}
+          </p>
         </div>
       </div>
     </section>
