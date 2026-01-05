@@ -365,8 +365,6 @@ export default function Landing() {
       {/* Unique Features */}
       <UniqueFeatures />
 
-      {/* Video Section */}
-      <VideoSection />
 
       {/* Before/After Section */}
       <BeforeAfterSection />
