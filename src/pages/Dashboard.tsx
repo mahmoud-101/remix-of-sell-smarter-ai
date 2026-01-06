@@ -10,8 +10,6 @@ import {
   Sparkles,
   Clock,
   Zap,
-  Image,
-  Wand2,
   TrendingUp,
   Users,
   Brain,
@@ -65,72 +63,70 @@ export default function Dashboard() {
     }
   };
 
-  const tools = [
+  // الصف الرئيسي - الأهم
+  const mainTools = [
     {
-      icon: Brain,
-      title: isRTL ? "مركز النمو الذكي" : "AI Growth Console",
-      description: isRTL ? "مستشار أعمالك - تحليل وتشخيص وتوصيات" : "Your business advisor - analyze, diagnose, recommend",
-      path: "/dashboard/growth-console",
-      color: "from-violet-500 to-purple-600",
-      featured: true,
-    },
-    {
-      icon: FileText,
-      title: t("featureProductCopy"),
-      description: isRTL ? "أنشئ وصف منتجات مقنع" : "Create compelling product descriptions",
-      path: "/dashboard/product-copy",
-      color: "from-blue-500 to-indigo-500",
+      icon: Palette,
+      title: isRTL ? "مصنع الكريتيفات" : "Creative Factory",
+      description: isRTL 
+        ? "ولّد صور منتجات + تصميمات إعلانات + اقتراحات ألوان وخطوط جاهزة للمصمم" 
+        : "Generate product photos, ad designs & color/font suggestions ready for designers",
+      path: "/dashboard/creative-factory",
+      color: "from-purple-500 to-pink-600",
+      badge: isRTL ? "الأكثر استخداماً" : "Most Used",
     },
     {
       icon: Megaphone,
-      title: t("featureAds"),
-      description: isRTL ? "أنشئ إعلانات عالية التحويل" : "Generate high-converting ad copy",
+      title: isRTL ? "مولّد الحملات الإعلانية" : "Ad Campaign Generator",
+      description: isRTL 
+        ? "نسخ إعلانات كاملة لميتا وتيك توك + زوايا مختلفة + هيكل الحملة" 
+        : "Complete ad copies for Meta & TikTok + angles + campaign structure",
       path: "/dashboard/ads-copy",
-      color: "from-pink-500 to-rose-500",
+      color: "from-pink-500 to-rose-600",
+      badge: null,
     },
     {
-      icon: Image,
-      title: isRTL ? "صور المنتجات" : "Product Images",
-      description: isRTL ? "ولد صور منتجات احترافية" : "Generate professional product images",
-      path: "/dashboard/image-generator",
-      color: "from-purple-500 to-pink-500",
+      icon: FileText,
+      title: isRTL ? "مولّد صفحة المنتج" : "Product Page Generator",
+      description: isRTL 
+        ? "عنوان + وصف + نقاط فوائد + FAQ من نفس داتا الإعلان" 
+        : "Title + description + benefits + FAQ from your ad data",
+      path: "/dashboard/product-copy",
+      color: "from-blue-500 to-indigo-600",
+      badge: null,
     },
-    {
-      icon: Wand2,
-      title: isRTL ? "مصمم الإعلانات" : "Ad Designer",
-      description: isRTL ? "صمم إعلانات بالذكاء الاصطناعي" : "Design ads with AI",
-      path: "/dashboard/ad-designer",
-      color: "from-red-500 to-orange-500",
-    },
-    {
-      icon: TrendingUp,
-      title: isRTL ? "منصات الإعلانات" : "Ad Platforms",
-      description: isRTL ? "ربط وتحليل حملاتك" : "Connect and analyze your campaigns",
-      path: "/dashboard/ads-platforms",
-      color: "from-green-500 to-emerald-500",
-    },
+  ];
+
+  // الصف الثاني - الداعم
+  const supportTools = [
     {
       icon: Calendar,
-      title: t("featureCampaign"),
-      description: isRTL ? "خطط حملات تسويقية كاملة" : "Plan complete marketing campaigns",
+      title: isRTL ? "مخطّط سريع للحملة" : "Quick Campaign Planner",
+      description: isRTL 
+        ? "جدول الجمهور والزوايا والميزانية + Checklist قبل الإطلاق" 
+        : "Audience, angles & budget table + pre-launch checklist",
       path: "/dashboard/campaign",
-      color: "from-amber-500 to-orange-500",
-    },
-    {
-      icon: Palette,
-      title: t("featureDesign"),
-      description: isRTL ? "احصل على توصيات التصميم" : "Get UX and design recommendations",
-      path: "/dashboard/design",
-      color: "from-emerald-500 to-teal-500",
+      color: "from-amber-500 to-orange-600",
     },
     {
       icon: Target,
-      title: t("featureCompetitor"),
-      description: isRTL ? "حلل منافسيك" : "Analyze competitors and find opportunities",
+      title: isRTL ? "محلّل الأداء والمنافسين" : "Performance & Competitor Analyzer",
+      description: isRTL 
+        ? "حلّل كريتيفاتك الأفضل + أفكار من المنافسين بأسلوبك" 
+        : "Analyze your best creatives + competitor-inspired ideas",
       path: "/dashboard/competitor",
-      color: "from-violet-500 to-purple-500",
+      color: "from-violet-500 to-purple-600",
     },
   ];
+
+  // Featured tool - Growth Console
+  const featuredTool = {
+    icon: Brain,
+    title: isRTL ? "مركز النمو الذكي" : "AI Growth Console",
+    description: isRTL ? "مستشار أعمالك الشخصي - تحليل وتشخيص وتوصيات ذكية لنمو متجرك" : "Your personal business advisor - analyze, diagnose & smart recommendations",
+    path: "/dashboard/growth-console",
+    color: "from-violet-500 to-purple-600",
+  };
 
   const statsData = [
     { label: isRTL ? "محتوى مولد" : "Content Generated", value: stats.contentGenerated.toString(), icon: FileText },
@@ -191,24 +187,98 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Tools Grid */}
+        {/* Featured Tool - Growth Console */}
+        <Link
+          to={featuredTool.path}
+          className="feature-card group lg:col-span-3 md:col-span-2 bg-gradient-to-r from-violet-500/5 to-purple-500/5 border-violet-500/20"
+        >
+          <div className="flex flex-row items-center gap-6">
+            <div
+              className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
+            >
+              <featuredTool.icon className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                {featuredTool.title}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {featuredTool.description}
+              </p>
+              <div className="flex items-center text-sm text-primary font-medium">
+                {isRTL ? "ابدأ الآن" : "Get Started"}
+                <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        {/* Main Tools - الصف الرئيسي */}
         <div>
-          <h2 className="text-xl font-semibold mb-4">{t("aiTools")}</h2>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" />
+            {isRTL ? "الأدوات الأساسية" : "Core Tools"}
+          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tools.map((tool, index) => (
+            {mainTools.map((tool, index) => (
               <Link
                 key={index}
                 to={tool.path}
-                className={`feature-card group ${tool.featured ? 'lg:col-span-3 md:col-span-2 bg-gradient-to-r from-violet-500/5 to-purple-500/5 border-violet-500/20' : ''}`}
+                className="feature-card group relative"
               >
-                <div className={`flex ${tool.featured ? 'flex-row items-center gap-6' : 'flex-col'}`}>
+                {tool.badge && (
+                  <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                    {tool.badge}
+                  </span>
+                )}
+                <div className="flex flex-col">
                   <div
-                    className={`${tool.featured ? 'w-16 h-16' : 'w-12 h-12'} rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center ${tool.featured ? '' : 'mb-4'} group-hover:scale-110 transition-transform duration-300`}
+                    className="w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
+                    style={{ background: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
                   >
-                    <tool.icon className={`${tool.featured ? 'w-8 h-8' : 'w-6 h-6'} text-white`} />
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center`}>
+                      <tool.icon className="w-6 h-6 text-white" />
+                    </div>
                   </div>
                   <div className="flex-1">
-                    <h3 className={`${tool.featured ? 'text-xl' : 'text-lg'} font-semibold mb-2 group-hover:text-primary transition-colors`}>
+                    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {tool.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {tool.description}
+                    </p>
+                    <div className="flex items-center text-sm text-primary font-medium">
+                      {isRTL ? "ابدأ الآن" : "Get Started"}
+                      <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Support Tools - الصف الداعم */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-accent" />
+            {isRTL ? "أدوات التحليل والتخطيط" : "Analysis & Planning Tools"}
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            {supportTools.map((tool, index) => (
+              <Link
+                key={index}
+                to={tool.path}
+                className="feature-card group"
+              >
+                <div className="flex flex-col">
+                  <div
+                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
+                  >
+                    <tool.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
                       {tool.title}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4">
