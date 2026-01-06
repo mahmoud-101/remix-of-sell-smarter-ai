@@ -31,6 +31,7 @@ const ImageGenerator = lazy(() => import("./pages/ImageGenerator"));
 const AdsPlatforms = lazy(() => import("./pages/AdsPlatforms"));
 const AdDesigner = lazy(() => import("./pages/AdDesigner"));
 const GrowthConsole = lazy(() => import("./pages/GrowthConsole"));
+const CreativeFactory = lazy(() => import("./pages/CreativeFactory"));
 const About = lazy(() => import("./pages/About"));
 const UseCases = lazy(() => import("./pages/UseCases"));
 const Privacy = lazy(() => import("./pages/Privacy"));
@@ -249,6 +250,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <GrowthConsole />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/creative-factory"
+          element={
+            <ProtectedRoute>
+              <CreativeFactory />
             </ProtectedRoute>
           }
         />
