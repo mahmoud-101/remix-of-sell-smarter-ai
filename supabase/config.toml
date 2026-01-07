@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.business-advisor]
 verify_jwt = false
+
+[functions.product-photo-prompt]
+verify_jwt = false
