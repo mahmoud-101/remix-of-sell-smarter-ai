@@ -8,52 +8,49 @@ const corsHeaders = {
 const systemPrompt = `أنت خبير عالمي في تصوير المنتجات وكتابة برومبتات لتوليد صور احترافية للإعلانات والمتاجر الإلكترونية.
 
 المهمة:
-اكتب برومبت تفصيلي لتوليد صورة منتج واحدة أو عدة لقطات للمنتج، بجودة تناسب الإعلانات والمتاجر (photorealistic, ultra‑detailed).
+اكتب برومبت تفصيلي لتوليد صورة منتج واحدة أو عدة لقطات للمنتج، بجودة تناسب الإعلانات والمتاجر (photorealistic, ultra-detailed).
 
 المخرجات يجب أن تكون بصيغة JSON صالحة فقط بدون أي نص خارج JSON.
 لو أي مدخل ناقص، افترض قيم منطقية مناسبة ولا تذكر أنك افترضتها.
 
-قواعد كتابة البرومبت:
-1. ركّز على تصوير المنتج نفسه كـ **Subject** واضح في الكادر، مع ذكر:
-   - الشكل العام، المواد، الألوان، أي تفاصيل مميزة للمنتج.
-2. حدد:
-   - نوع اللقطة: close-up, medium shot, flat lay, lifestyle shot.
-   - زاوية الكاميرا: eye level, top-down, low angle, 3/4 view.
-   - نوع العدسة (اختياري): 35mm / 50mm / wide-angle / macro.
-3. حدد الإضاءة بدقة:
-   - natural light / soft studio light / dramatic cinematic light / golden hour
-   - اتجاه الإضاءة (من الأمام، من الجانب، backlight) + وجود ظلال ناعمة أو حادة.
-4. صف الخلفية (Background / Environment):
-   - إن كانت صورة catalog: خلفية بسيطة نظيفة، minimal, studio, seamless.
-   - إن كانت lifestyle: مشهد حقيقي (مطبخ، حمّام، مكتب، صالة منزل، شارع، إلخ) مع التركيز على بقاء المنتج هو العنصر الأوضح.
-5. صف الـ Mood & Style:
-   - مشاعر وأجواء الصورة: luxury, clean, cozy, energetic, playful, elegant, premium.
-   - استخدم مفاهيم مثل: cinematic, editorial photography, commercial product photography.
-6. صف التفاصيل (Textures & Details):
-   - انعكاسات، لمعان، خامة السطح (matte/glossy), قطرات ماء، بخار، إلخ، لو مناسب للمنتج.
-7. أضف كلمات مفاتيح تقنية مناسبة لجودة عالية:
-   - photorealistic, hyperrealistic, ultra‑detailed, 8k resolution, sharp focus, high detail, studio lighting, DSLR photo.
-8. لا تستخدم:
-   - أي أسماء براندات حقيقية أو شعارات / Logos
-   - وجوه أشخاص حقيقيين أو مشاهير
-   - نصوص مكتوبة داخل الصورة (slogans, نص عربي، إلخ)
-9. إذا كان الاستخدام = متجر أو أمازون:
-   - ركّز أكثر على صورة catalog نظيفة بخلفية بسيطة أو بيضاء.
-10. إذا كان الاستخدام = إعلان / سوشيال ميديا:
-    - يمكن إضافة نسخة lifestyle أو creative مع مشهد واقعي أو فكرة قوية.
+منطق الصورة المرجعية:
+1. لو product_image_provided = true:
+   - استخدم صورة المنتج كمرجع أساسي للشكل والألوان.
+   - حافظ على شكل المنتج ولونه، وغيّر الخلفية والإضاءة والمشهد فقط.
+   - استخدم صياغة مثل:
+     "Use the provided product image as the main subject reference. Keep the product shape, colors and label consistent, and only change background, lighting and scene."
+
+2. لو product_image_provided = false:
+   - اعتمد على product_text في وصف شكل المنتج وخصائصه.
+
+استخدام أفكار المستخدم:
+- اعتبر user_ideas قائمة تفضيلات إضافية.
+- دمج هذه التفضيلات في البرومبت إن كانت منطقية (مثلاً جو رمضاني، أجواء فاخرة، ألوان معينة، نوع إضاءة، عناصر في الخلفية).
+- لا تكرر نص user_ideas حرفيًا، بل حوّله لوصف بصري احترافي.
+
+قواعد البرومبت (في كل الحالات):
+1. حدّد الـ Subject بوضوح (المنتج، مادته، ألوانه).
+2. حدّد نوع اللقطة (close-up / flat lay / lifestyle) وزاوية الكاميرا ونوع العدسة.
+3. صف الإضاءة بدقة (نوعها + اتجاهها + الظلال).
+4. صف الخلفية والبيئة بما يناسب usage و platform.
+5. عرّف الـ Mood/Style (luxury, clean, cozy, techy…).
+6. أضف تفاصيل للخامة والانعكاسات عند الحاجة.
+7. استخدم كلمات جودة: photorealistic, hyperrealistic, ultra-detailed, 8k resolution, sharp focus, studio lighting, DSLR photo.
+8. ممنوع: أسماء براندات حقيقية، شعارات، نصوص داخل الصورة، وجوه مشاهير.
 
 الخرج (JSON فقط):
 {
-  "main_prompt": "وصف كامل مفصل للصورة الرئيسية باللغة الإنجليزية، يبدأ بالمحتوى الأساسي (subject) ثم الكاميرا واللقطة والإضاءة والخلفية والمزاج، مع كلمات photorealistic, ultra-detailed, 8k, sharp focus, professional product photography.",
+  "main_prompt": "برومبت كامل باللغة الإنجليزية يدمج: وصف المنتج، حالة الصورة المرجعية، تفضيلات الاستخدام والستايل والخلفية، مع دمج ذكي لأفكار المستخدم user_ideas في شكل وصف بصري احترافي.",
   "negative_prompt": "blurry, low quality, low resolution, watermark, logo, text, distorted, extra limbs, deformed, overexposed, underexposed, noisy, cartoonish, illustration",
+  "use_reference_image": true/false,
   "variations": [
-    "lifestyle shot: وصف لقطة لايف ستايل للمنتج في استخدام واقعي مناسب للجمهور المستهدف",
-    "flat lay: وصف لقطة flat lay من أعلى مع ترتيب بسيط للإكسسوارات أو العناصر المحيطة بالمنتج",
-    "close-up detail: وصف لقطة close-up تركز على تفاصيل خامة المنتج أو أهم جزء فيه"
+    "lifestyle shot: ...",
+    "flat lay: ...",
+    "close-up detail: ..."
   ],
   "recommended_settings": {
-    "aspect_ratio": "1:1 للمتجر، 4:5 لفيسبوك/انستقرام، 9:16 للستوري والتيكتوك",
-    "style_hint": "catalog clean / lifestyle realistic / creative conceptual",
+    "aspect_ratio": "1:1 للمتجر وInstagram feed، 4:5 لإعلانات فيسبوك/انستقرام، 9:16 للستوري والتيكتوك",
+    "style_hint": "catalog clean / lifestyle realistic / creative conceptual حسب style و usage و user_ideas",
     "platform_fit": "optimized for usage on platform"
   }
 }`;
@@ -64,7 +61,17 @@ serve(async (req) => {
   }
 
   try {
-    const { product, usage, style, background, platform } = await req.json();
+    const { 
+      product_text, 
+      product_image_provided = false,
+      product_image_url,
+      usage, 
+      style, 
+      background, 
+      platform,
+      user_ideas
+    } = await req.json();
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -72,15 +79,18 @@ serve(async (req) => {
     }
 
     const userPrompt = `المدخلات:
-- المنتج: ${product}
+- اسم/وصف المنتج النصي: ${product_text}
+- صورة المنتج (موجودة): ${product_image_provided}
+${product_image_provided && product_image_url ? `- رابط صورة المنتج: ${product_image_url}` : ''}
 - الاستخدام: ${usage}
 - الستايل البصري: ${style}
 - الخلفية: ${background}
 - المنصة المستهدفة: ${platform || "غير محدد"}
+- أفكار إضافية من المستخدم: ${user_ideas || "لا توجد"}
 
 اكتب البرومبت الآن بصيغة JSON فقط.`;
 
-    console.log("Generating prompt for product:", product);
+    console.log("Generating prompt for product:", product_text, "with image:", product_image_provided);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -140,7 +150,13 @@ serve(async (req) => {
       }
     }
 
-    console.log("Successfully generated prompt data");
+    // Add reference image info to response
+    promptData.use_reference_image = product_image_provided;
+    if (product_image_provided && product_image_url) {
+      promptData.reference_image_url = product_image_url;
+    }
+
+    console.log("Successfully generated prompt data with reference:", product_image_provided);
 
     return new Response(
       JSON.stringify(promptData),
