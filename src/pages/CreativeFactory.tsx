@@ -166,27 +166,23 @@ export default function CreativeFactory() {
     const allPrompts = [data.main_prompt, ...data.variations];
     const types = ["main", "lifestyle", "flat_lay", "close_up"];
     
+    // Use reference image if provided
+    const useReference = data.use_reference_image && referenceImageUrl;
+    
     for (let i = 0; i < allPrompts.length; i++) {
       setGeneratingIndex(i);
       try {
         const promptText = allPrompts[i].includes(":") 
           ? allPrompts[i].split(":").slice(1).join(":").trim()
           : allPrompts[i];
-        
-        // If using reference image and it's available, use edit endpoint
-        const functionName = data.use_reference_image && referenceImageUrl 
-          ? "generate-image" 
-          : "generate-image";
           
-        const { data: imageData, error } = await supabase.functions.invoke(functionName, {
+        const { data: imageData, error } = await supabase.functions.invoke("generate-image", {
           body: { 
             prompt: promptText,
             style: style,
             background: background,
-            // Pass reference image for image-to-image generation
-            ...(data.use_reference_image && referenceImageUrl ? { 
-              reference_image: referenceImageUrl 
-            } : {})
+            // Pass reference image for image-to-image editing (keeps product, changes scene)
+            ...(useReference ? { reference_image: referenceImageUrl } : {})
           },
         });
 
