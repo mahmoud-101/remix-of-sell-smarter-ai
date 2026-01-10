@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      generated_content: {
+        Row: {
+          content_type: string
+          created_at: string
+          credits_used: number | null
+          id: string
+          input_data: Json
+          output_data: Json
+          user_id: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          credits_used?: number | null
+          id?: string
+          input_data: Json
+          output_data: Json
+          user_id: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          credits_used?: number | null
+          id?: string
+          input_data?: Json
+          output_data?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       history: {
         Row: {
           created_at: string
@@ -85,7 +115,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
+          credits_used: number | null
+          email: string | null
           full_name: string | null
           id: string
           plan: string | null
@@ -93,7 +126,10 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
+          credits_used?: number | null
+          email?: string | null
           full_name?: string | null
           id: string
           plan?: string | null
@@ -101,12 +137,51 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
+          credits_used?: number | null
+          email?: string | null
           full_name?: string | null
           id?: string
           plan?: string | null
           preferred_language?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -136,6 +211,33 @@ export type Database = {
           month_year?: string
           plan?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usage_logs: {
+        Row: {
+          action: string
+          created_at: string
+          credits: number | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          credits?: number | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          credits?: number | null
+          id?: string
+          metadata?: Json | null
           user_id?: string
         }
         Relationships: []
