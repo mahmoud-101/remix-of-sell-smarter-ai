@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.product-photo-prompt]
 verify_jwt = false
+
+[functions.ai-generate-openai]
+verify_jwt = false
