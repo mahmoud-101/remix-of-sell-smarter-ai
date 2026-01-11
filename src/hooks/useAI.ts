@@ -1,75 +1,54 @@
-import { useState } from "react";
+import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-type AIToolType = "product-copy" | "ads-copy" | "campaign" | "design" | "competitor";
-
-interface UseAIOptions {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
-}
-
-export function useAI(toolType: AIToolType, options?: UseAIOptions) {
+export const useAI = (toolType: string) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
   const { toast } = useToast();
-  const { t, language, isRTL } = useLanguage();
+  const { language } = useLanguage();
 
-  const generate = async (input: Record<string, any>) => {
+  const generate = async (inputData: any) => {
     setIsLoading(true);
-    setResult(null);
-
     try {
-      const { data, error } = await supabase.functions.invoke("ai-generate", {
-        body: { toolType, input, language },
+      console.log(`Generating ${toolType} with data:`, inputData);
+
+      const { data, error } = await supabase.functions.invoke('ai-generate', {
+        body: {
+          input: inputData,
+          toolType: toolType,
+          language: language === 'ar' ? 'ar' : 'en',
+        },
       });
 
       if (error) {
-        throw error;
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Error connecting to AI service');
       }
 
-      if (data.error) {
-        if (data.status === 429) {
-          toast({
-            title: isRTL ? "تجاوز الحد المسموح" : "Rate Limited",
-            description: isRTL ? "يرجى الانتظار قليلاً ثم المحاولة مرة أخرى" : "Please wait a moment and try again",
-            variant: "destructive",
-          });
-        } else if (data.status === 402) {
-          toast({
-            title: isRTL ? "الرصيد غير كافي" : "Payment Required",
-            description: isRTL ? "يرجى إضافة رصيد لمتابعة الاستخدام" : "Please add credits to continue",
-            variant: "destructive",
-          });
-        } else {
-          throw new Error(data.error);
-        }
-        return null;
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      setResult(data.result);
-      options?.onSuccess?.(data.result);
-      
-      toast({
-        title: isRTL ? "تم بنجاح! ✨" : "Success! ✨",
-        description: isRTL ? "تم إنشاء المحتوى بنجاح" : "Content generated successfully",
-      });
+      if (!data?.result) {
+        throw new Error('No result received from AI');
+      }
 
       return data.result;
+
     } catch (error: any) {
-      console.error("AI generation error:", error);
+      console.error("AI Generation Error:", error);
+      
       toast({
-        title: isRTL ? "حدث خطأ" : "Error",
-        description: error.message || (isRTL ? "يرجى المحاولة مرة أخرى" : "Please try again"),
+        title: language === 'ar' ? "خطأ في التوليد" : "Generation Error",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
-      options?.onError?.(error);
       return null;
     } finally {
       setIsLoading(false);
     }
   };
 
-  return { generate, isLoading, result };
-}
+  return { generate, isLoading };
+};
