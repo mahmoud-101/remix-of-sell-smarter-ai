@@ -180,64 +180,64 @@ const Billing = () => {
           <h2 className="text-xl font-semibold mb-4">
             {isRTL ? 'ترقية خطتك' : 'Upgrade Your Plan'}
           </h2>
-          <div className="grid gap-6 md:grid-cols-3">
-            {Object.entries(PLANS).map(([key, plan]) => {
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {Object.entries(PLANS).map(([key, planData]) => {
               const isCurrent = currentPlan === key;
               const isPopular = key === 'pro';
               
               return (
                 <Card 
                   key={key} 
-                  className={`relative ${isPopular ? 'border-primary shadow-lg' : ''} ${isCurrent ? 'bg-primary/5' : ''}`}
+                  className={`relative transition-all duration-300 hover:scale-[1.02] ${isPopular ? 'border-primary shadow-lg shadow-primary/20' : 'border-border/50'} ${isCurrent ? 'bg-primary/5 border-primary/40' : ''}`}
                 >
                   {isPopular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-primary">
+                      <Badge className="bg-primary text-primary-foreground">
                         <Sparkles className="h-3 w-3 mr-1" />
                         {isRTL ? 'الأكثر شعبية' : 'Most Popular'}
                       </Badge>
                     </div>
                   )}
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{isRTL ? plan.nameAr : plan.name}</span>
-                      {isCurrent && (
-                        <Badge variant="outline">
-                          {isRTL ? 'الحالية' : 'Current'}
-                        </Badge>
-                      )}
+                  <CardHeader className="text-center pb-2">
+                    <CardTitle className="text-xl">
+                      {isRTL ? planData.nameAr : planData.name}
                     </CardTitle>
-                    <div className="text-3xl font-bold">
-                      {plan.price === 0 ? (
-                        <span>{isRTL ? 'مجاناً' : 'Free'}</span>
+                    <div className="mt-4">
+                      {planData.price === 0 ? (
+                        <span className="text-3xl font-bold">{isRTL ? 'مجاناً' : 'Free'}</span>
                       ) : (
-                        <>
-                          ${plan.price}
-                          <span className="text-sm font-normal text-muted-foreground">
-                            /{isRTL ? 'شهر' : 'mo'}
-                          </span>
-                        </>
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-bold">${planData.price}</span>
+                          <span className="text-muted-foreground">/{isRTL ? 'شهر' : 'mo'}</span>
+                        </div>
                       )}
                     </div>
+                    {isCurrent && (
+                      <Badge variant="outline" className="mt-2 border-primary text-primary">
+                        {isRTL ? 'خطتك الحالية' : 'Current Plan'}
+                      </Badge>
+                    )}
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ul className="space-y-2">
-                      {(isRTL ? plan.featuresAr : plan.features).map((feature, i) => (
+                  <CardContent className="space-y-4 pt-4">
+                    <ul className="space-y-3">
+                      {(isRTL ? planData.featuresAr : planData.features).map((feature, i) => (
                         <li key={i} className="flex items-center gap-2 text-sm">
-                          <Check className="h-4 w-4 text-primary" />
-                          {feature}
+                          <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                          <span>{feature}</span>
                         </li>
                       ))}
                     </ul>
                     <Button 
-                      className="w-full" 
+                      className="w-full mt-4" 
                       variant={isCurrent ? 'outline' : isPopular ? 'default' : 'outline'}
-                      disabled={isCurrent}
+                      disabled={isCurrent || key === 'free'}
                       onClick={() => handleUpgrade(key)}
                     >
                       {isCurrent 
                         ? (isRTL ? 'خطتك الحالية' : 'Current Plan')
-                        : (isRTL ? 'ترقية الآن' : 'Upgrade Now')
+                        : key === 'free'
+                          ? (isRTL ? 'الخطة الأساسية' : 'Basic Plan')
+                          : (isRTL ? 'ترقية الآن' : 'Upgrade Now')
                       }
                     </Button>
                   </CardContent>
