@@ -26,13 +26,36 @@ const Billing = () => {
 
   const isRTL = language === 'ar';
 
+  // روابط الدفع للخطط المختلفة
+  const CHECKOUT_LINKS: Record<string, string> = {
+    start: "https://Sell-mate.nzmly.com/l/vrYhypJJeg",
+    starter: "https://Sell-mate.nzmly.com/l/vrYhypJJeg",
+    pro: "https://Sell-mate.nzmly.com/l/NgRgejCVJg",
+    business: "https://Sell-mate.nzmly.com/l/KLCfkEnzTn",
+    enterprise: "https://Sell-mate.nzmly.com/l/KLCfkEnzTn",
+  };
+
   const handleUpgrade = (planKey: string) => {
-    setSelectedPlan(planKey);
-    toast.info(
-      isRTL 
-        ? 'سيتم تفعيل المدفوعات قريباً! سجّل اهتمامك وسنتواصل معك.' 
-        : 'Payments coming soon! Register your interest and we\'ll contact you.'
-    );
+    const normalizedKey = planKey.toLowerCase();
+    const checkoutUrl = CHECKOUT_LINKS[normalizedKey];
+    
+    console.log("Plan clicked:", normalizedKey);
+    
+    if (checkoutUrl) {
+      window.open(checkoutUrl, '_blank');
+      toast.success(
+        isRTL 
+          ? 'جاري تحويلك لصفحة الدفع...' 
+          : 'Redirecting to checkout...'
+      );
+    } else {
+      setSelectedPlan(planKey);
+      toast.info(
+        isRTL 
+          ? 'هذه الخطة غير متاحة للشراء المباشر.' 
+          : 'This plan is not available for direct purchase.'
+      );
+    }
   };
 
   const usagePercentage = generationsLimit > 0 
