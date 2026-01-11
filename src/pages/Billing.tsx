@@ -23,10 +23,11 @@ const Billing = () => {
   const { subscription, currentPlan, planDetails, isLoading: subLoading } = useSubscription();
   const { generationsUsed, generationsLimit, plan } = useUsageLimit();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-
   const isRTL = language === 'ar';
 
-  // روابط الدفع للخطط المختلفة
+  // -----------------------------------------------------------
+  // 1. روابط الدفع (تم دمجها هنا)
+  // -----------------------------------------------------------
   const CHECKOUT_LINKS: Record<string, string> = {
     start: "https://Sell-mate.nzmly.com/l/vrYhypJJeg",
     starter: "https://Sell-mate.nzmly.com/l/vrYhypJJeg",
@@ -35,6 +36,9 @@ const Billing = () => {
     enterprise: "https://Sell-mate.nzmly.com/l/KLCfkEnzTn",
   };
 
+  // -----------------------------------------------------------
+  // 2. دالة التوجيه للدفع
+  // -----------------------------------------------------------
   const handleUpgrade = (planKey: string) => {
     const normalizedKey = planKey.toLowerCase();
     const checkoutUrl = CHECKOUT_LINKS[normalizedKey];
@@ -58,10 +62,12 @@ const Billing = () => {
     }
   };
 
+  // حساب نسبة الاستهلاك
   const usagePercentage = generationsLimit > 0 
     ? Math.min((generationsUsed / generationsLimit) * 100, 100) 
     : 0;
 
+  // تنسيق التاريخ
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return isRTL ? 'غير محدد' : 'Not set';
     return new Date(dateStr).toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
@@ -86,6 +92,7 @@ const Billing = () => {
 
         {/* Current Plan & Usage */}
         <div className="grid gap-6 md:grid-cols-2">
+          
           {/* Current Plan Card */}
           <Card className="border-primary/20">
             <CardHeader>
@@ -163,7 +170,6 @@ const Billing = () => {
                   </span>
                 </div>
               )}
-
               <div className="pt-2">
                 <p className="text-xs text-muted-foreground">
                   {isRTL 
@@ -175,7 +181,7 @@ const Billing = () => {
           </Card>
         </div>
 
-        {/* Upgrade Plans */}
+        {/* Upgrade Plans (Cards) */}
         <div>
           <h2 className="text-xl font-semibold mb-4">
             {isRTL ? 'ترقية خطتك' : 'Upgrade Your Plan'}
