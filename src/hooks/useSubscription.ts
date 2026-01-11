@@ -33,6 +33,15 @@ export const PLANS: Record<string, PlanDetails> = {
     featuresAr: ['10 توليدات/شهر', 'قوالب أساسية', 'دعم بالبريد'],
     generations: 10,
   },
+  start: {
+    name: 'Start',
+    nameAr: 'البداية',
+    price: 9,
+    priceAr: '9$/شهر',
+    features: ['100 generations/month', 'All templates', 'Email support', 'Basic analytics'],
+    featuresAr: ['100 توليد/شهر', 'جميع القوالب', 'دعم بالبريد', 'تحليلات أساسية'],
+    generations: 100,
+  },
   pro: {
     name: 'Professional',
     nameAr: 'احترافي',
