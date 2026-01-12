@@ -1,131 +1,72 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-export interface Subscription {
-  id: string;
-  plan: string;
-  status: string;
-  stripe_subscription_id: string | null;
-  stripe_customer_id: string | null;
-  expires_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PlanDetails {
-  name: string;
-  nameAr: string;
-  price: number;
-  priceAr: string;
-  features: string[];
-  featuresAr: string[];
-  generations: number;
-}
-
-export const PLANS: Record<string, PlanDetails> = {
+export const PLANS = {
   free: {
-    name: 'Free',
-    nameAr: 'مجاني',
+    name: "Free Trial",
+    nameAr: "تجربة مجانية",
     price: 0,
-    priceAr: 'مجاناً',
-    features: ['10 generations/month', 'Basic templates', 'Email support'],
-    featuresAr: ['10 توليدات/شهر', 'قوالب أساسية', 'دعم بالبريد'],
-    generations: 10,
+    features: ["5 credits total", "Try all tools", "Standard speed"],
+    featuresAr: ["5 محاولات مجانية", "تجرية كل الأدوات", "سرعة عادية"],
+    limit: 5
   },
   start: {
-    name: 'Start',
-    nameAr: 'البداية',
-    price: 9,
-    priceAr: '9$/شهر',
-    features: ['100 generations/month', 'All templates', 'Email support', 'Basic analytics'],
-    featuresAr: ['100 توليد/شهر', 'جميع القوالب', 'دعم بالبريد', 'تحليلات أساسية'],
-    generations: 100,
+    name: "Starter",
+    nameAr: "تاجر (بداية)",
+    price: 5,
+    features: ["50 Products/mo", "Ads Copywriting", "Basic Support"],
+    featuresAr: ["وصف 50 منتج شهرياً", "كتابة إعلانات احترافية", "دعم فني أساسي"],
+    limit: 50
   },
   pro: {
-    name: 'Professional',
-    nameAr: 'احترافي',
+    name: "Pro",
+    nameAr: "المحترف (الأكثر طلباً)",
+    price: 12,
+    features: ["Unlimited Text", "50 AI Images", "Competitor Analysis", "Priority Support"],
+    featuresAr: ["نصوص لا محدودة ♾️", "50 صورة بالذكاء الاصطناعي", "تحليل المنافسين", "أولوية في الدعم"],
+    limit: 1000 // رقم كبير يعامل معاملة اللامحدود للنصوص
+  },
+  enterprise: {
+    name: "Business",
+    nameAr: "بيزنس (شركات)",
     price: 29,
-    priceAr: '29$/شهر',
-    features: ['500 generations/month', 'All templates', 'Priority support', 'Advanced analytics'],
-    featuresAr: ['500 توليد/شهر', 'جميع القوالب', 'دعم أولوية', 'تحليلات متقدمة'],
-    generations: 500,
-  },
-  business: {
-    name: 'Business',
-    nameAr: 'أعمال',
-    price: 99,
-    priceAr: '99$/شهر',
-    features: ['Unlimited generations', 'All features', '24/7 support', 'API access', 'Custom branding'],
-    featuresAr: ['توليدات غير محدودة', 'جميع المميزات', 'دعم 24/7', 'وصول API', 'علامة تجارية مخصصة'],
-    generations: -1, // Unlimited
-  },
+    features: ["Unlimited Everything", "High-Res Images", "Direct WhatsApp Support", "Early Access"],
+    featuresAr: ["كل شيء لا محدود 🚀", "صور بدقة عالية 4K", "دعم مباشر واتساب", "وصول مبكر للتحديثات"],
+    limit: -1
+  }
 };
 
-export function useSubscription() {
+export const useSubscription = () => {
   const { user } = useAuth();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchSubscription = async () => {
-    if (!user) {
-      setSubscription(null);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-
-      if (!data) {
-        // Create default free subscription
-        const { data: newSub, error: insertError } = await supabase
-          .from('subscriptions')
-          .insert({
-            user_id: user.id,
-            plan: 'free',
-            status: 'active',
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setSubscription(newSub);
-      } else {
-        setSubscription(data);
-      }
-    } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching subscription:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSubscription();
-  }, [user]);
+  const { data: subscription, isLoading } = useQuery({
+    queryKey: ["subscription", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("plan, subscription_status, subscription_end_date")
+        .eq("id", user.id)
+        .single();
+      
+      if (error) return null;
+      return {
+        plan: data.plan || 'free',
+        status: data.subscription_status,
+        expires_at: data.subscription_end_date
+      };
+    },
+    enabled: !!user,
+  });
 
   const currentPlan = subscription?.plan || 'free';
-  const planDetails = PLANS[currentPlan] || PLANS.free;
+  const planDetails = PLANS[currentPlan as keyof typeof PLANS] || PLANS.free;
 
   return {
     subscription,
-    isLoading,
-    error,
     currentPlan,
     planDetails,
-    refreshSubscription: fetchSubscription,
+    isLoading
   };
-}
+};
