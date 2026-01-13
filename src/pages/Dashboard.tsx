@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   FileText,
   Megaphone,
-  Calendar,
   Palette,
   Target,
   ArrowRight,
@@ -12,7 +11,8 @@ import {
   Zap,
   TrendingUp,
   Users,
-  Brain,
+  Video,
+  Search,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -39,15 +39,12 @@ export default function Dashboard() {
 
   const fetchStats = async () => {
     if (!user) return;
-
     try {
-      // Fetch history count
       const { count: historyCount } = await supabase
         .from("history")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id);
 
-      // Fetch leads count
       const { count: leadsCount } = await supabase
         .from("leads")
         .select("*", { count: "exact", head: true })
@@ -63,75 +60,84 @@ export default function Dashboard() {
     }
   };
 
-  // الصف الرئيسي - الأهم
+  // ------------------------------------------------------------------
+  // 1. الأدوات الأساسية (Core Tools)
+  // ------------------------------------------------------------------
   const mainTools = [
     {
       icon: Palette,
       title: isRTL ? "مصنع الكريتيفات" : "Creative Factory",
       description: isRTL 
-        ? "ولّد صور منتجات + تصميمات إعلانات + اقتراحات ألوان وخطوط جاهزة للمصمم" 
-        : "Generate product photos, ad designs & color/font suggestions ready for designers",
+        ? "تصميم صور منتجات وإعلانات سوشيال ميديا بضغطة زر" 
+        : "Generate product photos & social media ads instantly",
       path: "/dashboard/creative-factory",
-      color: "from-purple-500 to-pink-600",
-      badge: isRTL ? "الأكثر استخداماً" : "Most Used",
+      color: "text-purple-600",
+      bgColor: "bg-purple-100 dark:bg-purple-900/20",
+      badge: isRTL ? "الأكثر استخداماً" : "Popular",
     },
     {
       icon: Megaphone,
-      title: isRTL ? "مولّد الحملات الإعلانية" : "Ad Campaign Generator",
+      title: isRTL ? "كاتب الإعلانات" : "Ad Copywriter",
       description: isRTL 
-        ? "نسخ إعلانات كاملة لميتا وتيك توك + زوايا مختلفة + هيكل الحملة" 
-        : "Complete ad copies for Meta & TikTok + angles + campaign structure",
+        ? "نصوص إعلانية مقنعة لفيسبوك، إنستجرام، وتيك توك" 
+        : "Persuasive ad copies for Facebook, Instagram & TikTok",
       path: "/dashboard/ads-copy",
-      color: "from-pink-500 to-rose-600",
-      badge: null,
+      color: "text-pink-600",
+      bgColor: "bg-pink-100 dark:bg-pink-900/20",
     },
     {
       icon: FileText,
-      title: isRTL ? "مولّد صفحة المنتج" : "Product Page Generator",
+      title: isRTL ? "وصف المنتجات" : "Product Descriptions",
       description: isRTL 
-        ? "عنوان + وصف + نقاط فوائد + FAQ من نفس داتا الإعلان" 
-        : "Title + description + benefits + FAQ from your ad data",
+        ? "اكتب وصف بيعي احترافي يزود مبيعات متجرك" 
+        : "Write professional product descriptions that sell",
       path: "/dashboard/product-copy",
-      color: "from-blue-500 to-indigo-600",
-      badge: null,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100 dark:bg-blue-900/20",
     },
   ];
 
-  // الصف الثاني - الداعم
-  const supportTools = [
+  // ------------------------------------------------------------------
+  // 2. أدوات الفيديو والنمو (New Tools)
+  // ------------------------------------------------------------------
+  const growthTools = [
     {
-      icon: Calendar,
-      title: isRTL ? "مخطّط سريع للحملة" : "Quick Campaign Planner",
+      icon: Video,
+      title: isRTL ? "صانع سكريبتات الفيديو" : "Video Script Maker",
       description: isRTL 
-        ? "جدول الجمهور والزوايا والميزانية + Checklist قبل الإطلاق" 
-        : "Audience, angles & budget table + pre-launch checklist",
-      path: "/dashboard/campaign",
-      color: "from-amber-500 to-orange-600",
+        ? "اكتب سكريبتات ريلز وتيك توك فيرال لمنتجاتك" 
+        : "Create viral scripts for TikTok & Reels instantly",
+      path: "/dashboard/video-scripts",
+      color: "text-red-600",
+      bgColor: "bg-red-100 dark:bg-red-900/20",
+      badge: isRTL ? "جديد 🔥" : "New",
+    },
+    {
+      icon: Search,
+      title: isRTL ? "محسن محركات البحث" : "E-commerce SEO",
+      description: isRTL 
+        ? "حسن ظهور منتجاتك في جوجل وزود الزيارات المجانية" 
+        : "Optimize your products for Google & get free traffic",
+      path: "/dashboard/seo-analyzer",
+      color: "text-green-600",
+      bgColor: "bg-green-100 dark:bg-green-900/20",
     },
     {
       icon: Target,
-      title: isRTL ? "محلّل الأداء والمنافسين" : "Performance & Competitor Analyzer",
+      title: isRTL ? "تحليل المنافسين" : "Competitor Analysis",
       description: isRTL 
-        ? "حلّل كريتيفاتك الأفضل + أفكار من المنافسين بأسلوبك" 
-        : "Analyze your best creatives + competitor-inspired ideas",
+        ? "تجسس على إعلانات منافسيك واعرف سر نجاحهم" 
+        : "Spy on competitors' ads and learn their secrets",
       path: "/dashboard/competitor",
-      color: "from-violet-500 to-purple-600",
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-100 dark:bg-indigo-900/20",
     },
   ];
-
-  // Featured tool - Growth Console
-  const featuredTool = {
-    icon: Brain,
-    title: isRTL ? "مركز النمو الذكي" : "AI Growth Console",
-    description: isRTL ? "مستشار أعمالك الشخصي - تحليل وتشخيص وتوصيات ذكية لنمو متجرك" : "Your personal business advisor - analyze, diagnose & smart recommendations",
-    path: "/dashboard/growth-console",
-    color: "from-violet-500 to-purple-600",
-  };
 
   const statsData = [
     { label: isRTL ? "محتوى مولد" : "Content Generated", value: stats.contentGenerated.toString(), icon: FileText },
     { label: isRTL ? "العملاء المحتملين" : "Leads", value: stats.leadsCount.toString(), icon: Users },
-    { label: isRTL ? "وقت موفر" : "Time Saved", value: `${stats.timeSaved}h`, icon: Clock },
+    { label: isRTL ? "ساعات موفرة" : "Time Saved", value: `${stats.timeSaved}h`, icon: Clock },
   ];
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
@@ -139,11 +145,10 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Usage Banner */}
         <UsageBanner />
         
         {/* Welcome Section */}
-        <div className="glass-card rounded-2xl p-6 md:p-8 relative overflow-hidden">
+        <div className="glass-card rounded-2xl p-6 md:p-8 relative overflow-hidden border-primary/20">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
@@ -157,7 +162,7 @@ export default function Dashboard() {
                 {isRTL ? `مرحباً${firstName ? ` ${firstName}` : ""}! 👋` : `Welcome${firstName ? ` ${firstName}` : ""}! 👋`}
               </h1>
               <p className="text-muted-foreground">
-                {t("chooseToolBelow")}
+                {isRTL ? "جاهز لمضاعفة مبيعاتك اليوم؟ اختر أداة وابدأ." : "Ready to scale your sales? Pick a tool to start."}
               </p>
             </div>
             <Link to="/dashboard/product-copy">
@@ -172,10 +177,7 @@ export default function Dashboard() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {statsData.map((stat, index) => (
-            <div
-              key={index}
-              className="glass-card rounded-xl p-5 flex items-center gap-4"
-            >
+            <div key={index} className="glass-card rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition-all">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                 <stat.icon className="w-6 h-6 text-primary" />
               </div>
@@ -187,70 +189,35 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Featured Tool - Growth Console */}
-        <Link
-          to={featuredTool.path}
-          className="feature-card group lg:col-span-3 md:col-span-2 bg-gradient-to-r from-violet-500/5 to-purple-500/5 border-violet-500/20"
-        >
-          <div className="flex flex-row items-center gap-6">
-            <div
-              className="w-16 h-16 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300"
-            >
-              <featuredTool.icon className="w-8 h-8 text-white" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
-                {featuredTool.title}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                {featuredTool.description}
-              </p>
-              <div className="flex items-center text-sm text-primary font-medium">
-                {isRTL ? "ابدأ الآن" : "Get Started"}
-                <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Main Tools - الصف الرئيسي */}
+        {/* Main Tools Section */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             {isRTL ? "الأدوات الأساسية" : "Core Tools"}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {mainTools.map((tool, index) => (
-              <Link
-                key={index}
-                to={tool.path}
-                className="feature-card group relative"
-              >
+              <Link key={index} to={tool.path} className="feature-card group relative overflow-hidden">
                 {tool.badge && (
-                  <span className="absolute top-3 left-3 px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                  <span className="absolute top-3 left-3 px-2 py-1 text-xs font-bold bg-primary text-primary-foreground rounded-full shadow-sm z-10">
                     {tool.badge}
                   </span>
                 )}
-                <div className="flex flex-col">
-                  <div
-                    className="w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
-                    style={{ background: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
-                  >
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center`}>
-                      <tool.icon className="w-6 h-6 text-white" />
-                    </div>
+                <div className="flex flex-col h-full">
+                  <div className={`w-14 h-14 rounded-2xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <tool.icon className={`w-7 h-7 ${tool.color}`} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
                       {tool.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                       {tool.description}
                     </p>
-                    <div className="flex items-center text-sm text-primary font-medium">
-                      {isRTL ? "ابدأ الآن" : "Get Started"}
-                      <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
-                    </div>
+                  </div>
+                  <div className="flex items-center text-sm text-primary font-medium mt-auto pt-2">
+                    {isRTL ? "جرب الآن" : "Try Now"}
+                    <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
                   </div>
                 </div>
               </Link>
@@ -258,37 +225,25 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Support Tools - الصف الداعم */}
+        {/* Growth Tools Section */}
         <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-accent" />
-            {isRTL ? "أدوات التحليل والتخطيط" : "Analysis & Planning Tools"}
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-violet-500" />
+            {isRTL ? "أدوات الفيديو والنمو" : "Video & Growth Tools"}
           </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            {supportTools.map((tool, index) => (
-              <Link
-                key={index}
-                to={tool.path}
-                className="feature-card group"
-              >
-                <div className="flex flex-col">
-                  <div
-                    className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}
-                  >
-                    <tool.icon className="w-6 h-6 text-white" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {growthTools.map((tool, index) => (
+              <Link key={index} to={tool.path} className="feature-card group">
+                <div className="flex flex-col h-full">
+                  <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
+                    <tool.icon className={`w-6 h-6 ${tool.color}`} />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {tool.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {tool.description}
-                    </p>
-                    <div className="flex items-center text-sm text-primary font-medium">
-                      {isRTL ? "ابدأ الآن" : "Get Started"}
-                      <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
-                    </div>
-                  </div>
+                  <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
+                    {tool.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                    {tool.description}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -296,35 +251,27 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Tips */}
-        <div className="glass-card rounded-2xl p-6">
+        <div className="glass-card rounded-2xl p-6 border-accent/20 bg-accent/5">
           <div className="flex items-center gap-2 mb-4">
             <Zap className="w-5 h-5 text-accent" />
-            <h2 className="text-lg font-semibold">{t("quickTips")}</h2>
+            <h2 className="text-lg font-bold">{t("quickTips")}</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-secondary/50">
-              <h3 className="font-medium mb-1">{t("beSpecific")}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t("beSpecificDesc")}
-              </p>
+            <div className="p-4 rounded-xl bg-background/50 border border-border/50">
+              <h3 className="font-bold mb-1 text-sm">{t("beSpecific")}</h3>
+              <p className="text-xs text-muted-foreground">{t("beSpecificDesc")}</p>
             </div>
-            <div className="p-4 rounded-xl bg-secondary/50">
-              <h3 className="font-medium mb-1">{t("iterateRefine")}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t("iterateRefineDesc")}
-              </p>
+            <div className="p-4 rounded-xl bg-background/50 border border-border/50">
+              <h3 className="font-bold mb-1 text-sm">{t("iterateRefine")}</h3>
+              <p className="text-xs text-muted-foreground">{t("iterateRefineDesc")}</p>
             </div>
-            <div className="p-4 rounded-xl bg-secondary/50">
-              <h3 className="font-medium mb-1">{isRTL ? "استخدم القوالب" : "Use Templates"}</h3>
-              <p className="text-sm text-muted-foreground">
-                {isRTL ? "استخدم القوالب الجاهزة للبدء بسرعة" : "Use ready templates to start quickly"}
-              </p>
+            <div className="p-4 rounded-xl bg-background/50 border border-border/50">
+              <h3 className="font-bold mb-1 text-sm">{isRTL ? "استخدم القوالب" : "Use Templates"}</h3>
+              <p className="text-xs text-muted-foreground">{isRTL ? "ابدأ بالقوالب الجاهزة لنتائج أسرع." : "Start with templates for faster results."}</p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Sales Chatbot */}
       <SalesChatbot />
     </DashboardLayout>
   );
