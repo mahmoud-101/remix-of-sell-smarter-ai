@@ -76,16 +76,6 @@ export default function Dashboard() {
       badge: isRTL ? "الأكثر استخداماً" : "Popular",
     },
     {
-      icon: Megaphone,
-      title: isRTL ? "كاتب الإعلانات" : "Ad Copywriter",
-      description: isRTL 
-        ? "نصوص إعلانية مقنعة لفيسبوك، إنستجرام، وتيك توك" 
-        : "Persuasive ad copies for Facebook, Instagram & TikTok",
-      path: "/dashboard/ads-copy",
-      color: "text-pink-600",
-      bgColor: "bg-pink-100 dark:bg-pink-900/20",
-    },
-    {
       icon: FileText,
       title: isRTL ? "وصف المنتجات" : "Product Descriptions",
       description: isRTL 
@@ -95,29 +85,39 @@ export default function Dashboard() {
       color: "text-blue-600",
       bgColor: "bg-blue-100 dark:bg-blue-900/20",
     },
+    {
+      icon: Megaphone,
+      title: isRTL ? "كاتب الإعلانات" : "Ad Copywriter",
+      description: isRTL 
+        ? "نصوص إعلانية مقنعة لفيسبوك، إنستجرام، وتيك توك" 
+        : "Persuasive ad copies for Facebook, Instagram & TikTok",
+      path: "/dashboard/ads-copy",
+      color: "text-pink-600",
+      bgColor: "bg-pink-100 dark:bg-pink-900/20",
+    },
   ];
 
   // ------------------------------------------------------------------
-  // 2. أدوات الفيديو والنمو (New Tools)
+  // 2. أدوات الفيديو والنمو (New Tools - Video & SEO)
   // ------------------------------------------------------------------
   const growthTools = [
     {
       icon: Video,
       title: isRTL ? "صانع سكريبتات الفيديو" : "Video Script Maker",
       description: isRTL 
-        ? "اكتب سكريبتات ريلز وتيك توك فيرال لمنتجاتك" 
+        ? "اكتب سكريبتات ريلز وتيك توك فيرال (Viral) لمنتجاتك" 
         : "Create viral scripts for TikTok & Reels instantly",
-      path: "/dashboard/video-scripts",
+      path: "/dashboard/video-scripts", 
       color: "text-red-600",
       bgColor: "bg-red-100 dark:bg-red-900/20",
       badge: isRTL ? "جديد 🔥" : "New",
     },
     {
       icon: Search,
-      title: isRTL ? "محسن محركات البحث" : "E-commerce SEO",
+      title: isRTL ? "خبير سيو المتاجر" : "E-commerce SEO",
       description: isRTL 
-        ? "حسن ظهور منتجاتك في جوجل وزود الزيارات المجانية" 
-        : "Optimize your products for Google & get free traffic",
+        ? "حسن منتجاتك لتظهر في الصفحة الأولى من جوجل" 
+        : "Optimize products to rank #1 on Google Search",
       path: "/dashboard/seo-analyzer",
       color: "text-green-600",
       bgColor: "bg-green-100 dark:bg-green-900/20",
@@ -126,8 +126,8 @@ export default function Dashboard() {
       icon: Target,
       title: isRTL ? "تحليل المنافسين" : "Competitor Analysis",
       description: isRTL 
-        ? "تجسس على إعلانات منافسيك واعرف سر نجاحهم" 
-        : "Spy on competitors' ads and learn their secrets",
+        ? "تجسس على إعلانات منافسيك واعرف نقاط قوتهم" 
+        : "Spy on competitors' ads and uncover their secrets",
       path: "/dashboard/competitor",
       color: "text-indigo-600",
       bgColor: "bg-indigo-100 dark:bg-indigo-900/20",
