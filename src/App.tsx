@@ -46,8 +46,8 @@ const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"), "Rese
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"), "Dashboard");
 const ProductCopy = lazyWithRetry(() => import("./pages/ProductCopy"), "ProductCopy");
 const AdsCopy = lazyWithRetry(() => import("./pages/AdsCopy"), "AdsCopy");
-const CampaignPlanner = lazyWithRetry(() => import("./pages/CampaignPlanner"), "CampaignPlanner");
-const DesignAdvisor = lazyWithRetry(() => import("./pages/DesignAdvisor"), "DesignAdvisor");
+const VideoScripts = lazyWithRetry(() => import("./pages/VideoScripts"), "VideoScripts");
+const SEOAnalyzer = lazyWithRetry(() => import("./pages/SEOAnalyzer"), "SEOAnalyzer");
 const CompetitorAnalysis = lazyWithRetry(() => import("./pages/CompetitorAnalysis"), "CompetitorAnalysis");
 const History = lazyWithRetry(() => import("./pages/History"), "History");
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
@@ -179,18 +179,18 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/dashboard/campaign"
+          path="/dashboard/video-scripts"
           element={
             <ProtectedRoute>
-              <CampaignPlanner />
+              <VideoScripts />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/dashboard/design"
+          path="/dashboard/seo-analyzer"
           element={
             <ProtectedRoute>
-              <DesignAdvisor />
+              <SEOAnalyzer />
             </ProtectedRoute>
           }
         />
