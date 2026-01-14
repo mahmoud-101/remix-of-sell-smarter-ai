@@ -44,17 +44,33 @@ export const useSubscription = () => {
     queryKey: ["subscription", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const { data, error } = await supabase
+      
+      // Try to get subscription from subscriptions table first
+      const { data: subData } = await supabase
+        .from("subscriptions")
+        .select("plan, status, expires_at")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (subData) {
+        return {
+          plan: subData.plan || 'free',
+          status: subData.status,
+          expires_at: subData.expires_at
+        };
+      }
+      
+      // Fallback to profiles table
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("plan, subscription_status, subscription_end_date")
+        .select("plan")
         .eq("id", user.id)
         .single();
       
-      if (error) return null;
       return {
-        plan: data.plan || 'free',
-        status: data.subscription_status,
-        expires_at: data.subscription_end_date
+        plan: profileData?.plan || 'free',
+        status: 'active',
+        expires_at: null
       };
     },
     enabled: !!user,
