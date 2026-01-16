@@ -238,7 +238,7 @@ export default function Landing() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-12 px-4 relative overflow-hidden">
+      <section className="pt-32 pb-16 px-4 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
@@ -246,67 +246,87 @@ export default function Landing() {
         </div>
 
         <div className="container mx-auto max-w-6xl relative">
-          <div className="text-center space-y-6 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+          <div className="text-center space-y-8 animate-fade-in">
+            {/* Trust Badge */}
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-bold">
               <Zap className="w-4 h-4" />
-              {t("heroTagline")}
+              {isRTL ? "🚀 أكثر من 10,000 متجر يثقون بنا" : "🚀 Trusted by 10,000+ Stores"}
             </div>
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-balance">
+            
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-balance leading-tight">
               {isRTL ? (
                 <>
-                  ضاعف مبيعاتك
-                  <span className="gradient-text"> بالذكاء الاصطناعي</span>
+                  <span className="gradient-text">طلّع حملتك الإعلانية كاملة</span>
                   <br />
-                  <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-normal mt-2 block">
-                    محتوى تسويقي احترافي في ثوانٍ
-                  </span>
+                  <span className="text-foreground">في أقل من 5 دقائق ⚡</span>
                 </>
               ) : (
                 <>
-                  Double Your Sales
-                  <span className="gradient-text"> With AI</span>
+                  <span className="gradient-text">Launch Your Complete Ad Campaign</span>
                   <br />
-                  <span className="text-2xl md:text-3xl lg:text-4xl text-muted-foreground font-normal mt-2 block">
-                    Professional Marketing Content in Seconds
-                  </span>
+                  <span className="text-foreground">in Under 5 Minutes ⚡</span>
                 </>
               )}
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
+            
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto text-balance font-medium leading-relaxed">
               {isRTL 
-                ? "أنشئ وصف منتجات جذاب، إعلانات عالية التحويل، وتصاميم مذهلة - كل ذلك بالذكاء الاصطناعي. وفر ساعات من العمل وزد مبيعاتك حتى 40%."
-                : "Create engaging product descriptions, high-converting ads, and stunning designs - all powered by AI. Save hours of work and increase your sales by up to 40%."}
+                ? "وصف منتجات + نصوص إعلانية + سكريبتات فيديو + صور احترافية = كل اللي تحتاجه لمضاعفة مبيعاتك بالذكاء الاصطناعي 🎯"
+                : "Product descriptions + Ad copies + Video scripts + Professional photos = Everything you need to double your sales with AI 🎯"}
             </p>
+            
+            {/* Stats inline */}
+            <div className="flex flex-wrap items-center justify-center gap-8 py-4">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-primary">+40%</div>
+                <div className="text-sm text-muted-foreground">{isRTL ? "زيادة في المبيعات" : "Sales Increase"}</div>
+              </div>
+              <div className="w-px h-12 bg-border hidden sm:block" />
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-primary">5 {isRTL ? "دقائق" : "min"}</div>
+                <div className="text-sm text-muted-foreground">{isRTL ? "لإنشاء حملة كاملة" : "Complete Campaign"}</div>
+              </div>
+              <div className="w-px h-12 bg-border hidden sm:block" />
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-black text-primary">24/7</div>
+                <div className="text-sm text-muted-foreground">{isRTL ? "يعمل بدون توقف" : "Always Available"}</div>
+              </div>
+            </div>
+            
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link to="/signup">
-                <Button variant="hero" size="xl" className="group min-w-[280px]">
-                  {isRTL ? "ابدأ مجاناً - بدون بطاقة ائتمان" : "Start Free - No Credit Card"}
+                <Button variant="hero" size="xl" className="group min-w-[320px] text-lg h-14">
+                  {isRTL ? "🎁 جرّب مجاناً - بدون بطاقة ائتمان" : "🎁 Try Free - No Credit Card"}
                   <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                 </Button>
               </Link>
               <a href="#demo">
-                <Button variant="hero-outline" size="xl" className="group min-w-[200px]">
+                <Button variant="hero-outline" size="xl" className="group min-w-[200px] h-14">
                   <Play className="w-5 h-5" />
-                  {t("viewDemo")}
+                  {isRTL ? "شوف كيف يعمل" : "See How It Works"}
                 </Button>
               </a>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {t("noCreditCard")}
+            
+            <p className="text-sm text-muted-foreground flex items-center justify-center gap-2">
+              <Shield className="w-4 h-4" />
+              {isRTL ? "آمن 100% • إلغاء في أي وقت • بدون التزام" : "100% Secure • Cancel Anytime • No Commitment"}
             </p>
           </div>
 
           {/* Benefits list */}
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
-            {benefits.map((benefit, index) => (
+            {[
+              isRTL ? "✅ وصف منتجات بيعي" : "✅ Selling Product Descriptions",
+              isRTL ? "✅ إعلانات عالية التحويل" : "✅ High-Converting Ads", 
+              isRTL ? "✅ سكريبتات فيرال" : "✅ Viral Scripts",
+              isRTL ? "✅ صور احترافية" : "✅ Professional Photos",
+            ].map((benefit, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 text-sm text-muted-foreground animate-fade-in"
+                className="flex items-center gap-2 text-sm font-medium text-foreground/80 animate-fade-in bg-card/50 px-4 py-2 rounded-full border border-border/50"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Check className="w-3 h-3 text-primary" />
-                </div>
                 {benefit}
               </div>
             ))}
@@ -332,26 +352,29 @@ export default function Landing() {
       </div>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4">
+      <section id="features" className="py-20 px-4 bg-gradient-to-b from-background to-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 text-accent text-sm font-bold mb-6">
+              {isRTL ? "🛠️ أدوات قوية" : "🛠️ Powerful Tools"}
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black mb-6">
               {isRTL ? (
                 <>
-                  6 أدوات قوية
-                  <span className="gradient-text"> لتنمية أعمالك</span>
+                  كل اللي تحتاجه في
+                  <span className="gradient-text"> مكان واحد</span>
                 </>
               ) : (
                 <>
-                  6 Powerful Tools to
-                  <span className="gradient-text"> Scale Your Business</span>
+                  Everything You Need in
+                  <span className="gradient-text"> One Place</span>
                 </>
               )}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {isRTL
-                ? "أدوات ذكاء اصطناعي متخصصة لبائعي التجارة الإلكترونية والوكالات والمسوقين."
-                : "AI tools designed specifically for e-commerce sellers, agencies, and marketers."}
+                ? "6 أدوات ذكاء اصطناعي صُممت خصيصاً لأصحاب المتاجر والمسوقين - وفر ساعات من العمل يومياً"
+                : "6 AI tools designed specifically for store owners and marketers - save hours of work daily"}
             </p>
           </div>
 
@@ -400,30 +423,34 @@ export default function Landing() {
       <FAQSection />
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-24 px-4 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto max-w-4xl">
-          <div className="glass-card rounded-3xl p-8 md:p-12 text-center relative overflow-hidden">
+          <div className="glass-card rounded-3xl p-8 md:p-14 text-center relative overflow-hidden border-primary/20">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 animate-bounce-in">
-                <Shield className="w-8 h-8 text-primary" />
+              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-8 animate-bounce-in">
+                <Zap className="w-10 h-10 text-primary" />
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                {isRTL ? "مستعد لتضاعف مبيعاتك؟" : "Ready to Double Your Sales?"}
+              <h2 className="text-3xl md:text-5xl font-black mb-6">
+                {isRTL ? "جاهز تبدأ تبيع أكتر؟ 🚀" : "Ready to Sell More? 🚀"}
               </h2>
-              <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+              <p className="text-xl text-muted-foreground max-w-xl mx-auto mb-10">
                 {isRTL 
-                  ? "انضم لأكثر من 10,000 بائع ومسوق يستخدمون سيل جينيوس لتنمية أعمالهم. ابدأ تجربتك المجانية اليوم."
-                  : "Join over 10,000 sellers and marketers using SellGenius to grow their businesses. Start your free trial today."}
+                  ? "انضم لأكثر من 10,000 متجر يستخدمون سيل جينيوس لمضاعفة مبيعاتهم. ابدأ مجاناً الآن!"
+                  : "Join 10,000+ stores using SellGenius to double their sales. Start free now!"}
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link to="/signup">
-                  <Button variant="gradient" size="xl" className="group">
-                    {t("getStartedFree")}
+                  <Button variant="hero" size="xl" className="group min-w-[320px] text-lg h-14">
+                    {isRTL ? "🎁 ابدأ مجاناً الآن" : "🎁 Start Free Now"}
                     <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                   </Button>
                 </Link>
               </div>
+              <p className="text-sm text-muted-foreground mt-6 flex items-center justify-center gap-2">
+                <Shield className="w-4 h-4" />
+                {isRTL ? "بدون بطاقة ائتمان • إلغاء في أي وقت" : "No credit card • Cancel anytime"}
+              </p>
             </div>
           </div>
         </div>
