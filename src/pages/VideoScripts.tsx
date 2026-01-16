@@ -21,7 +21,11 @@ const VideoScripts = () => {
   const [platform, setPlatform] = useState("tiktok");
   const [duration, setDuration] = useState("30");
   const [style, setStyle] = useState("viral");
-  const [result, setResult] = useState("");
+  const [result, setResult] = useState<{
+    scripts?: Array<{ hook: string; body: string; cta: string }>;
+    viral_elements?: string[];
+    best_posting_times?: string[];
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   
   const { generate, isLoading } = useAI("video-script");
@@ -45,12 +49,28 @@ const VideoScripts = () => {
     });
     
     if (response) {
-      setResult(response);
+      try {
+        const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+        setResult(parsed);
+      } catch {
+        // If parsing fails, create a simple structure
+        setResult({ scripts: [{ hook: "", body: response, cta: "" }] });
+      }
     }
   };
 
+  const getFormattedResult = () => {
+    if (!result) return "";
+    if (result.scripts) {
+      return result.scripts.map((script, i) => 
+        `${isRTL ? "سكريبت" : "Script"} ${i + 1}:\n${isRTL ? "الهوك" : "Hook"}: ${script.hook}\n${isRTL ? "المحتوى" : "Body"}: ${script.body}\n${isRTL ? "الدعوة للإجراء" : "CTA"}: ${script.cta}`
+      ).join("\n\n");
+    }
+    return JSON.stringify(result, null, 2);
+  };
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(result);
+    navigator.clipboard.writeText(getFormattedResult());
     setCopied(true);
     toast({
       title: isRTL ? "تم النسخ!" : "Copied!",
@@ -224,10 +244,48 @@ const VideoScripts = () => {
             </CardHeader>
             <CardContent>
               {result ? (
-                <div className="bg-muted/50 rounded-lg p-4 min-h-[300px]">
-                  <pre className="whitespace-pre-wrap text-sm leading-relaxed font-sans">
-                    {result}
-                  </pre>
+                <div className="space-y-4">
+                  {result.scripts?.map((script, index) => (
+                    <div key={index} className="bg-muted/50 rounded-lg p-4 space-y-3">
+                      <div className="font-bold text-primary">
+                        {isRTL ? `سكريبت ${index + 1}` : `Script ${index + 1}`}
+                      </div>
+                      <div>
+                        <span className="font-semibold text-orange-500">{isRTL ? "🎯 الهوك: " : "🎯 Hook: "}</span>
+                        <span>{script.hook}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-blue-500">{isRTL ? "📝 المحتوى: " : "📝 Body: "}</span>
+                        <span>{script.body}</span>
+                      </div>
+                      <div>
+                        <span className="font-semibold text-green-500">{isRTL ? "🚀 الدعوة للإجراء: " : "🚀 CTA: "}</span>
+                        <span>{script.cta}</span>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {result.viral_elements && result.viral_elements.length > 0 && (
+                    <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-4">
+                      <div className="font-bold mb-2">🔥 {isRTL ? "عناصر فيرال" : "Viral Elements"}</div>
+                      <ul className="list-disc list-inside space-y-1 text-sm">
+                        {result.viral_elements.map((element, i) => (
+                          <li key={i}>{element}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {result.best_posting_times && result.best_posting_times.length > 0 && (
+                    <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
+                      <div className="font-bold mb-2">⏰ {isRTL ? "أفضل أوقات النشر" : "Best Posting Times"}</div>
+                      <div className="flex flex-wrap gap-2">
+                        {result.best_posting_times.map((time, i) => (
+                          <span key={i} className="bg-background px-2 py-1 rounded text-sm">{time}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center min-h-[300px] text-muted-foreground">
