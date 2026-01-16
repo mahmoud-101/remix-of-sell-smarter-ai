@@ -3,7 +3,6 @@ import {
   Sparkles,
   FileText,
   Megaphone,
-  Calendar,
   Palette,
   Target,
   ArrowRight,
@@ -51,34 +50,48 @@ export default function Landing() {
 
   const features = [
     {
+      icon: Palette,
+      title: isRTL ? "مصنع الكريتيفات" : "Creative Factory",
+      description: isRTL 
+        ? "صمم صور منتجات وإعلانات سوشيال ميديا احترافية بالذكاء الاصطناعي بضغطة زر واحدة." 
+        : "Design professional product photos and social media ads with AI in one click.",
+      badge: isRTL ? "الأكثر استخداماً" : "Most Popular",
+    },
+    {
       icon: FileText,
-      title: t("featureProductCopy"),
-      description: t("featureProductCopyDesc"),
+      title: isRTL ? "وصف المنتجات" : "Product Descriptions",
+      description: isRTL 
+        ? "اكتب وصف منتجات بيعي واحترافي يزيد من مبيعاتك ويحسن ظهورك في محركات البحث." 
+        : "Write compelling product descriptions that boost sales and improve SEO.",
     },
     {
       icon: Megaphone,
-      title: t("featureAds"),
-      description: t("featureAdsDesc"),
+      title: isRTL ? "كاتب الإعلانات" : "Ad Copywriter",
+      description: isRTL 
+        ? "نصوص إعلانية مقنعة لفيسبوك وإنستجرام وتيك توك وجوجل مع نسخ A/B للاختبار." 
+        : "Persuasive ad copies for Facebook, Instagram, TikTok & Google with A/B variations.",
     },
     {
-      icon: Calendar,
-      title: t("featureCampaign"),
-      description: t("featureCampaignDesc"),
-    },
-    {
-      icon: Palette,
-      title: t("featureDesign"),
-      description: t("featureDesignDesc"),
-    },
-    {
-      icon: Target,
-      title: t("featureCompetitor"),
-      description: t("featureCompetitorDesc"),
+      icon: Play,
+      title: isRTL ? "سكريبتات الفيديو" : "Video Scripts",
+      description: isRTL 
+        ? "اكتب سكريبتات ريلز وتيك توك فيرال (Viral) تجذب العملاء وتزيد المبيعات." 
+        : "Create viral TikTok & Reels scripts that attract customers and boost sales.",
+      badge: isRTL ? "جديد 🔥" : "New 🔥",
     },
     {
       icon: BarChart3,
-      title: t("featureGrowth"),
-      description: t("featureGrowthDesc"),
+      title: isRTL ? "خبير السيو" : "SEO Expert",
+      description: isRTL 
+        ? "حسّن منتجاتك ومتجرك لتظهر في الصفحة الأولى من جوجل وتجلب زوار مجانيين." 
+        : "Optimize your products to rank #1 on Google and get free organic traffic.",
+    },
+    {
+      icon: Target,
+      title: isRTL ? "تحليل المنافسين" : "Competitor Analysis",
+      description: isRTL 
+        ? "تجسس على إعلانات ومنتجات منافسيك واكتشف نقاط قوتهم وضعفهم." 
+        : "Spy on competitors' ads and products to discover their strengths and weaknesses.",
     },
   ];
 
@@ -325,20 +338,20 @@ export default function Landing() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               {isRTL ? (
                 <>
-                  كل ما تحتاجه
+                  6 أدوات قوية
                   <span className="gradient-text"> لتنمية أعمالك</span>
                 </>
               ) : (
                 <>
-                  Everything You Need to
+                  6 Powerful Tools to
                   <span className="gradient-text"> Scale Your Business</span>
                 </>
               )}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {isRTL
-                ? "8 أدوات ذكاء اصطناعي قوية مصممة خصيصاً لبائعي التجارة الإلكترونية والوكالات والمسوقين."
-                : "8 powerful AI tools designed specifically for e-commerce sellers, agencies, and marketers."}
+                ? "أدوات ذكاء اصطناعي متخصصة لبائعي التجارة الإلكترونية والوكالات والمسوقين."
+                : "AI tools designed specifically for e-commerce sellers, agencies, and marketers."}
             </p>
           </div>
 
@@ -346,13 +359,18 @@ export default function Landing() {
             {features.map((feature, index) => (
               <div
                 key={index}
-                className="feature-card animate-fade-in"
+                className="feature-card animate-fade-in relative overflow-hidden group"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-primary" />
+                {feature.badge && (
+                  <span className="absolute top-3 left-3 px-3 py-1 text-xs font-bold bg-primary text-primary-foreground rounded-full shadow-sm z-10">
+                    {feature.badge}
+                  </span>
+                )}
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <feature.icon className="w-7 h-7 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{feature.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">
                   {feature.description}
                 </p>
