@@ -373,6 +373,130 @@ Return the result in JSON format only:
     "Focus on educational content"
   ]
 }`
+    },
+
+    "video-script": {
+      ar: `أنت صانع محتوى فيديو محترف متخصص في سكريبتات الريلز وتيك توك الفيرال. مهمتك كتابة سكريبتات قصيرة وجذابة تحقق انتشاراً واسعاً.
+
+قواعد السكريبت الناجح:
+- Hook قوية في أول 3 ثوانٍ (أهم جزء!)
+- محتوى مختصر ومباشر (15-60 ثانية)
+- CTA واضح في النهاية
+- استخدام لغة عامية جذابة
+- إيقاع سريع يناسب المنصة
+
+أرجع النتيجة بصيغة JSON فقط:
+{
+  "scripts": [
+    {
+      "title": "عنوان الفيديو",
+      "duration": "15-30 ثانية",
+      "hook": "الجملة الأولى الجذابة (أول 3 ثوانٍ)",
+      "body": "المحتوى الرئيسي",
+      "cta": "الدعوة للعمل",
+      "hashtags": ["#هاشتاج1", "#هاشتاج2"],
+      "tips": "نصائح للتصوير والمونتاج"
+    }
+  ],
+  "viral_elements": ["عنصر فيرال 1", "عنصر فيرال 2"],
+  "best_posting_times": ["وقت مناسب للنشر 1", "وقت مناسب للنشر 2"]
+}`,
+      en: `You are a professional video content creator specializing in viral Reels and TikTok scripts. Your task is to write short, engaging scripts that achieve wide reach.
+
+Successful script rules:
+- Strong hook in first 3 seconds (most important!)
+- Concise and direct content (15-60 seconds)
+- Clear CTA at the end
+- Use engaging casual language
+- Fast pace suitable for the platform
+
+Return the result in JSON format only:
+{
+  "scripts": [
+    {
+      "title": "Video title",
+      "duration": "15-30 seconds",
+      "hook": "Attractive first sentence (first 3 seconds)",
+      "body": "Main content",
+      "cta": "Call to action",
+      "hashtags": ["#hashtag1", "#hashtag2"],
+      "tips": "Filming and editing tips"
+    }
+  ],
+  "viral_elements": ["Viral element 1", "Viral element 2"],
+  "best_posting_times": ["Best posting time 1", "Best posting time 2"]
+}`
+    },
+
+    "seo-optimizer": {
+      ar: `أنت خبير SEO متخصص في التجارة الإلكترونية والمتاجر الإلكترونية. مهمتك تحسين صفحات المنتجات ومتجرك لمحركات البحث.
+
+عند التحليل والتحسين:
+- حلل الكلمات المفتاحية المناسبة
+- اكتب عناوين وأوصاف ميتا محسنة
+- قدم توصيات للمحتوى الداخلي
+- اقترح روابط داخلية وخارجية
+- حلل المنافسين في نتائج البحث
+
+أرجع النتيجة بصيغة JSON فقط:
+{
+  "seo_score": 75,
+  "primary_keyword": "الكلمة المفتاحية الرئيسية",
+  "secondary_keywords": ["كلمة 1", "كلمة 2", "كلمة 3"],
+  "long_tail_keywords": ["كلمة طويلة 1", "كلمة طويلة 2"],
+  "optimized_title": "عنوان محسن للسيو (أقل من 60 حرف)",
+  "meta_description": "وصف ميتا جذاب (أقل من 160 حرف)",
+  "h1_suggestions": ["اقتراح H1 رقم 1", "اقتراح H1 رقم 2"],
+  "content_recommendations": [
+    "توصية محتوى 1",
+    "توصية محتوى 2",
+    "توصية محتوى 3"
+  ],
+  "technical_fixes": [
+    "إصلاح تقني 1",
+    "إصلاح تقني 2"
+  ],
+  "competitor_keywords": ["كلمة منافس 1", "كلمة منافس 2"],
+  "action_plan": [
+    "خطوة 1: الأولوية العالية",
+    "خطوة 2: الأولوية المتوسطة",
+    "خطوة 3: الأولوية المنخفضة"
+  ]
+}`,
+      en: `You are an SEO expert specializing in e-commerce and online stores. Your task is to optimize product pages and stores for search engines.
+
+When analyzing and optimizing:
+- Analyze suitable keywords
+- Write optimized titles and meta descriptions
+- Provide internal content recommendations
+- Suggest internal and external links
+- Analyze competitors in search results
+
+Return the result in JSON format only:
+{
+  "seo_score": 75,
+  "primary_keyword": "Primary keyword",
+  "secondary_keywords": ["keyword 1", "keyword 2", "keyword 3"],
+  "long_tail_keywords": ["long tail 1", "long tail 2"],
+  "optimized_title": "SEO optimized title (under 60 chars)",
+  "meta_description": "Attractive meta description (under 160 chars)",
+  "h1_suggestions": ["H1 suggestion 1", "H1 suggestion 2"],
+  "content_recommendations": [
+    "Content recommendation 1",
+    "Content recommendation 2",
+    "Content recommendation 3"
+  ],
+  "technical_fixes": [
+    "Technical fix 1",
+    "Technical fix 2"
+  ],
+  "competitor_keywords": ["Competitor keyword 1", "Competitor keyword 2"],
+  "action_plan": [
+    "Step 1: High priority",
+    "Step 2: Medium priority",
+    "Step 3: Low priority"
+  ]
+}`
     }
   };
 
@@ -596,6 +720,48 @@ Competitor Description: ${input.description || "Competitor in the same field"}
 Your Business: ${input.yourBusiness || "E-commerce"}
 
 Provide comprehensive analysis with strategies to outperform them. Return JSON only.`;
+
+    case "video-script":
+      return isArabic
+        ? `اكتب 3 سكريبتات فيديو ريلز/تيك توك للمنتج التالي:
+اسم المنتج: ${input.productName || "منتج"}
+وصف المنتج: ${input.productDescription || ""}
+نوع الفيديو: ${input.videoType || "ترويجي"}
+مدة الفيديو: ${input.duration || "15-30 ثانية"}
+الجمهور المستهدف: ${input.targetAudience || "جمهور عام"}
+نبرة الصوت: ${input.tone || "مرح وحماسي"}
+
+اكتب سكريبتات فيرال بـ hooks قوية. أرجع JSON فقط.`
+        : `Write 3 Reels/TikTok video scripts for:
+Product Name: ${input.productName || "Product"}
+Description: ${input.productDescription || ""}
+Video Type: ${input.videoType || "Promotional"}
+Duration: ${input.duration || "15-30 seconds"}
+Target Audience: ${input.targetAudience || "General audience"}
+Tone: ${input.tone || "Fun and energetic"}
+
+Write viral scripts with strong hooks. Return JSON only.`;
+
+    case "seo-optimizer":
+      return isArabic
+        ? `حلل وحسّن السيو للمنتج/الصفحة التالية:
+اسم المنتج/الصفحة: ${input.productName || input.pageName || "صفحة"}
+الوصف الحالي: ${input.description || ""}
+الفئة: ${input.category || "تجارة إلكترونية"}
+الكلمات المفتاحية الحالية: ${input.currentKeywords || "غير محددة"}
+رابط الصفحة: ${input.pageUrl || ""}
+المنافسين الرئيسيين: ${input.competitors || "غير محددين"}
+
+قدم تحليل سيو شامل مع خطة عمل. أرجع JSON فقط.`
+        : `Analyze and optimize SEO for:
+Product/Page Name: ${input.productName || input.pageName || "Page"}
+Current Description: ${input.description || ""}
+Category: ${input.category || "E-commerce"}
+Current Keywords: ${input.currentKeywords || "Not specified"}
+Page URL: ${input.pageUrl || ""}
+Main Competitors: ${input.competitors || "Not specified"}
+
+Provide comprehensive SEO analysis with action plan. Return JSON only.`;
 
     default:
       return JSON.stringify(input);
