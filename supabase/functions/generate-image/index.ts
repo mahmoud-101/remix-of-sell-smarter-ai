@@ -1,14 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Validate authentication
+  const { data: authData, error: authError } = await validateAuth(req);
+  if (authError) {
+    return authError;
+  }
+
+  console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
     const { prompt, style, background, reference_image } = await req.json();
@@ -55,7 +59,7 @@ New scene: ${stylePrompts[style] || stylePrompts.professional}. ${backgroundStyl
 The product must remain IDENTICAL to the original image. Do not modify the product in any way.
 Ultra high quality, 4K resolution, photorealistic.`;
 
-      console.log("Editing image with reference, prompt:", editPrompt);
+      console.log(`User ${authData?.userId} editing image with reference, prompt:`, editPrompt);
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -105,7 +109,7 @@ Ultra high quality, 4K resolution, photorealistic.`;
       }
 
       const data = await response.json();
-      console.log("AI response received for image editing");
+      console.log(`AI response received for image editing for user ${authData?.userId}`);
 
       const message = data.choices?.[0]?.message;
       const images = message?.images;
@@ -118,7 +122,7 @@ Ultra high quality, 4K resolution, photorealistic.`;
       const imageUrl = images[0]?.image_url?.url;
       const textContent = message?.content || "";
 
-      console.log("Successfully edited image with reference");
+      console.log(`Successfully edited image with reference for user ${authData?.userId}`);
 
       return new Response(
         JSON.stringify({ 
@@ -135,7 +139,7 @@ Ultra high quality, 4K resolution, photorealistic.`;
     
     enhancedPrompt = `${arabicTextInstructions}. ${stylePrompts[style] || stylePrompts.product}. ${prompt}. ${backgroundStyles[background] || backgroundStyles.white}. Ultra high quality, 4K resolution.`;
 
-    console.log("Generating image with prompt:", enhancedPrompt);
+    console.log(`User ${authData?.userId} generating image with prompt:`, enhancedPrompt);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -174,7 +178,7 @@ Ultra high quality, 4K resolution, photorealistic.`;
     }
 
     const data = await response.json();
-    console.log("AI response received");
+    console.log(`AI response received for user ${authData?.userId}`);
 
     // Extract image from response
     const message = data.choices?.[0]?.message;
@@ -188,7 +192,7 @@ Ultra high quality, 4K resolution, photorealistic.`;
     const imageUrl = images[0]?.image_url?.url;
     const textContent = message?.content || "";
 
-    console.log("Successfully generated image");
+    console.log(`Successfully generated image for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ 

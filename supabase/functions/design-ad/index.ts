@@ -1,14 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Validate authentication
+  const { data: authData, error: authError } = await validateAuth(req);
+  if (authError) {
+    return authError;
+  }
+
+  console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
     const { productImageUrl, inspirationImageUrl, prompt, style, aspectRatio } = await req.json();
@@ -18,7 +22,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log('Generating ad design with:', { prompt, style, aspectRatio });
+    console.log(`User ${authData?.userId} generating ad design with:`, { prompt, style, aspectRatio });
 
     // Build the content array with images and text
     const content: any[] = [];
@@ -98,10 +102,12 @@ Requirements:
     }
 
     const data = await response.json();
-    console.log('AI response received');
+    console.log(`AI response received for user ${authData?.userId}`);
 
     const textContent = data.choices?.[0]?.message?.content || '';
     const images = data.choices?.[0]?.message?.images || [];
+
+    console.log(`Successfully generated ad design for user ${authData?.userId}`);
 
     return new Response(JSON.stringify({ 
       success: true,

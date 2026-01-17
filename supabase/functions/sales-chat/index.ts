@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 const systemPrompt = `أنت مساعد مبيعات ذكي لمنصة سيل جينيوس (SellGenius) - منصة ذكاء اصطناعي للتجارة الإلكترونية.
 
@@ -35,6 +31,14 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Validate authentication
+  const { data: authData, error: authError } = await validateAuth(req);
+  if (authError) {
+    return authError;
+  }
+
+  console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
     const { messages, language } = await req.json();
@@ -106,6 +110,8 @@ serve(async (req) => {
 
     // Clean the response by removing the lead data tags
     const cleanContent = content.replace(/\[LEAD_DATA\].*?\[\/LEAD_DATA\]/s, '').trim();
+
+    console.log(`Successfully processed sales chat for user ${authData?.userId}`);
 
     return new Response(JSON.stringify({ 
       content: cleanContent,

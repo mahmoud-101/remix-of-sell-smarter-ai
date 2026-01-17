@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 const getSystemPrompt = (toolType: string, language: string = 'ar'): string => {
   const isArabic = language === 'ar';
@@ -334,17 +330,18 @@ Return the result in JSON format only:
   ],
   "actionPlan": [
     "أطلق حملة تسعير تنافسي",
-    "اعمل على برنامج ولاء قوي",
-    "ركز على المحتوى التعليمي"
+    "طور محتوى UGC من العملاء",
+    "حسّن سرعة الموقع وتجربة الجوال",
+    "أنشئ برنامج ولاء للعملاء"
   ]
 }`,
       en: `You are an expert competitive analyst in e-commerce. Your task is to deeply analyze competitors and identify opportunities.
 
 When analyzing:
-- Accurately identify strengths and weaknesses
-- Analyze pricing strategy and offers
+- Identify strengths and weaknesses precisely
+- Analyze pricing and offers strategy
 - Understand marketing messaging style
-- Discover opportunities for differentiation
+- Discover differentiation opportunities
 - Provide actionable recommendations to beat them
 
 Return the result in JSON format only:
@@ -357,10 +354,10 @@ Return the result in JSON format only:
   "weaknesses": [
     "High prices compared to market",
     "Limited product selection",
-    "Non-responsive mobile website"
+    "Non-responsive mobile site"
   ],
   "pricingStrategy": "They use premium pricing strategy with seasonal discounts. Average price is 20% higher than market with focus on quality.",
-  "messagingStyle": "They focus on luxury and European quality. Formal language emphasizing warranty and authenticity.",
+  "messagingStyle": "They focus on luxury and European quality. Formal language with emphasis on warranty and authenticity.",
   "opportunities": [
     "Target underserved mid-price segment",
     "Offer product customization service",
@@ -369,84 +366,185 @@ Return the result in JSON format only:
   ],
   "actionPlan": [
     "Launch competitive pricing campaign",
-    "Build strong loyalty program",
-    "Focus on educational content"
+    "Develop UGC content from customers",
+    "Improve site speed and mobile experience",
+    "Create customer loyalty program"
   ]
 }`
     },
 
-    "video-script": {
-      ar: `أنت صانع محتوى فيديو محترف متخصص في سكريبتات الريلز وتيك توك الفيرال. مهمتك كتابة سكريبتات قصيرة وجذابة تحقق انتشاراً واسعاً.
+    "customer-profile": {
+      ar: `أنت خبير في أبحاث السوق وتحليل الجمهور. مهمتك إنشاء ملفات شخصية تفصيلية للعملاء المحتملين.
 
-قواعد السكريبت الناجح:
-- Hook قوية في أول 3 ثوانٍ (أهم جزء!)
-- محتوى مختصر ومباشر (15-60 ثانية)
-- CTA واضح في النهاية
-- استخدام لغة عامية جذابة
-- إيقاع سريع يناسب المنصة
+عند إنشاء الملف الشخصي:
+- حدد الخصائص الديموغرافية بدقة
+- افهم الدوافع العاطفية والمخاوف
+- حدد نقاط الألم والاعتراضات المحتملة
+- اقترح رسائل تسويقية مخصصة
+- حدد أفضل القنوات للوصول إليهم
+
+أرجع النتيجة بصيغة JSON فقط:
+{
+  "demographics": {
+    "ageRange": "25-35",
+    "gender": "أنثى",
+    "location": "المدن الكبرى",
+    "income": "متوسط إلى مرتفع",
+    "education": "جامعي",
+    "occupation": "موظفة / رائدة أعمال"
+  },
+  "psychographics": {
+    "values": ["الجودة", "التوفير الوقت", "المظهر"],
+    "lifestyle": "مشغولة، تبحث عن حلول سريعة",
+    "interests": ["الموضة", "العناية الشخصية", "السوشيال ميديا"],
+    "personality": "طموحة، تهتم بالتفاصيل، تبحث عن القيمة"
+  },
+  "painPoints": [
+    "ضيق الوقت للتسوق التقليدي",
+    "صعوبة العثور على منتجات جيدة",
+    "قلق من جودة المنتجات أونلاين"
+  ],
+  "objections": [
+    "هل المنتج أصلي؟",
+    "ماذا لو لم يعجبني؟",
+    "هل الشحن سريع؟"
+  ],
+  "messagingAngles": [
+    "وفري وقتك واحصلي على أفضل جودة",
+    "منتجات أصلية مع ضمان الاسترجاع",
+    "توصيل سريع لباب بيتك"
+  ],
+  "bestChannels": ["Instagram", "TikTok", "WhatsApp"],
+  "contentTypes": ["فيديوهات قصيرة", "Before/After", "شهادات عملاء"]
+}`,
+      en: `You are an expert in market research and audience analysis. Your task is to create detailed customer persona profiles.
+
+When creating the profile:
+- Identify demographics precisely
+- Understand emotional motivations and fears
+- Identify pain points and potential objections
+- Suggest personalized marketing messages
+- Identify best channels to reach them
+
+Return the result in JSON format only:
+{
+  "demographics": {
+    "ageRange": "25-35",
+    "gender": "Female",
+    "location": "Major cities",
+    "income": "Middle to high",
+    "education": "University",
+    "occupation": "Employee / Entrepreneur"
+  },
+  "psychographics": {
+    "values": ["Quality", "Time-saving", "Appearance"],
+    "lifestyle": "Busy, looking for quick solutions",
+    "interests": ["Fashion", "Self-care", "Social media"],
+    "personality": "Ambitious, detail-oriented, value-seeking"
+  },
+  "painPoints": [
+    "Limited time for traditional shopping",
+    "Difficulty finding quality products",
+    "Concerns about online product quality"
+  ],
+  "objections": [
+    "Is the product authentic?",
+    "What if I don't like it?",
+    "Is shipping fast?"
+  ],
+  "messagingAngles": [
+    "Save time and get the best quality",
+    "Authentic products with return guarantee",
+    "Fast delivery to your doorstep"
+  ],
+  "bestChannels": ["Instagram", "TikTok", "WhatsApp"],
+  "contentTypes": ["Short videos", "Before/After", "Customer testimonials"]
+}`
+    },
+
+    "video-script": {
+      ar: `أنت كاتب سكريبتات فيديو محترف متخصص في محتوى Reels وTikTok الفيروسي.
+
+مهمتك: إنشاء 3 سكريبتات فيديو قصيرة (15-60 ثانية) مصممة للانتشار.
+
+قواعد السكريبت الفيروسي:
+1. Hook قوي في أول 3 ثواني يوقف التمرير
+2. محتوى سريع ومشوق يحافظ على الاهتمام
+3. CTA واضح في النهاية
+4. استخدام عناصر trending
+5. قابل للتنفيذ بسهولة
 
 أرجع النتيجة بصيغة JSON فقط:
 {
   "scripts": [
     {
-      "title": "عنوان الفيديو",
-      "duration": "15-30 ثانية",
-      "hook": "الجملة الأولى الجذابة (أول 3 ثوانٍ)",
-      "body": "المحتوى الرئيسي",
-      "cta": "الدعوة للعمل",
-      "hashtags": ["#هاشتاج1", "#هاشتاج2"],
-      "tips": "نصائح للتصوير والمونتاج"
+      "name": "اسم السكريبت",
+      "duration": "30 ثانية",
+      "hook": "الجملة الافتتاحية الجاذبة (0-3 ثواني)",
+      "body": "المحتوى الرئيسي مع تعليمات التصوير والتوقيت",
+      "cta": "دعوة العمل النهائية",
+      "visualNotes": "ملاحظات بصرية للتصوير",
+      "audioSuggestion": "اقتراح موسيقى أو صوت trending"
     }
   ],
-  "viral_elements": ["عنصر فيرال 1", "عنصر فيرال 2"],
-  "best_posting_times": ["وقت مناسب للنشر 1", "وقت مناسب للنشر 2"]
+  "viral_elements": [
+    "عنصر فيروسي 1",
+    "عنصر فيروسي 2",
+    "عنصر فيروسي 3"
+  ],
+  "best_posting_times": ["9:00 PM", "12:00 PM", "6:00 PM"]
 }`,
-      en: `You are a professional video content creator specializing in viral Reels and TikTok scripts. Your task is to write short, engaging scripts that achieve wide reach.
+      en: `You are a professional video scriptwriter specializing in viral Reels and TikTok content.
 
-Successful script rules:
-- Strong hook in first 3 seconds (most important!)
-- Concise and direct content (15-60 seconds)
-- Clear CTA at the end
-- Use engaging casual language
-- Fast pace suitable for the platform
+Your task: Create 3 short video scripts (15-60 seconds) designed to go viral.
+
+Viral script rules:
+1. Strong hook in first 3 seconds to stop scrolling
+2. Fast, engaging content that maintains attention
+3. Clear CTA at the end
+4. Use trending elements
+5. Easy to execute
 
 Return the result in JSON format only:
 {
   "scripts": [
     {
-      "title": "Video title",
-      "duration": "15-30 seconds",
-      "hook": "Attractive first sentence (first 3 seconds)",
-      "body": "Main content",
-      "cta": "Call to action",
-      "hashtags": ["#hashtag1", "#hashtag2"],
-      "tips": "Filming and editing tips"
+      "name": "Script name",
+      "duration": "30 seconds",
+      "hook": "Opening hook line (0-3 seconds)",
+      "body": "Main content with filming instructions and timing",
+      "cta": "Final call to action",
+      "visualNotes": "Visual filming notes",
+      "audioSuggestion": "Trending music or sound suggestion"
     }
   ],
-  "viral_elements": ["Viral element 1", "Viral element 2"],
-  "best_posting_times": ["Best posting time 1", "Best posting time 2"]
+  "viral_elements": [
+    "Viral element 1",
+    "Viral element 2",
+    "Viral element 3"
+  ],
+  "best_posting_times": ["9:00 PM", "12:00 PM", "6:00 PM"]
 }`
     },
 
     "seo-optimizer": {
-      ar: `أنت خبير SEO متخصص في التجارة الإلكترونية والمتاجر الإلكترونية. مهمتك تحسين صفحات المنتجات ومتجرك لمحركات البحث.
+      ar: `أنت خبير SEO متخصص في التجارة الإلكترونية ومحركات البحث العربية والعالمية.
 
-عند التحليل والتحسين:
-- حلل الكلمات المفتاحية المناسبة
-- اكتب عناوين وأوصاف ميتا محسنة
-- قدم توصيات للمحتوى الداخلي
-- اقترح روابط داخلية وخارجية
-- حلل المنافسين في نتائج البحث
+مهمتك: تحليل المحتوى وتقديم خطة SEO شاملة لتحسين الظهور في نتائج البحث.
 
 أرجع النتيجة بصيغة JSON فقط:
 {
-  "seo_score": 75,
-  "primary_keyword": "الكلمة المفتاحية الرئيسية",
-  "secondary_keywords": ["كلمة 1", "كلمة 2", "كلمة 3"],
-  "long_tail_keywords": ["كلمة طويلة 1", "كلمة طويلة 2"],
-  "optimized_title": "عنوان محسن للسيو (أقل من 60 حرف)",
-  "meta_description": "وصف ميتا جذاب (أقل من 160 حرف)",
-  "h1_suggestions": ["اقتراح H1 رقم 1", "اقتراح H1 رقم 2"],
+  "current_score": 65,
+  "keywords": {
+    "primary": ["كلمة رئيسية 1", "كلمة رئيسية 2"],
+    "secondary": ["كلمة ثانوية 1", "كلمة ثانوية 2", "كلمة ثانوية 3"],
+    "long_tail": ["عبارة طويلة 1", "عبارة طويلة 2"]
+  },
+  "meta_tags": {
+    "title": "عنوان محسن للـ SEO (60 حرف)",
+    "description": "وصف ميتا محسن (160 حرف)",
+    "keywords": "الكلمات المفتاحية للميتا"
+  },
   "content_recommendations": [
     "توصية محتوى 1",
     "توصية محتوى 2",
@@ -456,31 +554,37 @@ Return the result in JSON format only:
     "إصلاح تقني 1",
     "إصلاح تقني 2"
   ],
-  "competitor_keywords": ["كلمة منافس 1", "كلمة منافس 2"],
-  "action_plan": [
-    "خطوة 1: الأولوية العالية",
-    "خطوة 2: الأولوية المتوسطة",
-    "خطوة 3: الأولوية المنخفضة"
-  ]
+  "backlink_opportunities": [
+    "فرصة باكلينك 1",
+    "فرصة باكلينك 2"
+  ],
+  "competitor_gaps": [
+    "فجوة عن المنافسين 1",
+    "فجوة عن المنافسين 2"
+  ],
+  "action_plan": {
+    "week1": "خطة الأسبوع الأول",
+    "week2": "خطة الأسبوع الثاني",
+    "month1": "خطة الشهر الأول"
+  }
 }`,
-      en: `You are an SEO expert specializing in e-commerce and online stores. Your task is to optimize product pages and stores for search engines.
+      en: `You are an SEO expert specializing in e-commerce and search engines.
 
-When analyzing and optimizing:
-- Analyze suitable keywords
-- Write optimized titles and meta descriptions
-- Provide internal content recommendations
-- Suggest internal and external links
-- Analyze competitors in search results
+Your task: Analyze content and provide a comprehensive SEO plan to improve search visibility.
 
 Return the result in JSON format only:
 {
-  "seo_score": 75,
-  "primary_keyword": "Primary keyword",
-  "secondary_keywords": ["keyword 1", "keyword 2", "keyword 3"],
-  "long_tail_keywords": ["long tail 1", "long tail 2"],
-  "optimized_title": "SEO optimized title (under 60 chars)",
-  "meta_description": "Attractive meta description (under 160 chars)",
-  "h1_suggestions": ["H1 suggestion 1", "H1 suggestion 2"],
+  "current_score": 65,
+  "keywords": {
+    "primary": ["Primary keyword 1", "Primary keyword 2"],
+    "secondary": ["Secondary keyword 1", "Secondary keyword 2", "Secondary keyword 3"],
+    "long_tail": ["Long tail phrase 1", "Long tail phrase 2"]
+  },
+  "meta_tags": {
+    "title": "SEO optimized title (60 chars)",
+    "description": "Optimized meta description (160 chars)",
+    "keywords": "Meta keywords"
+  },
   "content_recommendations": [
     "Content recommendation 1",
     "Content recommendation 2",
@@ -490,40 +594,56 @@ Return the result in JSON format only:
     "Technical fix 1",
     "Technical fix 2"
   ],
-  "competitor_keywords": ["Competitor keyword 1", "Competitor keyword 2"],
-  "action_plan": [
-    "Step 1: High priority",
-    "Step 2: Medium priority",
-    "Step 3: Low priority"
-  ]
+  "backlink_opportunities": [
+    "Backlink opportunity 1",
+    "Backlink opportunity 2"
+  ],
+  "competitor_gaps": [
+    "Competitor gap 1",
+    "Competitor gap 2"
+  ],
+  "action_plan": {
+    "week1": "Week 1 plan",
+    "week2": "Week 2 plan",
+    "month1": "Month 1 plan"
+  }
 }`
     }
   };
 
-  return prompts[toolType]?.[isArabic ? 'ar' : 'en'] || prompts[toolType]?.ar || '';
+  return prompts[toolType]?.[isArabic ? 'ar' : 'en'] || prompts["product-copy"][isArabic ? 'ar' : 'en'];
 };
 
 serve(async (req) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate authentication
+  const { data: authData, error: authError } = await validateAuth(req);
+  if (authError) {
+    return authError;
+  }
+
+  console.log(`Authenticated user: ${authData?.userId}`);
+
   try {
-    const { toolType, input, language = 'ar' } = await req.json();
+    const { toolType, input, language } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    console.log(`Processing ${toolType} request for user ${authData?.userId} with language: ${language}`);
+
     const systemPrompt = getSystemPrompt(toolType, language);
-    if (!systemPrompt) {
-      throw new Error(`Unknown tool type: ${toolType}`);
-    }
 
-    const userPrompt = buildUserPrompt(toolType, input, language);
+    const userPrompt = `Input data:
+${JSON.stringify(input, null, 2)}
 
-    console.log(`Generating ${toolType} content in ${language}...`);
+Generate the response in JSON format only.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -532,7 +652,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -543,13 +663,13 @@ serve(async (req) => {
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later.", status: 429 }),
+          JSON.stringify({ error: language === 'ar' ? "تم تجاوز الحد المسموح، يرجى المحاولة لاحقاً" : "Rate limit exceeded. Please try again later." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Payment required. Please add credits.", status: 402 }),
+          JSON.stringify({ error: language === 'ar' ? "يرجى إضافة رصيد للمتابعة" : "Payment required. Please add credits." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -559,28 +679,30 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = data.choices?.[0]?.message?.content || "";
 
-    if (!content) {
-      throw new Error("No content in AI response");
-    }
-
-    // Parse JSON from response
+    // Try to extract JSON from the response
     let result;
     try {
-      // Extract JSON from markdown code blocks if present
-      const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || 
-                       content.match(/```\n?([\s\S]*?)\n?```/) ||
-                       content.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? (jsonMatch[1] || jsonMatch[0]) : content;
-      result = JSON.parse(jsonStr.trim());
-    } catch (parseError) {
-      console.error("Failed to parse AI response as JSON:", content);
-      // Create structured response from raw text
-      result = { raw: content };
+      result = JSON.parse(content);
+    } catch {
+      // Try to extract JSON from markdown code blocks
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        result = JSON.parse(jsonMatch[1].trim());
+      } else {
+        // Try to find JSON object in the text
+        const jsonStart = content.indexOf('{');
+        const jsonEnd = content.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1) {
+          result = JSON.parse(content.slice(jsonStart, jsonEnd + 1));
+        } else {
+          result = { content };
+        }
+      }
     }
 
-    console.log(`Successfully generated ${toolType} content`);
+    console.log(`Successfully generated ${toolType} content for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ result }),
@@ -595,175 +717,3 @@ serve(async (req) => {
     );
   }
 });
-
-function buildUserPrompt(toolType: string, input: Record<string, any>, language: string): string {
-  const isArabic = language === 'ar';
-  
-  switch (toolType) {
-    case "product-copy":
-      // Build structured JSON input for the professional prompt
-      const productInput = {
-        product: {
-          name: input.productName || "",
-          description: input.productDescription || "",
-          category: input.category || "",
-          industry: input.industry || "",
-          specifications: input.specifications || [],
-          uses: input.uses || []
-        },
-        audience: {
-          country: input.country || "",
-          age_range: input.ageRange || "",
-          gender: input.gender || "",
-          pain_points: input.painPoints || [],
-          desired_outcomes: input.desiredOutcomes || [],
-          description: input.targetAudience || ""
-        },
-        brand_voice: {
-          tone: input.tone || "professional",
-          dialect: input.dialect || "فصحى",
-          language: isArabic ? "ar" : "en"
-        },
-        seo: {
-          primary_keywords: input.primaryKeywords || [],
-          secondary_keywords: input.secondaryKeywords || [],
-          meta_max_length: input.metaMaxLength || 160
-        },
-        constraints: {
-          prohibited_words: input.prohibitedWords || [],
-          policy_restrictions: input.policyRestrictions || [],
-          no_medical_claims: input.noMedicalClaims || false,
-          no_profit_guarantees: input.noProfitGuarantees || false
-        }
-      };
-      
-      return isArabic 
-        ? `أنشئ محتوى منتج احترافي كامل بناءً على البيانات التالية:
-
-${JSON.stringify(productInput, null, 2)}
-
-أرجع JSON فقط بالهيكل المحدد في التعليمات بدون أي نص إضافي.`
-        : `Create complete professional product content based on the following data:
-
-${JSON.stringify(productInput, null, 2)}
-
-Return JSON only with the structure specified in the instructions without any additional text.`;
-
-    case "ads-copy":
-      return isArabic
-        ? `أنشئ 3 إعلانات مختلفة للمنتج التالي:
-اسم المنتج: ${input.productName}
-وصف المنتج: ${input.productDescription}
-المنصة: ${input.platform || "facebook"}
-هدف الحملة: ${input.goal || "conversions"}
-الجمهور المستهدف: ${input.targetAudience || "جمهور عام"}
-
-اجعل كل نسخة مختلفة بأسلوب مميز. أرجع JSON فقط.`
-        : `Create 3 different ads for:
-Product Name: ${input.productName}
-Description: ${input.productDescription}
-Platform: ${input.platform || "facebook"}
-Campaign Goal: ${input.goal || "conversions"}
-Target Audience: ${input.targetAudience || "General audience"}
-
-Make each variation unique in style. Return JSON only.`;
-
-    case "campaign":
-      return isArabic
-        ? `أنشئ خطة حملة تسويقية شاملة ومفصلة:
-اسم الحملة: ${input.campaignName}
-نوع النشاط: ${input.businessType}
-الهدف الرئيسي: ${input.goal || "زيادة المبيعات"}
-المدة: ${input.duration || "شهر واحد"}
-الميزانية: ${input.budget || "متوسطة"}
-
-قدم خطة عملية وقابلة للتنفيذ. أرجع JSON فقط.`
-        : `Create a comprehensive marketing campaign plan:
-Campaign Name: ${input.campaignName}
-Business Type: ${input.businessType}
-Main Goal: ${input.goal || "Increase sales"}
-Duration: ${input.duration || "One month"}
-Budget: ${input.budget || "Medium"}
-
-Provide a practical and actionable plan. Return JSON only.`;
-
-    case "design":
-      return isArabic
-        ? `حلل صفحة المنتج التالية وقدم توصيات مفصلة:
-رابط الصفحة: ${input.pageUrl || "لم يُحدد"}
-نوع الصفحة: ${input.pageType || "product"}
-وصف الصفحة الحالي: ${input.description || "صفحة منتج تجارة إلكترونية"}
-الهدف: ${input.businessGoal || "زيادة معدل التحويل"}
-
-قدم تحليل شامل مع توصيات عملية محددة. أرجع JSON فقط.`
-        : `Analyze the following product page and provide detailed recommendations:
-Page URL: ${input.pageUrl || "Not specified"}
-Page Type: ${input.pageType || "product"}
-Current Page Description: ${input.description || "E-commerce product page"}
-Goal: ${input.businessGoal || "Increase conversion rate"}
-
-Provide comprehensive analysis with specific practical recommendations. Return JSON only.`;
-
-    case "competitor":
-      return isArabic
-        ? `حلل المنافس التالي بعمق:
-اسم المنافس: ${input.competitorName}
-موقعه: ${input.website || "لم يُحدد"}
-وصف المنافس: ${input.description || "منافس في نفس المجال"}
-نشاطك التجاري: ${input.yourBusiness || "تجارة إلكترونية"}
-
-قدم تحليل شامل مع استراتيجيات للتفوق عليهم. أرجع JSON فقط.`
-        : `Deeply analyze the following competitor:
-Competitor Name: ${input.competitorName}
-Website: ${input.website || "Not specified"}
-Competitor Description: ${input.description || "Competitor in the same field"}
-Your Business: ${input.yourBusiness || "E-commerce"}
-
-Provide comprehensive analysis with strategies to outperform them. Return JSON only.`;
-
-    case "video-script":
-      return isArabic
-        ? `اكتب 3 سكريبتات فيديو ريلز/تيك توك للمنتج التالي:
-اسم المنتج: ${input.productName || "منتج"}
-وصف المنتج: ${input.productDescription || ""}
-نوع الفيديو: ${input.videoType || "ترويجي"}
-مدة الفيديو: ${input.duration || "15-30 ثانية"}
-الجمهور المستهدف: ${input.targetAudience || "جمهور عام"}
-نبرة الصوت: ${input.tone || "مرح وحماسي"}
-
-اكتب سكريبتات فيرال بـ hooks قوية. أرجع JSON فقط.`
-        : `Write 3 Reels/TikTok video scripts for:
-Product Name: ${input.productName || "Product"}
-Description: ${input.productDescription || ""}
-Video Type: ${input.videoType || "Promotional"}
-Duration: ${input.duration || "15-30 seconds"}
-Target Audience: ${input.targetAudience || "General audience"}
-Tone: ${input.tone || "Fun and energetic"}
-
-Write viral scripts with strong hooks. Return JSON only.`;
-
-    case "seo-optimizer":
-      return isArabic
-        ? `حلل وحسّن السيو للمنتج/الصفحة التالية:
-اسم المنتج/الصفحة: ${input.productName || input.pageName || "صفحة"}
-الوصف الحالي: ${input.description || ""}
-الفئة: ${input.category || "تجارة إلكترونية"}
-الكلمات المفتاحية الحالية: ${input.currentKeywords || "غير محددة"}
-رابط الصفحة: ${input.pageUrl || ""}
-المنافسين الرئيسيين: ${input.competitors || "غير محددين"}
-
-قدم تحليل سيو شامل مع خطة عمل. أرجع JSON فقط.`
-        : `Analyze and optimize SEO for:
-Product/Page Name: ${input.productName || input.pageName || "Page"}
-Current Description: ${input.description || ""}
-Category: ${input.category || "E-commerce"}
-Current Keywords: ${input.currentKeywords || "Not specified"}
-Page URL: ${input.pageUrl || ""}
-Main Competitors: ${input.competitors || "Not specified"}
-
-Provide comprehensive SEO analysis with action plan. Return JSON only.`;
-
-    default:
-      return JSON.stringify(input);
-  }
-}

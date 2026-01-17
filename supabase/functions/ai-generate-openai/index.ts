@@ -1,15 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req) => {
   // 1. التعامل مع CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  // Validate authentication
+  const { data: authData, error: authError } = await validateAuth(req);
+  if (authError) {
+    return authError;
+  }
+
+  console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
     const { toolType, input, language } = await req.json();
@@ -19,7 +23,7 @@ serve(async (req) => {
       throw new Error("OPENAI_API_KEY is not configured");
     }
 
-    console.log(`Processing ${toolType} request with language: ${language}`);
+    console.log(`Processing ${toolType} request for user ${authData?.userId} with language: ${language}`);
 
     // 2. تحديد هوية الخبير بناءً على نوع الأداة
     let systemRole = "";
@@ -96,7 +100,7 @@ serve(async (req) => {
     }
 
     const result = JSON.parse(data.choices[0].message.content);
-    console.log(`Successfully generated ${toolType} content`);
+    console.log(`Successfully generated ${toolType} content for user ${authData?.userId}`);
 
     // 4. إرجاع النتيجة للفرونت-إند
     return new Response(
