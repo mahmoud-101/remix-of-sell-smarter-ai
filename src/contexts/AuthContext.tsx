@@ -1,12 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getSafeAuthRedirect } from "@/lib/authRedirect";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName: string
+  ) => Promise<{ error: Error | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -14,23 +19,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * In some preview/editor contexts the app can be hosted under a wrapper domain,
- * which can break OAuth if we redirect back to that wrapper.
- *
- * We prefer the current origin when it's a proper app domain, otherwise fall back
- * to the published domain.
- */
-function getOAuthRedirectTo(pathname = "/dashboard") {
-  const origin = window.location.origin;
-
-  // Typical “real app” hosts (preview + published) are under lovable.app.
-  // When embedded/wrapped (e.g. lovable.dev), use the published domain.
-  const isRealAppHost = origin.endsWith(".lovable.app");
-
-  const safeOrigin = isRealAppHost ? origin : "https://sellmate-ai-genius.lovable.app";
-  return `${safeOrigin}${pathname}`;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -58,9 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
+    const redirectUrl = getSafeAuthRedirect("/dashboard");
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -71,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
 
-    return { error: error as Error | null };
+    return { error: error as Error | null, session: data.session };
   };
 
   const signIn = async (email: string, password: string) => {
@@ -87,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: getOAuthRedirectTo("/dashboard"),
+        redirectTo: getSafeAuthRedirect("/dashboard"),
       },
     });
     return { error: error as Error | null };

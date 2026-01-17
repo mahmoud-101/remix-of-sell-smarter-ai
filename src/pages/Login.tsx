@@ -63,9 +63,15 @@ export default function Login() {
 
     if (error) {
       setIsLoading(false);
+
+      const msg = (error as any)?.message ? String((error as any).message) : "";
+      const isUnconfirmed = /email not confirmed|confirm your email/i.test(msg);
+
       toast({
         title: t("errorOccurred"),
-        description: t("invalidCredentials"),
+        description: isUnconfirmed
+          ? (t("confirmEmailFirst") || (isRTL ? "يرجى تأكيد بريدك الإلكتروني أولاً" : "Please confirm your email first"))
+          : (t("invalidCredentials") || msg),
         variant: "destructive",
       });
       return;
