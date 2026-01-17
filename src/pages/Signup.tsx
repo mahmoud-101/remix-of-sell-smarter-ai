@@ -87,14 +87,14 @@ export default function Signup() {
     setIsLoading(true);
     authRateLimiter.recordAttempt(email);
 
-    const { error } = await signUp(email.trim().toLowerCase(), password, name.trim());
+    const { error, session } = await signUp(email.trim().toLowerCase(), password, name.trim());
 
     if (error) {
       setIsLoading(false);
       let message = t("tryAgain");
       if (error.message.includes("already registered")) {
         message = t("userExists");
-      } else if (error.message.includes("weak")) {
+      } else if (error.message.toLowerCase().includes("weak")) {
         message = t("weakPassword");
       }
       toast({
@@ -107,9 +107,16 @@ export default function Signup() {
 
     toast({
       title: t("signupSuccess"),
-      description: t("signupSuccessDesc"),
+      description:
+        session
+          ? t("signupSuccessDesc")
+          : isRTL
+            ? "تم إنشاء الحساب. تحقق من بريدك الإلكتروني لتأكيد الحساب ثم سجّل الدخول."
+            : "Account created. Please confirm your email, then sign in.",
     });
-    navigate("/dashboard");
+
+    // If email confirmation is required, signUp won't return a session.
+    navigate(session ? "/dashboard" : "/login");
   };
 
   const handleGoogleSignUp = async () => {

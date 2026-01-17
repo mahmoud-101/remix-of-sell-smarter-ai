@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { emailSchema } from "@/lib/validation";
+import { getSafeAuthRedirect } from "@/lib/authRedirect";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -32,7 +33,7 @@ export default function ForgotPassword() {
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(
       email.trim().toLowerCase(),
       {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: getSafeAuthRedirect("/reset-password"),
       }
     );
 
