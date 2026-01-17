@@ -14,6 +14,24 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * In some preview/editor contexts the app can be hosted under a wrapper domain,
+ * which can break OAuth if we redirect back to that wrapper.
+ *
+ * We prefer the current origin when it's a proper app domain, otherwise fall back
+ * to the published domain.
+ */
+function getOAuthRedirectTo(pathname = "/dashboard") {
+  const origin = window.location.origin;
+
+  // Typical “real app” hosts (preview + published) are under lovable.app.
+  // When embedded/wrapped (e.g. lovable.dev), use the published domain.
+  const isRealAppHost = origin.endsWith(".lovable.app");
+
+  const safeOrigin = isRealAppHost ? origin : "https://sellmate-ai-genius.lovable.app";
+  return `${safeOrigin}${pathname}`;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -21,13 +39,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -52,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
-    
+
     return { error: error as Error | null };
   };
 
@@ -61,15 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
     });
-    
+
     return { error: error as Error | null };
   };
 
   const signInWithGoogle = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dashboard`,
+        redirectTo: getOAuthRedirectTo("/dashboard"),
       },
     });
     return { error: error as Error | null };
@@ -93,3 +111,4 @@ export function useAuth() {
   }
   return context;
 }
+
