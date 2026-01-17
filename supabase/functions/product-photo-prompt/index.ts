@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 const systemPrompt = `أنت خبير عالمي في تصوير المنتجات وكتابة برومبتات لتوليد صور احترافية للإعلانات والمتاجر الإلكترونية.
 
@@ -60,6 +56,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate authentication
+  const { data: authData, error: authError } = await validateAuth(req);
+  if (authError) {
+    return authError;
+  }
+
+  console.log(`Authenticated user: ${authData?.userId}`);
+
   try {
     const { 
       product_text, 
@@ -90,7 +94,7 @@ ${product_image_provided && product_image_url ? `- رابط صورة المنت�
 
 اكتب البرومبت الآن بصيغة JSON فقط.`;
 
-    console.log("Generating prompt for product:", product_text, "with image:", product_image_provided);
+    console.log(`User ${authData?.userId} generating prompt for product:`, product_text, "with image:", product_image_provided);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -156,7 +160,7 @@ ${product_image_provided && product_image_url ? `- رابط صورة المنت�
       promptData.reference_image_url = product_image_url;
     }
 
-    console.log("Successfully generated prompt data with reference:", product_image_provided);
+    console.log(`Successfully generated prompt data for user ${authData?.userId} with reference:`, product_image_provided);
 
     return new Response(
       JSON.stringify(promptData),
