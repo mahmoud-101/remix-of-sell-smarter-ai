@@ -56,9 +56,6 @@ const Leads = lazyWithRetry(() => import("./pages/Leads"), "Leads");
 const CustomerProfile = lazyWithRetry(() => import("./pages/CustomerProfile"), "CustomerProfile");
 const AdminDashboard = lazyWithRetry(() => import("./pages/AdminDashboard"), "AdminDashboard");
 const ImageGenerator = lazyWithRetry(() => import("./pages/ImageGenerator"), "ImageGenerator");
-const AdsPlatforms = lazyWithRetry(() => import("./pages/AdsPlatforms"), "AdsPlatforms");
-const AdDesigner = lazyWithRetry(() => import("./pages/AdDesigner"), "AdDesigner");
-const GrowthConsole = lazyWithRetry(() => import("./pages/GrowthConsole"), "GrowthConsole");
 const CreativeFactory = lazyWithRetry(() => import("./pages/CreativeFactory"), "CreativeFactory");
 const About = lazyWithRetry(() => import("./pages/About"), "About");
 const UseCases = lazyWithRetry(() => import("./pages/UseCases"), "UseCases");
@@ -255,30 +252,6 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <ImageGenerator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/ads-platforms"
-          element={
-            <ProtectedRoute>
-              <AdsPlatforms />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/ad-designer"
-          element={
-            <ProtectedRoute>
-              <AdDesigner />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/growth-console"
-          element={
-            <ProtectedRoute>
-              <GrowthConsole />
             </ProtectedRoute>
           }
         />
