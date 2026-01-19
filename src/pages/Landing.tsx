@@ -296,7 +296,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link to="/signup">
                 <Button variant="hero" size="xl" className="group min-w-[320px] text-lg h-14">
-                  {isRTL ? "🎁 جرّب مجاناً - بدون بطاقة ائتمان" : "🎁 Try Free - No Credit Card"}
+                  {isRTL ? "ابدأ مجانًا - بدون بطاقة ائتمان" : "🎁 Try Free - No Credit Card"}
                   <ArrowRight className={`w-5 h-5 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
                 </Button>
               </Link>

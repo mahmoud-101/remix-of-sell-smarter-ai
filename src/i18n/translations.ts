@@ -53,7 +53,7 @@ export const translations = {
     noCreditCard: "بدون بطاقة ائتمان • تجربة 14 يوم • إلغاء في أي وقت",
     features: "المميزات",
     pricing: "الأسعار",
-    getStarted: "ابدأ الآن",
+    getStarted: "ابدأ مجانًا",
     
     // Features
     featureProductCopy: "مولد نصوص المنتجات",
@@ -241,7 +241,7 @@ export const translations = {
     // CTA Section
     ctaTitle: "مستعد لتحويل تجارتك الإلكترونية؟",
     ctaDescription: "انضم لآلاف البائعين الذين يستخدمون سيل جينيوس لتنمية أعمالهم أسرع من أي وقت مضى.",
-    getStartedFree: "ابدأ مجاناً",
+    getStartedFree: "ابدأ مجانًا",
     
     // Toasts
     contentGeneratedSuccess: "تم توليد المحتوى!",
