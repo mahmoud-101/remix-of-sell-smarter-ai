@@ -2,16 +2,32 @@ import { useMemo, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUsageLimit } from "@/hooks/useUsageLimit";
 import { getCached, setCached, stableStringify, withTimeout } from "@/lib/memoryCache";
 
 export const useAI = (toolType: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { language } = useLanguage();
+  const { canGenerate, remainingGenerations, incrementUsage, refreshUsage } = useUsageLimit();
 
   const cacheKeyBase = useMemo(() => `ai-generate:${toolType}:${language === 'ar' ? 'ar' : 'en'}`, [toolType, language]);
 
   const generate = async (inputData: any) => {
+    // Check usage limit before generating
+    await refreshUsage();
+    
+    if (!canGenerate) {
+      toast({
+        title: language === 'ar' ? 'تم استنفاد الحد الشهري' : 'Monthly Limit Reached',
+        description: language === 'ar' 
+          ? 'لقد استخدمت جميع التوليدات المتاحة هذا الشهر. قم بترقية خطتك للمتابعة.'
+          : 'You have used all your generations this month. Upgrade your plan to continue.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
     const cacheKey = `${cacheKeyBase}:${stableStringify(inputData)}`;
     const cached = getCached<unknown>(cacheKey);
     if (cached) return cached;
@@ -46,6 +62,9 @@ export const useAI = (toolType: string) => {
         throw new Error(language === 'ar' ? 'لم يتم استلام نتيجة' : 'No result received');
       }
 
+      // Increment usage after successful generation
+      await incrementUsage();
+
       // Cache identical requests briefly to make repeated runs feel instant
       setCached(cacheKey, data.result, 5 * 60 * 1000);
       return data.result;
@@ -61,6 +80,6 @@ export const useAI = (toolType: string) => {
     }
   };
 
-  return { generate, isLoading };
+  return { generate, isLoading, canGenerate, remainingGenerations };
 };
 
