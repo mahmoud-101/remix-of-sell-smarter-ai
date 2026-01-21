@@ -17,9 +17,11 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [showResendConfirm, setShowResendConfirm] = useState(false);
+  const [isResendingConfirm, setIsResendingConfirm] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, resendConfirmationEmail } = useAuth();
   const { t, isRTL } = useLanguage();
 
   const validateForm = (): boolean => {
@@ -40,6 +42,7 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowResendConfirm(false);
     
     // Rate limiting check
     if (authRateLimiter.isRateLimited(email)) {
@@ -67,6 +70,10 @@ export default function Login() {
       const msg = (error as any)?.message ? String((error as any).message) : "";
       const isUnconfirmed = /email not confirmed|confirm your email/i.test(msg);
 
+      if (isUnconfirmed) {
+        setShowResendConfirm(true);
+      }
+
       toast({
         title: t("errorOccurred"),
         description: isUnconfirmed
@@ -82,6 +89,31 @@ export default function Login() {
       description: t("loginSuccessDesc"),
     });
     navigate("/dashboard");
+  };
+
+  const handleResendConfirmation = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) return;
+
+    setIsResendingConfirm(true);
+    const { error } = await resendConfirmationEmail(normalizedEmail);
+    setIsResendingConfirm(false);
+
+    if (error) {
+      toast({
+        title: t("errorOccurred"),
+        description: t("tryAgain"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: isRTL ? "تم الإرسال" : "Sent",
+      description: isRTL
+        ? "تم إرسال رسالة تأكيد جديدة إلى بريدك الإلكتروني. افتح الرسالة واضغط رابط التأكيد." 
+        : "We've sent a new confirmation email. Open it and click the confirmation link.",
+    });
   };
 
   const handleGoogleSignIn = async () => {
@@ -230,6 +262,27 @@ export default function Login() {
                 </>
               )}
             </Button>
+
+            {showResendConfirm && (
+              <div className="rounded-lg border bg-card/50 p-3 text-sm">
+                <p className="text-muted-foreground">
+                  {isRTL
+                    ? "حسابك يحتاج تأكيد البريد الإلكتروني. لو ماوصلتك الرسالة، اضغط إعادة الإرسال."
+                    : "Your account needs email confirmation. If you didn’t receive the email, resend it."}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-3 w-full"
+                  onClick={handleResendConfirmation}
+                  disabled={isResendingConfirm}
+                >
+                  {isResendingConfirm
+                    ? (isRTL ? "جاري الإرسال..." : "Sending...")
+                    : (isRTL ? "إعادة إرسال رسالة التأكيد" : "Resend confirmation email")}
+                </Button>
+              </div>
+            )}
           </form>
 
           {/* Footer */}

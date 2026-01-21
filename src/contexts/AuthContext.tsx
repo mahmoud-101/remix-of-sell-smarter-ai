@@ -14,6 +14,7 @@ interface AuthContextType {
   ) => Promise<{ error: Error | null; session: Session | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
+  resendConfirmationEmail: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -81,12 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const resendConfirmationEmail = async (email: string) => {
+    const redirectUrl = getSafeAuthRedirect("/dashboard");
+
+    // If the user already exists but didn't confirm their email, this re-sends the confirmation email.
+    // NOTE: type values are defined by the auth API ("signup", "email_change").
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    } as any);
+
+    return { error: error as Error | null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, loading, signUp, signIn, signInWithGoogle, resendConfirmationEmail, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
