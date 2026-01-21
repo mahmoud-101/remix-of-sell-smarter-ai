@@ -15,37 +15,50 @@ serve(async (req) => {
   console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
-    const { productImageUrl, inspirationImageUrl, prompt, style, aspectRatio } = await req.json();
+    const { productImageUrl, referenceImageUrl, prompt, designMethod, size, transparent } = await req.json();
     
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    console.log(`User ${authData?.userId} generating ad design with:`, { prompt, style, aspectRatio });
+    console.log(`User ${authData?.userId} generating ad design with:`, { prompt, designMethod, size, transparent });
 
     // Build the content array with images and text
     const content: any[] = [];
 
-    // Add text prompt
-    const fullPrompt = `Create a professional advertising design for this product.
-Style: ${style || 'Modern and clean'}
-Aspect Ratio: ${aspectRatio || '1:1'}
-User Instructions: ${prompt}
+    // Build a detailed prompt based on design method
+    let fullPrompt = prompt;
+    
+    if (designMethod === "replace" && referenceImageUrl) {
+      fullPrompt = `You are a professional product photographer. Take the product from the first image and place it into the scene/background from the second (reference) image. 
+      
+Instructions:
+- Maintain the exact same lighting, shadows, and atmosphere from the reference image
+- The product should look naturally placed in the scene
+- Keep the product's proportions and details accurate
+- Match the color grading and style of the reference image
 
-Requirements:
-- Make it visually appealing and professional
-- Suitable for social media advertising
-- Include the product prominently
-- Use attractive colors and composition
-- Make it eye-catching and conversion-focused`;
+Additional instructions: ${prompt}`;
+    } else {
+      fullPrompt = `You are a professional product photographer and advertising designer. Create a stunning product advertisement image.
+
+Instructions:
+- Create a professional, high-quality product photography
+- Use appropriate lighting and shadows
+- Make it suitable for e-commerce and social media advertising
+- Size: ${size || '1024x1024'}
+${transparent ? '- Use a transparent/clean background suitable for PNG export' : ''}
+
+Style instructions: ${prompt}`;
+    }
 
     content.push({
       type: 'text',
       text: fullPrompt
     });
 
-    // Add product image if provided
+    // Add product image (required)
     if (productImageUrl) {
       content.push({
         type: 'image_url',
@@ -55,12 +68,12 @@ Requirements:
       });
     }
 
-    // Add inspiration image if provided
-    if (inspirationImageUrl) {
+    // Add reference image if provided and using replace method
+    if (referenceImageUrl && designMethod === "replace") {
       content.push({
         type: 'image_url',
         image_url: {
-          url: inspirationImageUrl
+          url: referenceImageUrl
         }
       });
     }
@@ -72,7 +85,7 @@ Requirements:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-pro-image-preview',
+        model: 'google/gemini-2.5-flash-image-preview',
         messages: [
           {
             role: 'user',
@@ -107,7 +120,7 @@ Requirements:
     const textContent = data.choices?.[0]?.message?.content || '';
     const images = data.choices?.[0]?.message?.images || [];
 
-    console.log(`Successfully generated ad design for user ${authData?.userId}`);
+    console.log(`Successfully generated ad design for user ${authData?.userId}, images count: ${images.length}`);
 
     return new Response(JSON.stringify({ 
       success: true,
