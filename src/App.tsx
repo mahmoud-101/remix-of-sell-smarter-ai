@@ -58,6 +58,7 @@ const AdminDashboard = lazyWithRetry(() => import("./pages/AdminDashboard"), "Ad
 const ImageGenerator = lazyWithRetry(() => import("./pages/ImageGenerator"), "ImageGenerator");
 const CreativeFactory = lazyWithRetry(() => import("./pages/CreativeFactory"), "CreativeFactory");
 const AdDesigner = lazyWithRetry(() => import("./pages/AdDesigner"), "AdDesigner");
+const ProductResearch = lazyWithRetry(() => import("./pages/ProductResearch"), "ProductResearch");
 const About = lazyWithRetry(() => import("./pages/About"), "About");
 const UseCases = lazyWithRetry(() => import("./pages/UseCases"), "UseCases");
 const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
@@ -269,6 +270,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <AdDesigner />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/product-research"
+          element={
+            <ProtectedRoute>
+              <ProductResearch />
             </ProtectedRoute>
           }
         />

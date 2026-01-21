@@ -18,6 +18,7 @@ import {
   Brush,
   CreditCard,
   ImagePlus,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const navItems = [
     { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
+    { icon: TrendingUp, label: isRTL ? "البحث عن المنتجات" : "Product Research", path: "/dashboard/product-research" },
     { icon: Brush, label: isRTL ? "مصنع الكريتيفات" : "Creative Factory", path: "/dashboard/creative-factory" },
     { icon: ImagePlus, label: isRTL ? "مصمم الإعلانات" : "Ad Designer", path: "/dashboard/ad-designer" },
     { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
