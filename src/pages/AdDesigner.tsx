@@ -1,468 +1,254 @@
 import { useState, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Upload,
-  Image as ImageIcon,
-  Sparkles,
-  Loader2,
-  Download,
-  Trash2,
-  Wand2,
-  RotateCcw,
-} from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Upload, Sparkles, Loader2, Download, Wand2, Image as ImageIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdDesigner() {
   const { isRTL } = useLanguage();
-  const { user } = useAuth();
   const { toast } = useToast();
-  
   const [productImage, setProductImage] = useState<string | null>(null);
-  const [inspirationImage, setInspirationImage] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState("");
-  const [style, setStyle] = useState("modern");
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [designMethod, setDesignMethod] = useState<"new" | "replace">("new");
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [selectedPromptSuggestion, setSelectedPromptSuggestion] = useState("");
   const [aspectRatio, setAspectRatio] = useState("1:1");
+  const [transparent, setTransparent] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-  
   const productInputRef = useRef<HTMLInputElement>(null);
-  const inspirationInputRef = useRef<HTMLInputElement>(null);
+  const referenceInputRef = useRef<HTMLInputElement>(null);
 
-  const styles = [
-    { value: "modern", label: isRTL ? "عصري وأنيق" : "Modern & Elegant" },
-    { value: "minimal", label: isRTL ? "بسيط ومينيمال" : "Minimal & Clean" },
-    { value: "bold", label: isRTL ? "جريء وملفت" : "Bold & Eye-catching" },
-    { value: "luxury", label: isRTL ? "فاخر وراقي" : "Luxury & Premium" },
-    { value: "playful", label: isRTL ? "مرح وحيوي" : "Playful & Vibrant" },
-    { value: "professional", label: isRTL ? "احترافي" : "Professional" },
+  const promptSuggestions = [
+    { ar: "منتج على خلفية بيضاء نظيفة، إضاءة استوديو احترافية، جودة عالية", en: "Product on clean white background, professional studio lighting, high quality" },
+    { ar: "منتج في بيئة فاخرة مع إضاءة ذهبية دافئة، أسلوب فخم", en: "Product in luxury setting with warm golden lighting, premium style" },
+    { ar: "منتج في مشهد حياة طبيعي، إضاءة طبيعية، أسلوب عصري", en: "Product in lifestyle scene, natural lighting, modern style" },
+    { ar: "منتج مع تأثيرات إبداعية ملونة، خلفية حيوية وجذابة", en: "Product with creative colorful effects, vibrant eye-catching background" },
+    { ar: "منتج في بيئة مينيمال أنيقة، ألوان محايدة، تصميم نظيف", en: "Product in elegant minimal environment, neutral colors, clean design" },
   ];
 
   const aspectRatios = [
-    { value: "1:1", label: isRTL ? "مربع (1:1)" : "Square (1:1)" },
-    { value: "4:5", label: isRTL ? "انستغرام (4:5)" : "Instagram (4:5)" },
-    { value: "9:16", label: isRTL ? "ستوري (9:16)" : "Story (9:16)" },
-    { value: "16:9", label: isRTL ? "يوتيوب (16:9)" : "YouTube (16:9)" },
+    { value: "1:1", label: "1:1", size: "1024x1024", icon: "⬛" },
+    { value: "9:16", label: "9:16", size: "1024x1792", icon: "📱" },
+    { value: "16:9", label: "16:9", size: "1792x1024", icon: "🖥️" },
   ];
 
-  const handleImageUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    type: "product" | "inspiration"
-  ) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "product" | "reference") => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Validate file type
     if (!file.type.startsWith("image/")) {
-      toast({
-        title: isRTL ? "خطأ" : "Error",
-        description: isRTL ? "يرجى اختيار صورة صالحة" : "Please select a valid image",
-        variant: "destructive",
-      });
+      toast({ title: isRTL ? "خطأ" : "Error", description: isRTL ? "يرجى اختيار صورة صالحة" : "Please select a valid image", variant: "destructive" });
       return;
     }
-
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: isRTL ? "خطأ" : "Error",
-        description: isRTL ? "حجم الصورة كبير جداً (الحد الأقصى 5MB)" : "Image too large (max 5MB)",
-        variant: "destructive",
-      });
+      toast({ title: isRTL ? "خطأ" : "Error", description: isRTL ? "حجم الصورة كبير (الحد الأقصى 5MB)" : "Image too large (max 5MB)", variant: "destructive" });
       return;
     }
-
-    try {
-      // Upload to Supabase Storage
-      const fileName = `${user?.id}/${Date.now()}-${file.name}`;
-      const { data, error } = await supabase.storage
-        .from("ad-designs")
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("ad-designs")
-        .getPublicUrl(fileName);
-
-      if (type === "product") {
-        setProductImage(urlData.publicUrl);
-      } else {
-        setInspirationImage(urlData.publicUrl);
-      }
-
-      toast({
-        title: isRTL ? "تم الرفع" : "Uploaded",
-        description: isRTL ? "تم رفع الصورة بنجاح" : "Image uploaded successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: isRTL ? "خطأ" : "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (type === "product") setProductImage(reader.result as string);
+      else setReferenceImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    toast({ title: isRTL ? "تم الرفع" : "Uploaded", description: isRTL ? "تم رفع الصورة بنجاح" : "Image uploaded successfully" });
   };
 
   const handleGenerate = async () => {
-    if (!productImage && !prompt) {
-      toast({
-        title: isRTL ? "مطلوب" : "Required",
-        description: isRTL 
-          ? "يرجى رفع صورة المنتج أو كتابة وصف" 
-          : "Please upload a product image or write a description",
-        variant: "destructive",
-      });
+    if (!productImage) {
+      toast({ title: isRTL ? "مطلوب" : "Required", description: isRTL ? "يرجى رفع صورة المنتج" : "Please upload product image", variant: "destructive" });
       return;
     }
-
     setIsGenerating(true);
     setGeneratedImages([]);
-
     try {
-      const { data, error } = await supabase.functions.invoke("design-ad", {
-        body: {
-          productImageUrl: productImage,
-          inspirationImageUrl: inspirationImage,
-          prompt,
-          style: styles.find(s => s.value === style)?.label,
-          aspectRatio,
-        },
-      });
-
+      const sizeMap: Record<string, string> = { "1:1": "1024x1024", "9:16": "1024x1792", "16:9": "1792x1024" };
+      let fullPrompt = designMethod === "new" ? "Professional e-commerce product photography. " : "Replace the product in the reference image with the new product, maintaining the same style, lighting, and composition. ";
+      if (selectedPromptSuggestion) fullPrompt += selectedPromptSuggestion + ". ";
+      if (customPrompt) fullPrompt += customPrompt + ". ";
+      if (transparent) fullPrompt += "Transparent background, PNG format. ";
+      fullPrompt += "High quality, 8K resolution, commercial photography, perfect lighting and shadows.";
+      const { data, error } = await supabase.functions.invoke("design-ad", { body: { productImageUrl: productImage, referenceImageUrl: referenceImage, prompt: fullPrompt, designMethod, size: sizeMap[aspectRatio], transparent } });
       if (error) throw error;
-
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
+      if (data.error) throw new Error(data.error);
       if (data.images && data.images.length > 0) {
         setGeneratedImages(data.images);
-        toast({
-          title: isRTL ? "تم التصميم!" : "Design Complete!",
-          description: isRTL ? "تم إنشاء تصميم الإعلان بنجاح" : "Ad design generated successfully",
-        });
-      } else {
-        throw new Error(isRTL ? "لم يتم إنشاء صور" : "No images generated");
+        toast({ title: isRTL ? "تم التصميم!" : "Design Complete!", description: isRTL ? "تم إنشاء إعلانك بنجاح" : "Ad created successfully" });
       }
     } catch (error: any) {
-      toast({
-        title: isRTL ? "خطأ" : "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: isRTL ? "خطأ" : "Error", description: error.message, variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleDownload = async (imageUrl: string, index: number) => {
-    try {
-      const link = document.createElement("a");
-      link.href = imageUrl;
-      link.download = `ad-design-${index + 1}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      // For base64 images
-      const link = document.createElement("a");
-      link.href = imageUrl;
-      link.download = `ad-design-${index + 1}.png`;
-      link.click();
-    }
-  };
-
-  const handleReset = () => {
-    setProductImage(null);
-    setInspirationImage(null);
-    setPrompt("");
-    setGeneratedImages([]);
-  };
-
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Wand2 className="w-8 h-8 text-primary" />
-            {isRTL ? "مصمم الإعلانات بالذكاء الاصطناعي" : "AI Ad Designer"}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isRTL 
-              ? "صمم إعلانات احترافية لمنتجاتك باستخدام الذكاء الاصطناعي" 
-              : "Design professional ads for your products using AI"}
-          </p>
+      <div className="space-y-6 max-w-6xl mx-auto">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-2">{isRTL ? "مصمم الإعلانات الاحترافي" : "Professional Ad Designer"}</h1>
+          <p className="text-muted-foreground">{isRTL ? "صمم إعلانات منتجاتك باستخدام الذكاء الاصطناعي" : "Design product ads with AI"}</p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Input Section */}
-          <div className="space-y-6">
-            {/* Product Image Upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5" />
-                  {isRTL ? "صورة المنتج" : "Product Image"}
-                </CardTitle>
-                <CardDescription>
-                  {isRTL ? "ارفع صورة المنتج الذي تريد تصميم إعلان له" : "Upload the product image for your ad"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <input
-                  ref={productInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, "product")}
-                  className="hidden"
-                />
+        <Card className="border-l-4 border-l-primary">
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">1</span>
+                {isRTL ? "ارفع الصور" : "Upload Images"}
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="mb-2 block">{isRTL ? "صورة المنتج (الأساسي)" : "Product Image (Main)"}</Label>
+                <input ref={productInputRef} type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "product")} className="hidden" />
                 {productImage ? (
-                  <div className="relative">
-                    <img 
-                      src={productImage} 
-                      alt="Product" 
-                      className="w-full h-48 object-contain rounded-lg border bg-muted"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2"
-                      onClick={() => setProductImage(null)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  <div className="relative border-2 border-primary rounded-lg p-2">
+                    <img src={productImage} alt="Product" className="w-full h-48 object-contain rounded" />
+                    <Button size="sm" variant="secondary" className="absolute top-4 right-4" onClick={() => setProductImage(null)}>{isRTL ? "تغيير" : "Change"}</Button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => productInputRef.current?.click()}
-                    className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-primary/5 transition-colors"
-                  >
-                    <Upload className="w-10 h-10 text-muted-foreground" />
-                    <span className="text-muted-foreground">
-                      {isRTL ? "اضغط لرفع صورة المنتج" : "Click to upload product image"}
-                    </span>
+                  <button onClick={() => productInputRef.current?.click()} className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-colors">
+                    <ImageIcon className="w-10 h-10 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">{isRTL ? "اختيار ملف من الجهاز" : "Choose file from device"}</span>
                   </button>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Inspiration Image Upload */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5" />
-                  {isRTL ? "صورة ملهمة (اختياري)" : "Inspiration Image (Optional)"}
-                </CardTitle>
-                <CardDescription>
-                  {isRTL ? "ارفع صورة إعلان تعجبك ليحاكيها الذكاء الاصطناعي" : "Upload an ad style you like for AI to emulate"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <input
-                  ref={inspirationInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e, "inspiration")}
-                  className="hidden"
-                />
-                {inspirationImage ? (
-                  <div className="relative">
-                    <img 
-                      src={inspirationImage} 
-                      alt="Inspiration" 
-                      className="w-full h-40 object-contain rounded-lg border bg-muted"
-                    />
-                    <Button
-                      size="icon"
-                      variant="destructive"
-                      className="absolute top-2 right-2"
-                      onClick={() => setInspirationImage(null)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+              </div>
+              <div>
+                <Label className="mb-2 block">{isRTL ? "صورة مرجعية (اختياري)" : "Reference Image (Optional)"}</Label>
+                <input ref={referenceInputRef} type="file" accept="image/*" onChange={(e) => handleImageUpload(e, "reference")} className="hidden" />
+                {referenceImage ? (
+                  <div className="relative border-2 rounded-lg p-2">
+                    <img src={referenceImage} alt="Reference" className="w-full h-48 object-contain rounded" />
+                    <Button size="sm" variant="secondary" className="absolute top-4 right-4" onClick={() => setReferenceImage(null)}>{isRTL ? "تغيير" : "Change"}</Button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => inspirationInputRef.current?.click()}
-                    className="w-full h-40 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-3 hover:border-primary hover:bg-primary/5 transition-colors"
-                  >
+                  <button onClick={() => referenceInputRef.current?.click()} className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-colors">
                     <Upload className="w-8 h-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
-                      {isRTL ? "اضغط لرفع صورة ملهمة" : "Click to upload inspiration image"}
-                    </span>
+                    <span className="text-sm text-muted-foreground">{isRTL ? "اختيار ملف (اختياري)" : "Choose file (optional)"}</span>
                   </button>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Prompt & Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>{isRTL ? "وصف الإعلان" : "Ad Description"}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{isRTL ? "البرومبت / الوصف" : "Prompt / Description"}</Label>
-                  <Textarea
-                    placeholder={isRTL 
-                      ? "صف الإعلان الذي تريده... مثال: إعلان لعطر فاخر مع خلفية ذهبية وإضاءة دافئة" 
-                      : "Describe the ad you want... Example: Luxury perfume ad with golden background and warm lighting"}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    rows={4}
-                  />
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">2</span>
+                {isRTL ? "اختر طريقة التصميم" : "Choose Design Method"}
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <button onClick={() => setDesignMethod("new")} className={`p-6 rounded-xl border-2 transition-all ${designMethod === "new" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                <Sparkles className="w-8 h-8 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">{isRTL ? "استلهام تصميم جديد" : "New Inspired Design"}</h3>
+                <p className="text-sm text-muted-foreground">{isRTL ? "سيتم إنشاء تصميم جديد حسب تفضيلاتك" : "Create new design based on your preferences"}</p>
+              </button>
+              <button onClick={() => setDesignMethod("replace")} className={`p-6 rounded-xl border-2 transition-all ${designMethod === "replace" ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                <Wand2 className="w-8 h-8 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">{isRTL ? "تبديل المنتج في الصورة" : "Replace Product in Image"}</h3>
+                <p className="text-sm text-muted-foreground">{isRTL ? "سيتم تبديل المنتج بالصورة المرجعية" : "Replace product in reference image"}</p>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">3</span>
+                {isRTL ? "مساعدة الذكاء الاصطناعي" : "AI Assistance"}
+              </h2>
+            </div>
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                {promptSuggestions.map((suggestion, index) => (
+                  <button key={index} onClick={() => setSelectedPromptSuggestion(isRTL ? suggestion.ar : suggestion.en)} className={`p-3 text-sm text-right rounded-lg border transition-all ${selectedPromptSuggestion === (isRTL ? suggestion.ar : suggestion.en) ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                    {isRTL ? suggestion.ar : suggestion.en}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm">4</span>
+                {isRTL ? "تخصيص التصميم" : "Customize Design"}
+              </h2>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <Label className="mb-2 block">{isRTL ? "تعليمات إضافية" : "Additional Instructions"}</Label>
+                <Textarea placeholder={isRTL ? "اكتب أي تفاصيل إضافية هنا..." : "Write any additional details here..."} value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)} rows={3} className="resize-none" />
+              </div>
+              <div>
+                <Label className="mb-3 block">{isRTL ? "أبعاد الصورة" : "Aspect Ratio"}</Label>
+                <div className="flex gap-3">
+                  {aspectRatios.map((ratio) => (
+                    <button key={ratio.value} onClick={() => setAspectRatio(ratio.value)} className={`flex-1 p-4 rounded-xl border-2 transition-all ${aspectRatio === ratio.value ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary/50"}`}>
+                      <div className="text-2xl mb-1">{ratio.icon}</div>
+                      <div className="font-semibold">{ratio.label}</div>
+                      <div className="text-xs opacity-70">{ratio.size}</div>
+                    </button>
+                  ))}
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "الستايل" : "Style"}</Label>
-                    <Select value={style} onValueChange={setStyle}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {styles.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>{isRTL ? "الأبعاد" : "Aspect Ratio"}</Label>
-                    <Select value={aspectRatio} onValueChange={setAspectRatio}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {aspectRatios.map((ar) => (
-                          <SelectItem key={ar.value} value={ar.value}>
-                            {ar.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
+                <div>
+                  <Label className="font-semibold">{isRTL ? "الخلفية" : "Background"}</Label>
+                  <p className="text-sm text-muted-foreground">{isRTL ? (transparent ? "شفافة" : "معتمة") : (transparent ? "Transparent" : "Opaque")}</p>
                 </div>
+                <Switch checked={transparent} onCheckedChange={setTransparent} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    onClick={handleGenerate} 
-                    disabled={isGenerating}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                        {isRTL ? "جاري التصميم..." : "Designing..."}
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="w-5 h-5 mr-2" />
-                        {isRTL ? "صمم الإعلان" : "Design Ad"}
-                      </>
-                    )}
-                  </Button>
-                  <Button variant="outline" onClick={handleReset}>
-                    <RotateCcw className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        <Button size="lg" className="w-full h-14 text-lg" onClick={handleGenerate} disabled={isGenerating || !productImage}>
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              {isRTL ? "جاري التصميم..." : "Designing..."}
+            </>
+          ) : (
+            <>
+              <Wand2 className="w-5 h-5 mr-2" />
+              {isRTL ? "صمم الإعلان" : "Design Ad"}
+            </>
+          )}
+        </Button>
 
-          {/* Output Section */}
-          <div className="space-y-6">
-            <Card className="min-h-[500px]">
-              <CardHeader>
-                <CardTitle>{isRTL ? "التصميم المولد" : "Generated Design"}</CardTitle>
-                <CardDescription>
-                  {isRTL ? "سيظهر تصميم الإعلان هنا" : "Your ad design will appear here"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isGenerating ? (
-                  <div className="h-80 flex flex-col items-center justify-center gap-4">
-                    <div className="relative">
-                      <div className="w-20 h-20 border-4 border-primary/30 rounded-full" />
-                      <div className="absolute inset-0 w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    </div>
-                    <p className="text-muted-foreground animate-pulse">
-                      {isRTL ? "جاري تصميم إعلانك الاحترافي..." : "Creating your professional ad..."}
-                    </p>
+        {generatedImages.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-semibold mb-4">{isRTL ? "النتيجة" : "Result"}</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {generatedImages.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <img src={img} alt={`Result ${index + 1}`} className="w-full rounded-lg border shadow-lg" />
+                    <Button size="sm" className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { const link = document.createElement("a"); link.href = img; link.download = `ad-design-${index + 1}.png`; link.click(); }}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {isRTL ? "تحميل" : "Download"}
+                    </Button>
                   </div>
-                ) : generatedImages.length > 0 ? (
-                  <div className="space-y-4">
-                    {generatedImages.map((img, index) => (
-                      <div key={index} className="relative group">
-                        <img 
-                          src={img} 
-                          alt={`Generated ad ${index + 1}`}
-                          className="w-full rounded-lg border shadow-lg"
-                        />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={() => handleDownload(img, index)}
-                          >
-                            <Download className="w-4 h-4 mr-2" />
-                            {isRTL ? "تحميل" : "Download"}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="h-80 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-                    <Wand2 className="w-16 h-16 opacity-30" />
-                    <p className="text-center">
-                      {isRTL 
-                        ? "ارفع صورة المنتج واكتب الوصف ثم اضغط 'صمم الإعلان'" 
-                        : "Upload a product image, write a description, then click 'Design Ad'"}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">
-                  {isRTL ? "نصائح للحصول على أفضل النتائج" : "Tips for Best Results"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  <li>• {isRTL ? "استخدم صورة منتج واضحة وعالية الجودة" : "Use a clear, high-quality product image"}</li>
-                  <li>• {isRTL ? "كن محدداً في وصف الإعلان المطلوب" : "Be specific in your ad description"}</li>
-                  <li>• {isRTL ? "أضف صورة ملهمة للحصول على نتائج أفضل" : "Add an inspiration image for better results"}</li>
-                  <li>• {isRTL ? "جرب أكثر من ستايل للحصول على تنوع" : "Try different styles for variety"}</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );
