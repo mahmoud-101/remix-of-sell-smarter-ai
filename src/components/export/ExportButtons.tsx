@@ -10,8 +10,13 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 
+interface VariationContent {
+  variations: string[] | string[][];
+  selectedIndex: number;
+}
+
 interface ExportButtonsProps {
-  content: string | Record<string, string>;
+  content: string | Record<string, string> | Record<string, VariationContent>;
   filename?: string;
 }
 
@@ -20,9 +25,18 @@ export function ExportButtons({ content, filename = "content" }: ExportButtonsPr
   const { toast } = useToast();
   const [exporting, setExporting] = useState<string | null>(null);
 
+  const getValueAsString = (value: string | VariationContent): string => {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object' && 'variations' in value) {
+      const current = value.variations[value.selectedIndex];
+      return Array.isArray(current) ? current.join('\n') : current;
+    }
+    return String(value);
+  };
+
   const getFullContent = (): string => {
     return Object.entries(content)
-      .map(([key, value]) => `${key.toUpperCase()}\n${"=".repeat(20)}\n${value}`)
+      .map(([key, value]) => `${key.toUpperCase()}\n${"=".repeat(20)}\n${getValueAsString(value)}`)
       .join("\n\n");
   };
 
@@ -37,7 +51,7 @@ export function ExportButtons({ content, filename = "content" }: ExportButtonsPr
   const formatContent = (format: "txt" | "html" | "md" | "docx" | "pdf"): string => {
     const entries = typeof content === "string" 
       ? [["content", content]] 
-      : Object.entries(content);
+      : Object.entries(content).map(([key, value]) => [key, getValueAsString(value)]);
     
     switch (format) {
       case "txt":

@@ -5,6 +5,8 @@ import {
   Copy,
   RotateCcw,
   Check,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -25,17 +27,32 @@ import { useHistory } from "@/hooks/useHistory";
 import { TemplatePicker, ProductTemplate } from "@/components/templates/ProductTemplates";
 import { ExportButtons } from "@/components/export/ExportButtons";
 
+interface VariationContent {
+  variations: string[] | string[][];
+  selectedIndex: number;
+}
+
 export default function ProductCopy() {
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [targetAudience, setTargetAudience] = useState("");
   const [tone, setTone] = useState("professional");
+  
+  // 🆕 New fields
+  const [usps, setUsps] = useState<string[]>(["", "", ""]);
+  const [price, setPrice] = useState("");
+  const [offer, setOffer] = useState("");
+  const [platform, setPlatform] = useState("website");
+  const [keywords, setKeywords] = useState("");
+  const [preferredCTA, setPreferredCTA] = useState("");
+  const [contentLength, setContentLength] = useState("medium");
+  
   const [selectedOutputs, setSelectedOutputs] = useState<string[]>([
     "title",
     "description",
     "bullets",
   ]);
-  const [generatedContent, setGeneratedContent] = useState<Record<string, string>>({});
+  const [generatedContent, setGeneratedContent] = useState<Record<string, VariationContent>>({});
   const { toast } = useToast();
   const { t, isRTL } = useLanguage();
   const { generate, isLoading } = useAI("product-copy");
@@ -47,6 +64,20 @@ export default function ProductCopy() {
     { value: "luxury", label: t("toneLuxury") },
     { value: "aggressive", label: t("toneAggressive") },
     { value: "playful", label: t("tonePlayful") },
+  ];
+
+  const platforms = [
+    { value: "website", label: isRTL ? "موقع إلكتروني" : "Website" },
+    { value: "facebook", label: "Facebook" },
+    { value: "instagram", label: "Instagram" },
+    { value: "tiktok", label: "TikTok" },
+    { value: "google", label: "Google Ads" },
+  ];
+
+  const contentLengths = [
+    { value: "short", label: isRTL ? "قصير" : "Short" },
+    { value: "medium", label: isRTL ? "متوسط" : "Medium" },
+    { value: "long", label: isRTL ? "طويل" : "Long" },
   ];
 
   const outputTypes = [
@@ -74,6 +105,12 @@ export default function ProductCopy() {
     });
   };
 
+  const handleUSPChange = (index: number, value: string) => {
+    const newUsps = [...usps];
+    newUsps[index] = value;
+    setUsps(newUsps);
+  };
+
   const handleGenerate = async () => {
     if (!productName || !productDescription) {
       toast({
@@ -89,26 +126,65 @@ export default function ProductCopy() {
       productDescription,
       targetAudience,
       tone,
+      usps: usps.filter(u => u.trim() !== ""),
+      price,
+      offer,
+      platform,
+      keywords,
+      preferredCTA,
+      contentLength,
       outputTypes: selectedOutputs,
     };
 
     const result = await generate(input);
 
     if (result) {
-      const content: Record<string, string> = {};
+      const content: Record<string, VariationContent> = {};
+      
       selectedOutputs.forEach((key) => {
-        if (result[key]) {
-          content[key] = result[key];
+        if (result[key]?.variations) {
+          content[key] = {
+            variations: result[key].variations,
+            selectedIndex: 0,
+          };
         }
       });
-      setGeneratedContent(content);
       
+      setGeneratedContent(content);
       await saveToHistory("product", input, result);
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const switchVariation = (key: string, direction: 'prev' | 'next') => {
+    setGeneratedContent(prev => {
+      const current = prev[key];
+      if (!current) return prev;
+      
+      const maxIndex = current.variations.length - 1;
+      let newIndex = current.selectedIndex;
+      
+      if (direction === 'next') {
+        newIndex = newIndex >= maxIndex ? 0 : newIndex + 1;
+      } else {
+        newIndex = newIndex <= 0 ? maxIndex : newIndex - 1;
+      }
+      
+      return {
+        ...prev,
+        [key]: { ...current, selectedIndex: newIndex }
+      };
+    });
+  };
+
+  const getCurrentVariation = (key: string): string | string[] => {
+    const content = generatedContent[key];
+    if (!content) return "";
+    return content.variations[content.selectedIndex];
+  };
+
+  const copyToClipboard = (text: string | string[]) => {
+    const textToCopy = Array.isArray(text) ? text.join('\n') : text;
+    navigator.clipboard.writeText(textToCopy);
     toast({
       title: t("copied"),
       description: t("copiedToClipboard"),
@@ -180,6 +256,42 @@ export default function ProductCopy() {
                 />
               </div>
 
+              {/* 🆕 USPs */}
+              <div className="space-y-2">
+                <Label>{isRTL ? "نقاط البيع الفريدة (USPs)" : "Unique Selling Points"}</Label>
+                {usps.map((usp, index) => (
+                  <Input
+                    key={index}
+                    placeholder={`${isRTL ? "نقطة" : "Point"} ${index + 1}`}
+                    value={usp}
+                    onChange={(e) => handleUSPChange(index, e.target.value)}
+                    className="input-field"
+                  />
+                ))}
+              </div>
+
+              {/* 🆕 Price & Offer */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>{isRTL ? "السعر" : "Price"}</Label>
+                  <Input
+                    placeholder={isRTL ? "2,500 جنيه" : "$99"}
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{isRTL ? "العرض" : "Special Offer"}</Label>
+                  <Input
+                    placeholder={isRTL ? "خصم 20%" : "20% Off"}
+                    value={offer}
+                    onChange={(e) => setOffer(e.target.value)}
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>{t("toneOfVoice")}</Label>
                 <Select value={tone} onValueChange={setTone}>
@@ -190,6 +302,51 @@ export default function ProductCopy() {
                     {tones.map((t) => (
                       <SelectItem key={t.value} value={t.value}>
                         {t.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 🆕 Platform */}
+              <div className="space-y-2">
+                <Label>{isRTL ? "المنصة" : "Platform"}</Label>
+                <Select value={platform} onValueChange={setPlatform}>
+                  <SelectTrigger className="input-field">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {platforms.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* 🆕 Keywords */}
+              <div className="space-y-2">
+                <Label>{isRTL ? "الكلمات المفتاحية" : "SEO Keywords"}</Label>
+                <Input
+                  placeholder={isRTL ? "ساعة ذكية، رياضية..." : "smart watch, fitness..."}
+                  value={keywords}
+                  onChange={(e) => setKeywords(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              {/* 🆕 Content Length */}
+              <div className="space-y-2">
+                <Label>{isRTL ? "طول المحتوى" : "Content Length"}</Label>
+                <Select value={contentLength} onValueChange={setContentLength}>
+                  <SelectTrigger className="input-field">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contentLengths.map((l) => (
+                      <SelectItem key={l.value} value={l.value}>
+                        {l.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -272,6 +429,9 @@ export default function ProductCopy() {
               <div className="space-y-4">
                 {Object.entries(generatedContent).map(([key, content]) => {
                   const outputType = outputTypes.find((t) => t.id === key);
+                  const currentVariation = getCurrentVariation(key);
+                  const variationCount = content.variations.length;
+                  
                   return (
                     <div
                       key={key}
@@ -282,17 +442,41 @@ export default function ProductCopy() {
                           <span>{outputType?.icon}</span>
                           <h3 className="font-medium">{outputType?.label}</h3>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyToClipboard(content)}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {variationCount > 1 && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-md">
+                              <button
+                                onClick={() => switchVariation(key, 'prev')}
+                                className="hover:text-foreground transition-colors"
+                              >
+                                <ChevronLeft className="w-4 h-4" />
+                              </button>
+                              <span>{content.selectedIndex + 1}/{variationCount}</span>
+                              <button
+                                onClick={() => switchVariation(key, 'next')}
+                                className="hover:text-foreground transition-colors"
+                              >
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard(currentVariation)}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">
-                        {content}
-                      </p>
+                      <div className="text-sm text-muted-foreground whitespace-pre-line">
+                        {Array.isArray(currentVariation) 
+                          ? currentVariation.map((item, i) => (
+                              <div key={i} className="mb-1">• {item}</div>
+                            ))
+                          : currentVariation
+                        }
+                      </div>
                     </div>
                   );
                 })}
