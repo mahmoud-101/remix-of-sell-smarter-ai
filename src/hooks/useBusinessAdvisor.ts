@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useUsageLimit } from '@/hooks/useUsageLimit';
 import { getCached, setCached, stableStringify, withTimeout } from '@/lib/memoryCache';
 
 export type AnalysisType =
@@ -38,10 +39,25 @@ export function useBusinessAdvisor() {
   const [result, setResult] = useState<any>(null);
   const { toast } = useToast();
   const { language, isRTL } = useLanguage();
+  const { canGenerate, remainingGenerations, incrementUsage, refreshUsage } = useUsageLimit();
 
   const cacheKeyBase = useMemo(() => `business-advisor:${language}`, [language]);
 
   const analyze = async (analysisType: AnalysisType, context: BusinessContext) => {
+    // Check usage limit before analyzing
+    await refreshUsage();
+    
+    if (!canGenerate) {
+      toast({
+        title: isRTL ? 'تم استنفاد الحد الشهري' : 'Monthly Limit Reached',
+        description: isRTL 
+          ? 'لقد استخدمت جميع التوليدات المتاحة هذا الشهر. قم بترقية خطتك للمتابعة.'
+          : 'You have used all your generations this month. Upgrade your plan to continue.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
     const cacheKey = `${cacheKeyBase}:${analysisType}:${stableStringify(context)}`;
     const cached = getCached<any>(cacheKey);
     if (cached) {
@@ -88,6 +104,9 @@ export function useBusinessAdvisor() {
         return null;
       }
 
+      // Increment usage after successful generation
+      await incrementUsage();
+
       setResult(data.result);
       setCached(cacheKey, data.result, 5 * 60 * 1000);
       return data.result;
@@ -108,6 +127,8 @@ export function useBusinessAdvisor() {
     analyze,
     isLoading,
     result,
+    canGenerate,
+    remainingGenerations,
   };
 }
 
