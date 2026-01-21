@@ -17,6 +17,7 @@ import {
   Users,
   Brush,
   CreditCard,
+  ImagePlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navItems = [
     { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
     { icon: Brush, label: isRTL ? "مصنع الكريتيفات" : "Creative Factory", path: "/dashboard/creative-factory" },
+    { icon: ImagePlus, label: isRTL ? "مصمم الإعلانات" : "Ad Designer", path: "/dashboard/ad-designer" },
     { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
     { icon: Megaphone, label: t("navigation.adsCopy"), path: "/dashboard/ads-copy" },
     { icon: Video, label: isRTL ? "سكريبتات الفيديو" : "Video Scripts", path: "/dashboard/video-scripts" },
