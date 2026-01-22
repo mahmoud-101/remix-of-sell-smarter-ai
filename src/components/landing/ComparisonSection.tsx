@@ -16,58 +16,70 @@ const features: ComparisonFeature[] = [
     competitors: "partial"
   },
   {
-    name: { ar: "توليد محتوى بالذكاء الاصطناعي", en: "AI Content Generation" },
+    name: { ar: "مصنع الكريتيفات (صور + إعلانات)", en: "Creative Factory (Images + Ads)" },
+    sellgenius: true,
+    traditional: false,
+    competitors: "partial"
+  },
+  {
+    name: { ar: "كاتب وصف المنتجات", en: "Product Description Writer" },
     sellgenius: true,
     traditional: false,
     competitors: true
   },
   {
-    name: { ar: "تحليل المنافسين", en: "Competitor Analysis" },
+    name: { ar: "كاتب الإعلانات متعدد المنصات", en: "Multi-Platform Ad Copywriter" },
     sellgenius: true,
     traditional: false,
     competitors: "partial"
   },
   {
-    name: { ar: "مولد إعلانات متعدد المنصات", en: "Multi-Platform Ad Generator" },
+    name: { ar: "صانع سكريبتات الفيديو", en: "Video Script Maker" },
     sellgenius: true,
     traditional: false,
     competitors: "partial"
   },
   {
-    name: { ar: "مخطط الحملات التسويقية", en: "Marketing Campaign Planner" },
+    name: { ar: "مصمم الإعلانات بالذكاء الاصطناعي", en: "AI Ad Designer" },
+    sellgenius: true,
+    traditional: false,
+    competitors: false
+  },
+  {
+    name: { ar: "خبير SEO للمتاجر", en: "E-commerce SEO Expert" },
+    sellgenius: true,
+    traditional: "partial",
+    competitors: "partial"
+  },
+  {
+    name: { ar: "تحليل المنافسين والتجسس على إعلاناتهم", en: "Competitor Analysis & Ad Spy" },
+    sellgenius: true,
+    traditional: false,
+    competitors: "partial"
+  },
+  {
+    name: { ar: "البحث عن المنتجات الرابحة", en: "Winning Product Research" },
+    sellgenius: true,
+    traditional: false,
+    competitors: false
+  },
+  {
+    name: { ar: "لوحة الإحصائيات والتحليلات", en: "Analytics Dashboard" },
+    sellgenius: true,
+    traditional: "partial",
+    competitors: "partial"
+  },
+  {
+    name: { ar: "إدارة العملاء والطلبات", en: "Leads Management" },
+    sellgenius: true,
+    traditional: false,
+    competitors: false
+  },
+  {
+    name: { ar: "أسعار مناسبة (تبدأ من $5)", en: "Affordable Pricing (from $5)" },
     sellgenius: true,
     traditional: "partial",
     competitors: false
-  },
-  {
-    name: { ar: "تصميم إعلانات بالذكاء الاصطناعي", en: "AI Ad Design" },
-    sellgenius: true,
-    traditional: false,
-    competitors: false
-  },
-  {
-    name: { ar: "أسعار مناسبة للسوق العربي", en: "Affordable for Arabic Market" },
-    sellgenius: true,
-    traditional: "partial",
-    competitors: false
-  },
-  {
-    name: { ar: "دعم WhatsApp المباشر", en: "Direct WhatsApp Support" },
-    sellgenius: true,
-    traditional: false,
-    competitors: false
-  },
-  {
-    name: { ar: "واجهة سهلة للمبتدئين", en: "Beginner-Friendly Interface" },
-    sellgenius: true,
-    traditional: false,
-    competitors: "partial"
-  },
-  {
-    name: { ar: "تجربة مجانية بدون بطاقة", en: "Free Trial No Card Required" },
-    sellgenius: true,
-    traditional: false,
-    competitors: "partial"
   }
 ];
 
