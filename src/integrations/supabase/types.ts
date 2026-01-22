@@ -149,6 +149,51 @@ export type Database = {
         }
         Relationships: []
       }
+      store_connections: {
+        Row: {
+          api_key: string | null
+          api_secret: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_sync_at: string | null
+          platform: Database["public"]["Enums"]["store_platform"]
+          products_count: number | null
+          store_name: string
+          store_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key?: string | null
+          api_secret?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          platform: Database["public"]["Enums"]["store_platform"]
+          products_count?: number | null
+          store_name: string
+          store_url: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key?: string | null
+          api_secret?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          platform?: Database["public"]["Enums"]["store_platform"]
+          products_count?: number | null
+          store_name?: string
+          store_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           created_at: string
@@ -184,6 +229,77 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      synced_products: {
+        Row: {
+          compare_at_price: number | null
+          created_at: string
+          description: string | null
+          external_product_id: string
+          generated_at: string | null
+          generated_description: string | null
+          generated_title: string | null
+          id: string
+          image_url: string | null
+          inventory_quantity: number | null
+          last_synced_at: string | null
+          price: number | null
+          product_url: string | null
+          status: string | null
+          store_connection_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compare_at_price?: number | null
+          created_at?: string
+          description?: string | null
+          external_product_id: string
+          generated_at?: string | null
+          generated_description?: string | null
+          generated_title?: string | null
+          id?: string
+          image_url?: string | null
+          inventory_quantity?: number | null
+          last_synced_at?: string | null
+          price?: number | null
+          product_url?: string | null
+          status?: string | null
+          store_connection_id?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compare_at_price?: number | null
+          created_at?: string
+          description?: string | null
+          external_product_id?: string
+          generated_at?: string | null
+          generated_description?: string | null
+          generated_title?: string | null
+          id?: string
+          image_url?: string | null
+          inventory_quantity?: number | null
+          last_synced_at?: string | null
+          price?: number | null
+          product_url?: string | null
+          status?: string | null
+          store_connection_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_products_store_connection_id_fkey"
+            columns: ["store_connection_id"]
+            isOneToOne: false
+            referencedRelation: "store_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage: {
         Row: {
@@ -250,7 +366,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      store_platform: "shopify" | "woocommerce"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -377,6 +493,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      store_platform: ["shopify", "woocommerce"],
+    },
   },
 } as const
