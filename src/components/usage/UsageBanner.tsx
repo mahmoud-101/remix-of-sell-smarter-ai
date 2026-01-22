@@ -10,7 +10,8 @@ export function UsageBanner() {
   const { language, isRTL } = useLanguage();
   const { plan, generationsUsed, generationsLimit, remainingGenerations, percentageUsed, canGenerate } = useUsageLimit();
 
-  if (plan === "enterprise") {
+  // Hide banner for unlimited plans
+  if (plan === "business" || plan === "pro") {
     return null;
   }
 

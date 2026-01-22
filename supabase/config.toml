@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.search-facebook-ads]
 verify_jwt = false
+
+[functions.nzmly-webhook]
+verify_jwt = false
