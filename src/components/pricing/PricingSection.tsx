@@ -1,105 +1,34 @@
 import { useState } from "react";
-import { Check, Sparkles, Zap, Crown, Building2 } from "lucide-react";
+import { Check, X, Sparkles, Crown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
-interface PlanFeature {
-  ar: string;
-  en: string;
-}
+import { PAYMENT_LINKS, PLAN_FEATURES, getPaymentUrl } from "@/lib/paymentConfig";
 
 interface Plan {
-  id: string;
-  name: { ar: string; en: string };
-  price: number | null;
-  period: { ar: string; en: string };
-  description: { ar: string; en: string };
-  features: PlanFeature[];
+  id: 'free' | 'pro' | 'business';
+  paymentKey: 'starter' | 'pro' | 'business';
   icon: React.ElementType;
   popular?: boolean;
-  buttonText: { ar: string; en: string };
 }
 
 const plans: Plan[] = [
   {
     id: "free",
-    name: { ar: "مجاني", en: "Free" },
-    price: 0,
-    period: { ar: "/شهر", en: "/month" },
-    description: { 
-      ar: "للمبتدئين والتجربة", 
-      en: "For beginners and trial" 
-    },
-    features: [
-      { ar: "5 توليدات شهرياً", en: "5 generations/month" },
-      { ar: "جميع أدوات الذكاء الاصطناعي", en: "All AI tools access" },
-      { ar: "دعم المجتمع", en: "Community support" },
-      { ar: "تاريخ 7 أيام", en: "7-day history" },
-    ],
+    paymentKey: "starter",
     icon: Sparkles,
-    buttonText: { ar: "ابدأ مجاناً", en: "Start Free" },
-  },
-  {
-    id: "start",
-    name: { ar: "Start", en: "Start" },
-    price: 5,
-    period: { ar: "/شهر", en: "/month" },
-    description: { 
-      ar: "للبائعين الصغار", 
-      en: "For small sellers" 
-    },
-    features: [
-      { ar: "50 توليد شهرياً", en: "50 generations/month" },
-      { ar: "جميع أدوات الذكاء الاصطناعي", en: "All AI tools access" },
-      { ar: "دعم البريد الإلكتروني", en: "Email support" },
-      { ar: "تاريخ 30 يوم", en: "30-day history" },
-      { ar: "تصدير المحتوى", en: "Content export" },
-    ],
-    icon: Zap,
-    buttonText: { ar: "اشترك الآن", en: "Subscribe Now" },
   },
   {
     id: "pro",
-    name: { ar: "Pro", en: "Pro" },
-    price: 10,
-    period: { ar: "/شهر", en: "/month" },
-    description: { 
-      ar: "للبائعين المحترفين", 
-      en: "For professional sellers" 
-    },
-    features: [
-      { ar: "200 توليد شهرياً", en: "200 generations/month" },
-      { ar: "جميع أدوات الذكاء الاصطناعي", en: "All AI tools access" },
-      { ar: "دعم أولوية 24/7", en: "24/7 priority support" },
-      { ar: "تاريخ غير محدود", en: "Unlimited history" },
-      { ar: "تصدير متقدم", en: "Advanced export" },
-      { ar: "تحليلات متقدمة", en: "Advanced analytics" },
-    ],
+    paymentKey: "pro",
     icon: Crown,
     popular: true,
-    buttonText: { ar: "اشترك الآن", en: "Subscribe Now" },
   },
   {
-    id: "enterprise",
-    name: { ar: "Enterprise", en: "Enterprise" },
-    price: 20,
-    period: { ar: "/شهر", en: "/month" },
-    description: { 
-      ar: "للفرق والمؤسسات", 
-      en: "For teams and enterprises" 
-    },
-    features: [
-      { ar: "توليدات غير محدودة", en: "Unlimited generations" },
-      { ar: "جميع أدوات الذكاء الاصطناعي", en: "All AI tools access" },
-      { ar: "مدير حساب مخصص", en: "Dedicated account manager" },
-      { ar: "تاريخ غير محدود", en: "Unlimited history" },
-      { ar: "API كامل", en: "Full API access" },
-      { ar: "تدريب مخصص", en: "Custom training" },
-      { ar: "SLA مضمون", en: "Guaranteed SLA" },
-    ],
+    id: "business",
+    paymentKey: "business",
     icon: Building2,
-    buttonText: { ar: "تواصل معنا", en: "Contact Us" },
   },
 ];
 
@@ -107,151 +36,243 @@ export default function PricingSection() {
   const { language, isRTL } = useLanguage();
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
 
-  const getPrice = (monthlyPrice: number | null) => {
-    if (monthlyPrice === null || monthlyPrice === 0) return monthlyPrice;
-    if (billingPeriod === "yearly") {
-      return Math.round(monthlyPrice * 0.8); // 20% discount
+  const getPrice = (plan: Plan) => {
+    const planData = PLAN_FEATURES[plan.id];
+    if (planData.price === 0) return 0;
+    if (billingPeriod === "yearly" && planData.yearlyPrice) {
+      return Math.round(planData.yearlyPrice / 12);
     }
-    return monthlyPrice;
+    return planData.price;
+  };
+
+  const getYearlySavings = (plan: Plan) => {
+    const planData = PLAN_FEATURES[plan.id];
+    if (!planData.price || planData.price === 0) return 0;
+    const monthlyTotal = planData.price * 12;
+    const yearlyPrice = planData.yearlyPrice || monthlyTotal;
+    return Math.round(monthlyTotal - yearlyPrice);
+  };
+
+  const handleUpgrade = (plan: Plan) => {
+    const url = getPaymentUrl(plan.paymentKey);
+    window.open(url, '_blank');
   };
 
   return (
-    <section id="pricing" className="py-20 px-4">
+    <section id="pricing" className="py-20 px-4 bg-gradient-to-br from-background via-primary/5 to-background">
       <div className="container mx-auto max-w-7xl">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4">
             {isRTL ? (
               <>
-                خطط أسعار
-                <span className="gradient-text"> تناسب الجميع</span>
+                اختر خطتك
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> المثالية</span>
               </>
             ) : (
               <>
-                Pricing Plans
-                <span className="gradient-text"> for Everyone</span>
+                Choose Your
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> Perfect Plan</span>
               </>
             )}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             {isRTL
-              ? "اختر الخطة المناسبة لحجم أعمالك وابدأ في تنمية مبيعاتك اليوم"
-              : "Choose the right plan for your business size and start growing your sales today"}
+              ? "ابدأ مجاناً، وقم بالترقية عندما تكون جاهزاً للتوسع"
+              : "Start free, upgrade when you're ready to scale"}
           </p>
+          
+          {/* Special offer badge */}
+          <div className="inline-block bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-400 rounded-full px-6 py-2 mb-8">
+            <span className="text-yellow-800 dark:text-yellow-300 font-bold text-sm">
+              🎉 {isRTL ? 'عرض خاص: أول 100 مستخدم يحصلون على 20% خصم!' : 'Special Launch Offer: First 100 users get 20% off forever!'}
+            </span>
+          </div>
 
           {/* Billing toggle */}
-          <div className="inline-flex items-center gap-4 p-1.5 rounded-full bg-secondary border border-border">
+          <div className="inline-flex items-center gap-1 p-1.5 rounded-xl bg-secondary border border-border shadow-lg">
             <button
               onClick={() => setBillingPeriod("monthly")}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all",
+                "px-6 py-3 rounded-lg text-sm font-semibold transition-all",
                 billingPeriod === "monthly" 
-                  ? "bg-primary text-primary-foreground" 
+                  ? "bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-md" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isRTL ? "شهري" : "Monthly"}
+              {isRTL ? "شهري" : "Monthly Billing"}
             </button>
             <button
               onClick={() => setBillingPeriod("yearly")}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all relative",
+                "px-6 py-3 rounded-lg text-sm font-semibold transition-all relative",
                 billingPeriod === "yearly" 
-                  ? "bg-primary text-primary-foreground" 
+                  ? "bg-gradient-to-r from-primary to-purple-600 text-primary-foreground shadow-md" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {isRTL ? "سنوي" : "Yearly"}
-              <span className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded-full">
-                -20%
+              {isRTL ? "سنوي" : "Yearly Billing"}
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-green-500 text-white text-[10px] font-bold rounded-full">
+                {isRTL ? 'وفر 17%' : 'Save 17%'}
               </span>
             </button>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {plans.map((plan, index) => (
-            <div
-              key={plan.id}
-              className={cn(
-                "relative flex flex-col rounded-2xl border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl animate-fade-in",
-                plan.popular 
-                  ? "border-primary shadow-lg shadow-primary/10 scale-105 lg:scale-110 z-10" 
-                  : "border-border hover:border-primary/50"
-              )}
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full animate-pulse">
-                    {isRTL ? "الأكثر شعبية ⭐" : "⭐ Most Popular"}
-                  </span>
-                </div>
-              )}
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {plans.map((plan, index) => {
+            const planData = PLAN_FEATURES[plan.id];
+            const price = getPrice(plan);
+            const savings = getYearlySavings(plan);
+            
+            return (
+              <div
+                key={plan.id}
+                className={cn(
+                  "relative flex flex-col rounded-2xl border bg-card p-8 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl animate-fade-in",
+                  plan.popular 
+                    ? "border-primary border-4 shadow-xl shadow-primary/20 scale-105 z-10" 
+                    : "border-border hover:border-primary/50"
+                )}
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                {/* Badge */}
+                {(planData.badge || planData.badgeAr) && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <span className={cn(
+                      "text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg",
+                      plan.id === 'pro' 
+                        ? "bg-gradient-to-r from-primary to-purple-600" 
+                        : "bg-gradient-to-r from-purple-500 to-pink-600"
+                    )}>
+                      ⭐ {isRTL ? planData.badgeAr : planData.badge}
+                    </span>
+                  </div>
+                )}
 
-              <div className="flex items-center gap-3 mb-4">
-                <div className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
-                  plan.popular ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
-                )}>
-                  <plan.icon className="w-6 h-6" />
+                <div className="flex items-center gap-3 mb-6 mt-2">
+                  <div className={cn(
+                    "w-14 h-14 rounded-xl flex items-center justify-center",
+                    plan.popular ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
+                  )}>
+                    <plan.icon className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl">{isRTL ? planData.nameAr : planData.name}</h3>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg">{plan.name[language]}</h3>
-                  <p className="text-sm text-muted-foreground">{plan.description[language]}</p>
-                </div>
-              </div>
 
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  {plan.price === 0 ? (
-                    <span className="text-4xl font-bold">{isRTL ? "مجاني" : "Free"}</span>
-                  ) : (
-                    <>
-                      <span className="text-4xl font-bold">${getPrice(plan.price)}</span>
-                      <span className="text-muted-foreground">
-                        {billingPeriod === "yearly" 
-                          ? (isRTL ? "/شهر (سنوي)" : "/mo (billed yearly)")
-                          : plan.period[language]}
-                      </span>
-                    </>
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    {price === 0 ? (
+                      <span className="text-5xl font-bold">{isRTL ? "مجاني" : "Free"}</span>
+                    ) : (
+                      <>
+                        <span className={cn(
+                          "text-5xl font-bold",
+                          plan.popular && "bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"
+                        )}>
+                          ${price}
+                        </span>
+                        <span className="text-muted-foreground text-sm">
+                          /{isRTL ? 'شهر' : 'month'}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {planData.price === 0 && (
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {isRTL ? 'مجاني للأبد' : 'Forever free'}
+                    </p>
+                  )}
+                  {billingPeriod === "yearly" && savings > 0 && (
+                    <p className="text-green-600 text-sm font-semibold mt-2">
+                      {isRTL 
+                        ? `أو $${planData.yearlyPrice}/سنة (وفر $${savings})`
+                        : `or $${planData.yearlyPrice}/year (save $${savings})`}
+                    </p>
                   )}
                 </div>
-                {billingPeriod === "yearly" && plan.price && plan.price > 0 && (
-                  <p className="text-xs text-green-600 mt-1">
+
+                {/* Features */}
+                <ul className="space-y-3 mb-8 flex-1">
+                  {(isRTL ? planData.featuresAr : planData.features).map((feature, featureIndex) => (
+                    <li key={featureIndex} className="flex items-start gap-2 text-sm">
+                      <div className={cn(
+                        "w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                        plan.id === 'business' ? "bg-purple-100 dark:bg-purple-900/30" : "bg-primary/10"
+                      )}>
+                        <Check className={cn(
+                          "w-3 h-3",
+                          plan.id === 'business' ? "text-purple-600" : "text-primary"
+                        )} />
+                      </div>
+                      <span className="font-medium">{feature}</span>
+                    </li>
+                  ))}
+                  
+                  {/* Limitations for free plan */}
+                  {planData.limitations && (isRTL ? planData.limitationsAr : planData.limitations).map((limitation, limIndex) => (
+                    <li key={`lim-${limIndex}`} className="flex items-start gap-2 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                        <X className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                      <span className="text-muted-foreground">{limitation}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {plan.id === 'free' ? (
+                  <Link to="/signup" className="w-full">
+                    <Button
+                      className="w-full py-6 text-lg font-bold"
+                      variant="outline"
+                      size="lg"
+                    >
+                      {isRTL ? 'ابدأ مجاناً' : 'Get Started'}
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button
+                    className={cn(
+                      "w-full py-6 text-lg font-bold transition-all",
+                      plan.popular 
+                        ? "bg-gradient-to-r from-primary to-purple-600 hover:shadow-xl hover:scale-105" 
+                        : "bg-gradient-to-r from-purple-500 to-pink-600 hover:shadow-xl hover:scale-105"
+                    )}
+                    size="lg"
+                    onClick={() => handleUpgrade(plan)}
+                  >
                     {isRTL 
-                      ? `وفر $${Math.round(plan.price * 12 * 0.2)} سنوياً`
-                      : `Save $${Math.round(plan.price * 12 * 0.2)}/year`}
-                  </p>
+                      ? `ترقية إلى ${planData.nameAr}` 
+                      : `Upgrade to ${planData.name}`}
+                  </Button>
                 )}
               </div>
+            );
+          })}
+        </div>
 
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={featureIndex} className="flex items-start gap-2 text-sm">
-                    <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-primary" />
-                    </div>
-                    <span>{feature[language]}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link to="/signup" className="w-full">
-                <Button
-                  className="w-full"
-                  variant={plan.popular ? "gradient" : "outline"}
-                  size="lg"
-                >
-                  {plan.buttonText[language]}
-                </Button>
-              </Link>
+        {/* Trust Badges */}
+        <div className="mt-16 text-center">
+          <div className="flex flex-wrap justify-center items-center gap-6 text-muted-foreground text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-green-500">🔒</span>
+              <span>{isRTL ? 'دفع آمن عبر Nzmly' : 'Secure Payment via Nzmly'}</span>
             </div>
-          ))}
+            <div className="flex items-center gap-2">
+              <span className="text-blue-500">💳</span>
+              <span>{isRTL ? 'جميع البطاقات المصرية مقبولة' : 'All Egyptian Cards Accepted'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-purple-500">↩️</span>
+              <span>{isRTL ? 'إلغاء في أي وقت' : 'Cancel Anytime'}</span>
+            </div>
+          </div>
         </div>
 
         {/* Money back guarantee */}
-        <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm">
+        <div className="mt-8 text-center">
+          <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary/10 text-primary text-sm font-medium">
             <Check className="w-4 h-4" />
             {isRTL 
               ? "ضمان استرداد الأموال خلال 14 يوم - بدون أسئلة"
