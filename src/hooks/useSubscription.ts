@@ -6,28 +6,36 @@ import { PLAN_FEATURES, PlanType } from "@/lib/paymentConfig";
 // Re-export PLANS for backward compatibility
 export const PLANS = {
   free: {
-    name: "Free",
-    nameAr: "مجاني",
+    name: "Free Trial",
+    nameAr: "تجربة مجانية",
     price: 0,
     features: PLAN_FEATURES.free.features,
     featuresAr: PLAN_FEATURES.free.featuresAr,
-    limit: PLAN_FEATURES.free.limits.productDescriptions
+    limit: 5
+  },
+  start: {
+    name: "Start",
+    nameAr: "ستارت",
+    price: 5,
+    features: PLAN_FEATURES.start.features,
+    featuresAr: PLAN_FEATURES.start.featuresAr,
+    limit: 50
   },
   pro: {
     name: "Pro",
     nameAr: "المحترف",
-    price: PLAN_FEATURES.pro.price,
+    price: 10,
     features: PLAN_FEATURES.pro.features,
     featuresAr: PLAN_FEATURES.pro.featuresAr,
-    limit: -1 // Unlimited
+    limit: -1
   },
   business: {
     name: "Business",
     nameAr: "بيزنس",
-    price: PLAN_FEATURES.business.price,
+    price: 20,
     features: PLAN_FEATURES.business.features,
     featuresAr: PLAN_FEATURES.business.featuresAr,
-    limit: -1 // Unlimited
+    limit: -1
   }
 };
 
@@ -39,7 +47,6 @@ export const useSubscription = () => {
     queryFn: async () => {
       if (!user) return null;
       
-      // Try to get subscription from subscriptions table first
       const { data: subData } = await supabase
         .from("subscriptions")
         .select("plan, status, expires_at")
@@ -54,7 +61,6 @@ export const useSubscription = () => {
         };
       }
       
-      // Fallback to profiles table
       const { data: profileData } = await supabase
         .from("profiles")
         .select("plan")

@@ -1,29 +1,29 @@
 // Nzmly Payment Links Configuration
 export const PAYMENT_LINKS = {
-  starter: {
+  start: {
     url: 'https://Sell-mate.nzmly.com/l/vrYhypJJeg',
-    planType: 'free' as const,
-    price: 0,
-    name: 'Starter (Free)',
-    nameAr: 'مجاني'
+    planType: 'start' as const,
+    price: 5,
+    name: 'Start',
+    nameAr: 'ستارت'
   },
   pro: {
     url: 'https://Sell-mate.nzmly.com/l/NgRgejCVJg',
     planType: 'pro' as const,
-    price: 4.99,
+    price: 10,
     name: 'Pro',
     nameAr: 'المحترف'
   },
   business: {
     url: 'https://Sell-mate.nzmly.com/l/KLCfkEnzTn',
     planType: 'business' as const,
-    price: 14.99,
+    price: 20,
     name: 'Business',
     nameAr: 'بيزنس'
   }
 } as const;
 
-export type PlanType = 'free' | 'pro' | 'business';
+export type PlanType = 'free' | 'start' | 'pro' | 'business';
 
 export interface PlanFeatures {
   name: string;
@@ -45,8 +45,8 @@ export interface PlanFeatures {
 
 export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   free: {
-    name: 'Free',
-    nameAr: 'مجاني',
+    name: 'Free Trial',
+    nameAr: 'تجربة مجانية',
     price: 0,
     limits: {
       productDescriptions: 5,
@@ -54,39 +54,62 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       videoScripts: 2
     },
     features: [
-      '5 product descriptions/month',
-      '3 AI images/month',
-      '2 video scripts/month',
+      '5 product descriptions',
+      '3 AI images',
+      '2 video scripts',
       'Standard quality',
-      'Watermark on images',
-      '10 basic templates',
       'Community support'
     ],
     featuresAr: [
-      '5 وصف منتج شهرياً',
+      '5 وصف منتج',
       '3 صور بالذكاء الاصطناعي',
       '2 سكريبت فيديو',
       'جودة عادية',
-      'علامة مائية على الصور',
-      '10 قوالب أساسية',
       'دعم المجتمع'
     ],
     limitations: [
-      'No Product Research',
-      'No Analytics Dashboard',
-      'No Competitor Spy Tools'
+      'Limited generations',
+      'No priority support'
     ],
     limitationsAr: [
-      'بدون بحث المنتجات',
-      'بدون لوحة التحليلات',
-      'بدون أدوات التجسس على المنافسين'
+      'توليدات محدودة',
+      'بدون دعم أولوية'
+    ]
+  },
+  start: {
+    name: 'Start',
+    nameAr: 'ستارت',
+    price: 5,
+    yearlyPrice: 50,
+    limits: {
+      productDescriptions: 50,
+      images: 20,
+      videoScripts: 10
+    },
+    features: [
+      '50 product descriptions/month',
+      '20 AI images/month',
+      '10 video scripts/month',
+      'HD quality',
+      'Email support',
+      'All templates',
+      'Export all formats'
+    ],
+    featuresAr: [
+      '50 وصف منتج شهرياً',
+      '20 صورة AI شهرياً',
+      '10 سكريبت فيديو شهرياً',
+      'جودة عالية HD',
+      'دعم بريد إلكتروني',
+      'جميع القوالب',
+      'تصدير كل الصيغ'
     ]
   },
   pro: {
     name: 'Pro',
     nameAr: 'المحترف',
-    price: 4.99,
-    yearlyPrice: 49,
+    price: 10,
+    yearlyPrice: 100,
     limits: {
       productDescriptions: -1,
       images: -1,
@@ -97,20 +120,18 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       '✅ Unlimited AI images (HD)',
       '✅ Unlimited video scripts',
       '✅ No watermarks',
-      '✅ 50+ premium templates',
-      '✅ All export formats',
       '✅ Priority email support',
-      '✅ Advanced AI models'
+      '✅ Advanced AI models',
+      '✅ Analytics dashboard'
     ],
     featuresAr: [
       '✅ وصف منتجات غير محدود',
       '✅ صور AI غير محدودة (HD)',
       '✅ سكريبتات فيديو غير محدودة',
       '✅ بدون علامة مائية',
-      '✅ +50 قالب احترافي',
-      '✅ جميع صيغ التصدير',
       '✅ دعم بريد إلكتروني أولوية',
-      '✅ نماذج AI متقدمة'
+      '✅ نماذج AI متقدمة',
+      '✅ لوحة التحليلات'
     ],
     badge: 'MOST POPULAR',
     badgeAr: 'الأكثر طلباً'
@@ -118,8 +139,8 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   business: {
     name: 'Business',
     nameAr: 'بيزنس',
-    price: 14.99,
-    yearlyPrice: 149,
+    price: 20,
+    yearlyPrice: 200,
     limits: {
       productDescriptions: -1,
       images: -1,
@@ -129,20 +150,18 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       '✅ Everything in Pro, plus:',
       '✅ Product Research Tool',
       '✅ Competitor Spy Tool',
-      '✅ Analytics Dashboard',
       '✅ API Access (coming soon)',
       '✅ Priority WhatsApp support',
-      '✅ 1:1 onboarding call (30 min)',
+      '✅ 1:1 onboarding call',
       '✅ White-label option'
     ],
     featuresAr: [
       '✅ كل مميزات Pro، بالإضافة إلى:',
       '✅ أداة البحث عن المنتجات',
       '✅ أداة التجسس على المنافسين',
-      '✅ لوحة التحليلات',
       '✅ وصول API (قريباً)',
       '✅ دعم واتساب أولوية',
-      '✅ مكالمة تعريفية 1:1 (30 دقيقة)',
+      '✅ مكالمة تعريفية 1:1',
       '✅ خيار العلامة البيضاء'
     ],
     badge: 'BEST VALUE',
@@ -157,11 +176,4 @@ export const getPaymentUrl = (planKey: keyof typeof PAYMENT_LINKS, email?: strin
     return `${paymentLink.url}?email=${encodeURIComponent(email)}`;
   }
   return paymentLink.url;
-};
-
-// Helper to check if a feature is available for a plan
-export const isFeatureAvailable = (planType: PlanType, feature: 'productResearch' | 'analytics' | 'competitorSpy'): boolean => {
-  if (planType === 'business') return true;
-  if (planType === 'pro' && feature !== 'productResearch' && feature !== 'competitorSpy') return true;
-  return false;
 };
