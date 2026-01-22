@@ -155,7 +155,9 @@ export type Database = {
       store_connections: {
         Row: {
           api_key: string | null
+          api_key_encrypted: string | null
           api_secret: string | null
+          api_secret_encrypted: string | null
           created_at: string
           id: string
           is_active: boolean | null
@@ -169,7 +171,9 @@ export type Database = {
         }
         Insert: {
           api_key?: string | null
+          api_key_encrypted?: string | null
           api_secret?: string | null
+          api_secret_encrypted?: string | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -183,7 +187,9 @@ export type Database = {
         }
         Update: {
           api_key?: string | null
+          api_key_encrypted?: string | null
           api_secret?: string | null
+          api_secret_encrypted?: string | null
           created_at?: string
           id?: string
           is_active?: boolean | null
@@ -302,6 +308,13 @@ export type Database = {
             referencedRelation: "store_connections"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "synced_products_store_connection_id_fkey"
+            columns: ["store_connection_id"]
+            isOneToOne: false
+            referencedRelation: "store_connections_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       usage: {
@@ -363,10 +376,65 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      store_connections_safe: {
+        Row: {
+          created_at: string | null
+          has_api_key: boolean | null
+          has_api_secret: boolean | null
+          id: string | null
+          is_active: boolean | null
+          last_sync_at: string | null
+          platform: Database["public"]["Enums"]["store_platform"] | null
+          products_count: number | null
+          store_name: string | null
+          store_url: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          has_api_key?: never
+          has_api_secret?: never
+          id?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          platform?: Database["public"]["Enums"]["store_platform"] | null
+          products_count?: number | null
+          store_name?: string | null
+          store_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          has_api_key?: never
+          has_api_secret?: never
+          id?: string | null
+          is_active?: boolean | null
+          last_sync_at?: string | null
+          platform?: Database["public"]["Enums"]["store_platform"] | null
+          products_count?: number | null
+          store_name?: string | null
+          store_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      decrypt_api_credential: {
+        Args: { encrypted_credential: string }
+        Returns: string
+      }
+      encrypt_api_credential: { Args: { credential: string }; Returns: string }
+      get_store_credentials: {
+        Args: { connection_uuid: string }
+        Returns: {
+          api_key: string
+          api_secret: string
+        }[]
+      }
     }
     Enums: {
       store_platform: "shopify" | "woocommerce"

@@ -84,6 +84,26 @@ async function fetchWooCommerceProducts(storeUrl: string, consumerKey: string, c
   return await response.json();
 }
 
+// Get decrypted credentials securely using the RPC function
+async function getDecryptedCredentials(supabase: any, connectionId: string): Promise<{ api_key: string; api_secret: string | null }> {
+  const { data, error } = await supabase
+    .rpc('get_store_credentials', { connection_uuid: connectionId });
+  
+  if (error) {
+    console.error('Error getting credentials:', error);
+    throw new Error('Failed to retrieve store credentials');
+  }
+  
+  if (!data || data.length === 0) {
+    throw new Error('Credentials not found');
+  }
+  
+  return {
+    api_key: data[0].api_key,
+    api_secret: data[0].api_secret
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -130,7 +150,7 @@ serve(async (req) => {
           productCount = products.length;
         }
 
-        // Save connection
+        // Save connection - credentials will be encrypted by the database trigger
         const { data: connection, error: insertError } = await supabase
           .from('store_connections')
           .upsert({
@@ -138,8 +158,8 @@ serve(async (req) => {
             platform,
             store_name: storeName,
             store_url: storeUrl,
-            api_key: apiKey,
-            api_secret: apiSecret || null,
+            api_key: apiKey, // Will be encrypted by trigger
+            api_secret: apiSecret || null, // Will be encrypted by trigger
             is_active: true,
             products_count: productCount,
             last_sync_at: new Date().toISOString()
@@ -155,7 +175,13 @@ serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             success: true, 
-            connection,
+            connection: {
+              ...connection,
+              api_key: undefined, // Never return credentials
+              api_secret: undefined,
+              api_key_encrypted: undefined,
+              api_secret_encrypted: undefined
+            },
             message: `تم الاتصال بنجاح! وجدنا ${productCount} منتج`,
             productsCount: productCount
           }),
@@ -164,10 +190,10 @@ serve(async (req) => {
       }
 
       case 'sync': {
-        // Get connection details
+        // Get connection details (without credentials)
         const { data: connection, error: connError } = await supabase
           .from('store_connections')
-          .select('*')
+          .select('id, user_id, platform, store_url, store_name')
           .eq('id', connectionId)
           .eq('user_id', user.id)
           .single();
@@ -176,12 +202,15 @@ serve(async (req) => {
           throw new Error('Connection not found');
         }
 
+        // Get decrypted credentials securely
+        const credentials = await getDecryptedCredentials(supabase, connectionId);
+
         let products: any[] = [];
         
         if (connection.platform === 'shopify') {
           const shopifyProducts = await fetchShopifyProducts(
             connection.store_url, 
-            connection.api_key
+            credentials.api_key
           ) as ShopifyProduct[];
           
           products = shopifyProducts.map(p => ({
@@ -201,8 +230,8 @@ serve(async (req) => {
         } else if (connection.platform === 'woocommerce') {
           const wooProducts = await fetchWooCommerceProducts(
             connection.store_url,
-            connection.api_key,
-            connection.api_secret
+            credentials.api_key,
+            credentials.api_secret || ''
           ) as WooCommerceProduct[];
           
           products = wooProducts.map(p => ({
