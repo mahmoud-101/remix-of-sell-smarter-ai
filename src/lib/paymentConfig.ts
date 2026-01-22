@@ -57,23 +57,27 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       '5 product descriptions',
       '3 AI images',
       '2 video scripts',
-      'Standard quality',
-      'Community support'
+      'Ad Copywriter',
+      'Standard templates'
     ],
     featuresAr: [
       '5 وصف منتج',
       '3 صور بالذكاء الاصطناعي',
       '2 سكريبت فيديو',
-      'جودة عادية',
-      'دعم المجتمع'
+      'كاتب الإعلانات',
+      'قوالب أساسية'
     ],
     limitations: [
-      'Limited generations',
-      'No priority support'
+      'No SEO Tool',
+      'No Competitor Analysis',
+      'No Product Research',
+      'No Analytics'
     ],
     limitationsAr: [
-      'توليدات محدودة',
-      'بدون دعم أولوية'
+      'بدون أداة SEO',
+      'بدون تحليل المنافسين',
+      'بدون البحث عن المنتجات',
+      'بدون الإحصائيات'
     ]
   },
   start: {
@@ -90,19 +94,33 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       '50 product descriptions/month',
       '20 AI images/month',
       '10 video scripts/month',
-      'HD quality',
-      'Email support',
+      'Creative Factory',
+      'Ad Copywriter',
+      'Video Script Maker',
+      'SEO Analyzer',
       'All templates',
-      'Export all formats'
+      'Email support'
     ],
     featuresAr: [
       '50 وصف منتج شهرياً',
       '20 صورة AI شهرياً',
       '10 سكريبت فيديو شهرياً',
-      'جودة عالية HD',
-      'دعم بريد إلكتروني',
+      'مصنع الكريتيفات',
+      'كاتب الإعلانات',
+      'صانع سكريبتات الفيديو',
+      'خبير SEO',
       'جميع القوالب',
-      'تصدير كل الصيغ'
+      'دعم بريد إلكتروني'
+    ],
+    limitations: [
+      'No Competitor Analysis',
+      'No Product Research',
+      'No Analytics Dashboard'
+    ],
+    limitationsAr: [
+      'بدون تحليل المنافسين',
+      'بدون البحث عن المنتجات',
+      'بدون لوحة الإحصائيات'
     ]
   },
   pro: {
@@ -117,21 +135,35 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     },
     features: [
       '✅ Unlimited product descriptions',
-      '✅ Unlimited AI images (HD)',
+      '✅ Unlimited AI images',
       '✅ Unlimited video scripts',
-      '✅ No watermarks',
-      '✅ Priority email support',
-      '✅ Advanced AI models',
-      '✅ Analytics dashboard'
+      '✅ Creative Factory',
+      '✅ Ad Copywriter',
+      '✅ Video Script Maker',
+      '✅ SEO Analyzer',
+      '✅ Analytics Dashboard',
+      '✅ Ad Designer',
+      '✅ Priority email support'
     ],
     featuresAr: [
       '✅ وصف منتجات غير محدود',
-      '✅ صور AI غير محدودة (HD)',
+      '✅ صور AI غير محدودة',
       '✅ سكريبتات فيديو غير محدودة',
-      '✅ بدون علامة مائية',
-      '✅ دعم بريد إلكتروني أولوية',
-      '✅ نماذج AI متقدمة',
-      '✅ لوحة التحليلات'
+      '✅ مصنع الكريتيفات',
+      '✅ كاتب الإعلانات',
+      '✅ صانع سكريبتات الفيديو',
+      '✅ خبير SEO',
+      '✅ لوحة الإحصائيات',
+      '✅ مصمم الإعلانات',
+      '✅ دعم بريد إلكتروني أولوية'
+    ],
+    limitations: [
+      'No Competitor Analysis',
+      'No Product Research'
+    ],
+    limitationsAr: [
+      'بدون تحليل المنافسين',
+      'بدون البحث عن المنتجات'
     ],
     badge: 'MOST POPULAR',
     badgeAr: 'الأكثر طلباً'
@@ -148,20 +180,22 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     },
     features: [
       '✅ Everything in Pro, plus:',
+      '✅ Competitor Analysis Tool',
       '✅ Product Research Tool',
-      '✅ Competitor Spy Tool',
-      '✅ API Access (coming soon)',
+      '✅ Advanced Analytics',
+      '✅ Leads Management',
       '✅ Priority WhatsApp support',
-      '✅ 1:1 onboarding call',
+      '✅ API Access (coming soon)',
       '✅ White-label option'
     ],
     featuresAr: [
       '✅ كل مميزات Pro، بالإضافة إلى:',
+      '✅ أداة تحليل المنافسين',
       '✅ أداة البحث عن المنتجات',
-      '✅ أداة التجسس على المنافسين',
-      '✅ وصول API (قريباً)',
+      '✅ تحليلات متقدمة',
+      '✅ إدارة العملاء',
       '✅ دعم واتساب أولوية',
-      '✅ مكالمة تعريفية 1:1',
+      '✅ وصول API (قريباً)',
       '✅ خيار العلامة البيضاء'
     ],
     badge: 'BEST VALUE',
