@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, TrendingUp, Eye, DollarSign, Star, ShoppingCart } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Search, TrendingUp, Eye, DollarSign, Star, ShoppingCart, Flame, ExternalLink, ArrowUpDown } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +20,8 @@ interface Product {
   imageUrl: string;
   supplierUrl: string;
   estimatedProfit: string;
+  source: string;
+  trendScore: number;
 }
 
 interface FacebookAd {
@@ -37,6 +41,7 @@ export default function ProductResearch() {
   const [facebookAds, setFacebookAds] = useState<FacebookAd[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('products');
+  const [sortBy, setSortBy] = useState('orders');
 
   const searchAliExpressProducts = async () => {
     setLoading(true);
@@ -44,12 +49,24 @@ export default function ProductResearch() {
       const { data, error } = await supabase.functions.invoke('search-products', {
         body: { 
           query: searchQuery,
-          sortBy: 'orders'
+          sortBy: sortBy
         }
       });
       
       if (error) throw error;
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
       setProducts(data.products || []);
+      
+      toast({
+        title: isRTL ? 'تم البحث بنجاح' : 'Search Complete',
+        description: isRTL 
+          ? `تم العثور على ${data.products?.length || 0} منتج رابح`
+          : `Found ${data.products?.length || 0} winning products`,
+      });
     } catch (error: any) {
       console.error('Error searching products:', error);
       toast({
@@ -113,15 +130,26 @@ export default function ProductResearch() {
           </p>
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <Input
-            placeholder={isRTL ? "ابحث عن منتجات أو كلمات مفتاحية... (مثال: phone accessories, watches)" : "Search for products or keywords... (e.g., phone accessories, watches)"}
+            placeholder={isRTL ? "ابحث عن منتجات... (مثال: phone accessories, smart watch)" : "Search for products... (e.g., phone accessories, smart watch)"}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             className="flex-1 text-lg"
           />
-          <Button onClick={handleSearch} disabled={loading} size="lg">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue placeholder={isRTL ? "ترتيب حسب" : "Sort by"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="orders">{isRTL ? "الأكثر مبيعاً" : "Best Selling"}</SelectItem>
+              <SelectItem value="profit">{isRTL ? "أعلى ربح" : "Highest Profit"}</SelectItem>
+              <SelectItem value="trend">{isRTL ? "الأكثر رواجاً" : "Most Trending"}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={handleSearch} disabled={loading} size="lg" className="whitespace-nowrap">
             <Search className="mr-2 h-5 w-5" />
             {loading ? (isRTL ? 'جاري البحث...' : 'Searching...') : (isRTL ? 'بحث' : 'Search')}
           </Button>
@@ -150,15 +178,24 @@ export default function ProductResearch() {
             {!loading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {products.map((product) => (
-                  <Card key={product.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <Card key={product.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group">
                     <div className="relative">
                       <img 
                         src={product.imageUrl} 
                         alt={product.title}
-                        className="w-full h-56 object-cover"
+                        className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://picsum.photos/400/400?grayscale';
+                        }}
                       />
-                      <div className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                        🔥 {isRTL ? 'رائج' : 'Trending'}
+                      <div className="absolute top-2 right-2 flex flex-col gap-1">
+                        <Badge className="bg-primary text-primary-foreground">
+                          <Flame className="h-3 w-3 mr-1" />
+                          {product.trendScore}% {isRTL ? 'رائج' : 'Trending'}
+                        </Badge>
+                        <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
+                          {product.source}
+                        </Badge>
                       </div>
                     </div>
                     <CardHeader className="pb-3">
@@ -169,14 +206,14 @@ export default function ProductResearch() {
                     <CardContent>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">{isRTL ? 'السعر:' : 'Price:'}</span>
+                          <span className="text-sm text-muted-foreground">{isRTL ? 'سعر المورد:' : 'Supplier Price:'}</span>
                           <span className="font-bold text-xl text-primary">{product.price}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">{isRTL ? 'المبيعات:' : 'Orders:'}</span>
+                          <span className="text-sm text-muted-foreground">{isRTL ? 'المبيعات الشهرية:' : 'Monthly Sales:'}</span>
                           <span className="font-semibold text-green-600 flex items-center gap-1">
                             <ShoppingCart className="h-4 w-4" />
-                            {product.orders.toLocaleString()} {isRTL ? 'طلب' : 'orders'}
+                            {product.orders.toLocaleString()}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -194,11 +231,12 @@ export default function ProductResearch() {
                           </span>
                         </div>
                         <Button 
-                          className="w-full mt-4" 
+                          className="w-full mt-4 group-hover:bg-primary/90" 
                           variant="default"
                           onClick={() => window.open(product.supplierUrl, '_blank')}
                         >
-                          {isRTL ? 'عرض المورد 🚀' : 'View Supplier 🚀'}
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          {isRTL ? 'عرض المورد' : 'View Supplier'}
                         </Button>
                       </div>
                     </CardContent>
