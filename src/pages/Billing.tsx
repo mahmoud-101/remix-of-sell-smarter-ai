@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, PLANS } from "@/hooks/useSubscription";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,19 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
-  CreditCard, Check, Crown, Zap, Calendar, AlertCircle, Sparkles, X
+  CreditCard, Check, Crown, Zap, Calendar, AlertCircle, Sparkles, Building2, X
 } from "lucide-react";
 import { toast } from "sonner";
-import { PAYMENT_LINKS, PLAN_FEATURES, getPaymentUrl, PlanType } from "@/lib/paymentConfig";
+import { PAYMENT_LINKS, getPaymentUrl, PlanType } from "@/lib/paymentConfig";
 
 const Billing = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
-  const { subscription, currentPlan, isLoading: subLoading } = useSubscription();
-  const { generationsUsed, generationsLimit, plan } = useUsageLimit();
+  const { subscription, currentPlan, planDetails, isLoading: subLoading } = useSubscription();
+  const { generationsUsed, generationsLimit } = useUsageLimit();
   const isRTL = language === 'ar';
 
-  const handleUpgrade = (planKey: 'starter' | 'pro' | 'business') => {
+  const handleUpgrade = (planKey: 'start' | 'pro' | 'business') => {
     const url = getPaymentUrl(planKey, user?.email || undefined);
     window.open(url, '_blank');
     toast.success(
@@ -42,12 +42,10 @@ const Billing = () => {
     });
   };
 
-  const currentPlanData = PLAN_FEATURES[currentPlan as PlanType] || PLAN_FEATURES.free;
-
-  const planConfigs: { key: PlanType; paymentKey: 'starter' | 'pro' | 'business'; icon: typeof Sparkles }[] = [
-    { key: 'free', paymentKey: 'starter', icon: Sparkles },
+  const planConfigs: { key: keyof typeof PLANS; paymentKey?: 'start' | 'pro' | 'business'; icon: typeof Sparkles }[] = [
+    { key: 'start', paymentKey: 'start', icon: Zap },
     { key: 'pro', paymentKey: 'pro', icon: Crown },
-    { key: 'business', paymentKey: 'business', icon: Zap },
+    { key: 'business', paymentKey: 'business', icon: Building2 },
   ];
 
   return (
@@ -64,15 +62,15 @@ const Billing = () => {
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Current Plan Card */}
-          <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
+          <Card className="border-primary/20">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
                   <Crown className="h-5 w-5 text-primary" />
                   {isRTL ? 'خطتك الحالية' : 'Current Plan'}
                 </CardTitle>
-                <Badge variant={currentPlan === 'free' ? 'secondary' : 'default'} className="text-sm">
-                  {isRTL ? currentPlanData.nameAr : currentPlanData.name}
+                <Badge variant={currentPlan === 'free' ? 'secondary' : 'default'}>
+                  {isRTL ? planDetails.nameAr : planDetails.name}
                 </Badge>
               </div>
               <CardDescription>
@@ -84,19 +82,17 @@ const Billing = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2 text-3xl font-bold">
-                {currentPlanData.price === 0 ? (
+                {planDetails.price === 0 ? (
                   <span className="text-muted-foreground">{isRTL ? 'مجاناً' : 'Free'}</span>
                 ) : (
                   <>
-                    <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                      ${currentPlanData.price}
-                    </span>
+                    <span className="text-primary">${planDetails.price}</span>
                     <span className="text-sm font-normal text-muted-foreground">/{isRTL ? 'شهر' : 'month'}</span>
                   </>
                 )}
               </div>
               <ul className="space-y-2">
-                {(isRTL ? currentPlanData.featuresAr : currentPlanData.features).slice(0, 5).map((feature, i) => (
+                {(isRTL ? planDetails.featuresAr : planDetails.features).slice(0, 4).map((feature, i) => (
                   <li key={i} className="flex items-center gap-2 text-sm">
                     <Check className="h-4 w-4 text-primary flex-shrink-0" />
                     {feature}
@@ -132,25 +128,19 @@ const Billing = () => {
                 <div className="flex items-center gap-2 p-3 bg-yellow-500/10 rounded-lg text-yellow-600 dark:text-yellow-400">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span className="text-sm">
-                    {isRTL ? 'أوشكت على استهلاك حد التوليدات الشهري' : 'You\'re approaching your monthly limit'}
+                    {isRTL ? 'أوشكت على استهلاك حد التوليدات' : 'Approaching your monthly limit'}
                   </span>
                 </div>
               )}
               
-              {currentPlan === 'free' && (
+              {(currentPlan === 'free' || currentPlan === 'start') && (
                 <Button 
-                  className="w-full bg-gradient-to-r from-primary to-purple-600"
+                  className="w-full bg-primary"
                   onClick={() => handleUpgrade('pro')}
                 >
-                  {isRTL ? 'ترقية للحصول على توليدات غير محدودة' : 'Upgrade for Unlimited Generations'}
+                  {isRTL ? 'ترقية للحصول على توليدات غير محدودة' : 'Upgrade for Unlimited'}
                 </Button>
               )}
-              
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground">
-                  {isRTL ? 'يتجدد الرصيد في بداية كل شهر ميلادي' : 'Credits reset at the beginning of each calendar month'}
-                </p>
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -160,7 +150,7 @@ const Billing = () => {
           <h2 className="text-xl font-semibold mb-4">{isRTL ? 'ترقية خطتك' : 'Upgrade Your Plan'}</h2>
           <div className="grid gap-6 md:grid-cols-3">
             {planConfigs.map(({ key, paymentKey, icon: Icon }) => {
-              const planData = PLAN_FEATURES[key];
+              const planData = PLANS[key];
               const isCurrent = currentPlan === key;
               const isPopular = key === 'pro';
               
@@ -168,22 +158,14 @@ const Billing = () => {
                 <Card 
                   key={key} 
                   className={`relative transition-all duration-300 hover:scale-[1.02] ${
-                    isPopular ? 'border-primary border-2 shadow-lg shadow-primary/20' : 'border-border/50'
+                    isPopular ? 'border-primary border-2 shadow-lg shadow-primary/20' : ''
                   } ${isCurrent ? 'bg-primary/5 border-primary/40' : ''}`}
                 >
                   {isPopular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-primary to-purple-600 text-white">
+                      <Badge className="bg-primary text-primary-foreground">
                         <Sparkles className="h-3 w-3 mr-1" />
-                        {isRTL ? 'الأكثر شعبية' : 'Most Popular'}
-                      </Badge>
-                    </div>
-                  )}
-                  
-                  {planData.badge && !isPopular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-600 text-white">
-                        💎 {isRTL ? planData.badgeAr : planData.badge}
+                        {isRTL ? 'الأكثر طلباً' : 'Most Popular'}
                       </Badge>
                     </div>
                   )}
@@ -198,18 +180,12 @@ const Billing = () => {
                     </div>
                     <CardTitle className="text-xl">{isRTL ? planData.nameAr : planData.name}</CardTitle>
                     <div className="mt-4">
-                      {planData.price === 0 ? (
-                        <span className="text-3xl font-bold">{isRTL ? 'مجاناً' : 'Free'}</span>
-                      ) : (
-                        <div className="flex items-baseline justify-center gap-1">
-                          <span className={`text-4xl font-bold ${
-                            isPopular ? 'bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent' : ''
-                          }`}>
-                            ${planData.price}
-                          </span>
-                          <span className="text-muted-foreground">/{isRTL ? 'شهر' : 'mo'}</span>
-                        </div>
-                      )}
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className={`text-4xl font-bold ${isPopular ? 'text-primary' : ''}`}>
+                          ${planData.price}
+                        </span>
+                        <span className="text-muted-foreground">/{isRTL ? 'شهر' : 'mo'}</span>
+                      </div>
                     </div>
                     {isCurrent && (
                       <Badge variant="outline" className="mt-2 border-primary text-primary">
@@ -220,35 +196,23 @@ const Billing = () => {
                   
                   <CardContent className="space-y-4 pt-4">
                     <ul className="space-y-3">
-                      {(isRTL ? planData.featuresAr : planData.features).slice(0, 6).map((feature, i) => (
+                      {(isRTL ? planData.featuresAr : planData.features).slice(0, 5).map((feature, i) => (
                         <li key={i} className="flex items-center gap-2 text-sm">
                           <Check className="h-4 w-4 text-primary flex-shrink-0" />
                           <span>{feature}</span>
                         </li>
                       ))}
-                      {planData.limitations && (isRTL ? planData.limitationsAr : planData.limitations).map((lim, i) => (
-                        <li key={`lim-${i}`} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <X className="h-4 w-4 flex-shrink-0" />
-                          <span>{lim}</span>
-                        </li>
-                      ))}
                     </ul>
                     
                     <Button 
-                      className={`w-full mt-4 ${
-                        isPopular && !isCurrent 
-                          ? 'bg-gradient-to-r from-primary to-purple-600 hover:shadow-lg' 
-                          : ''
-                      }`}
+                      className={`w-full mt-4 ${isPopular && !isCurrent ? 'bg-primary' : ''}`}
                       variant={isCurrent ? 'outline' : isPopular ? 'default' : 'outline'}
-                      disabled={isCurrent || key === 'free'}
-                      onClick={() => handleUpgrade(paymentKey)}
+                      disabled={isCurrent}
+                      onClick={() => paymentKey && handleUpgrade(paymentKey)}
                     >
                       {isCurrent 
                         ? (isRTL ? 'خطتك الحالية' : 'Current Plan')
-                        : key === 'free'
-                          ? (isRTL ? 'الخطة الأساسية' : 'Basic Plan')
-                          : (isRTL ? 'ترقية الآن' : 'Upgrade Now')
+                        : (isRTL ? 'اشترك الآن' : 'Subscribe Now')
                       }
                     </Button>
                   </CardContent>
@@ -261,16 +225,12 @@ const Billing = () => {
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center items-center gap-6 text-muted-foreground text-sm py-4">
           <div className="flex items-center gap-2">
-            <span className="text-green-500">🔒</span>
+            <span>🔒</span>
             <span>{isRTL ? 'دفع آمن عبر Nzmly' : 'Secure Payment via Nzmly'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-blue-500">💳</span>
-            <span>{isRTL ? 'جميع البطاقات المصرية مقبولة' : 'All Egyptian Cards Accepted'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-purple-500">↩️</span>
-            <span>{isRTL ? 'إلغاء في أي وقت' : 'Cancel Anytime'}</span>
+            <span>💳</span>
+            <span>{isRTL ? 'جميع البطاقات مقبولة' : 'All Cards Accepted'}</span>
           </div>
         </div>
 
@@ -287,11 +247,6 @@ const Billing = () => {
               <div className="text-center">
                 <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>{isRTL ? 'لا توجد مدفوعات بعد' : 'No payments yet'}</p>
-                <p className="text-sm mt-1">
-                  {isRTL 
-                    ? 'ستظهر هنا سجل مدفوعاتك عند الاشتراك' 
-                    : 'Your payment history will appear here once you subscribe'}
-                </p>
               </div>
             </div>
           </CardContent>
