@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SecurityHeaders } from "@/components/security/SecurityHeaders";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { TrackingScripts } from "@/components/tracking/TrackingScripts";
 
 // Lazy load pages for better performance
 // NOTE: After publishing a new frontend build, some users may have stale cached chunks.
@@ -317,6 +318,7 @@ const App = () => (
         <AuthProvider>
           <TooltipProvider>
             <SecurityHeaders />
+            <TrackingScripts />
             <Toaster />
             <Sonner />
             <BrowserRouter>

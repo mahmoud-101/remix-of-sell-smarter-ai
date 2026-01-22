@@ -123,6 +123,7 @@ export type Database = {
           id: string
           plan: string | null
           preferred_language: string | null
+          tracking_config: Json | null
           updated_at: string
         }
         Insert: {
@@ -134,6 +135,7 @@ export type Database = {
           id: string
           plan?: string | null
           preferred_language?: string | null
+          tracking_config?: Json | null
           updated_at?: string
         }
         Update: {
@@ -145,6 +147,7 @@ export type Database = {
           id?: string
           plan?: string | null
           preferred_language?: string | null
+          tracking_config?: Json | null
           updated_at?: string
         }
         Relationships: []

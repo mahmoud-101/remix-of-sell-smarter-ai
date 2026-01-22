@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Globe, Bell, Shield, Save, Loader2, Palette, MessageCircle, Moon, Sun, Store } from "lucide-react";
+import { User, Mail, Globe, Bell, Shield, Save, Loader2, Palette, MessageCircle, Moon, Sun, Store, BarChart3 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import BrandVoiceSettings from "@/components/settings/BrandVoiceSettings";
 import RealWhatsAppIntegration from "@/components/whatsapp/RealWhatsAppIntegration";
 import WhatsAppBusinessSetup from "@/components/whatsapp/WhatsAppBusinessSetup";
 import StoreIntegrations from "@/components/settings/StoreIntegrations";
+import { TrackingIntegrations } from "@/components/settings/TrackingIntegrations";
 import {
   Select,
   SelectContent,
@@ -104,7 +105,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-[800px]">
+          <TabsList className="grid w-full grid-cols-8 lg:w-[900px]">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">{isRTL ? "الملف" : "Profile"}</span>
@@ -116,6 +117,10 @@ export default function Settings() {
             <TabsTrigger value="stores" className="flex items-center gap-2">
               <Store className="w-4 h-4" />
               <span className="hidden sm:inline">{isRTL ? "المتاجر" : "Stores"}</span>
+            </TabsTrigger>
+            <TabsTrigger value="tracking" className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">{isRTL ? "التتبع" : "Tracking"}</span>
             </TabsTrigger>
             <TabsTrigger value="brand" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
@@ -234,6 +239,23 @@ export default function Settings() {
           <TabsContent value="stores" className="space-y-6">
             <div className="glass-card rounded-2xl p-6">
               <StoreIntegrations />
+            </div>
+          </TabsContent>
+
+          {/* Tracking & Pixels Tab */}
+          <TabsContent value="tracking" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">
+                  {isRTL ? "ربط المنصات الإعلانية والتحليلات" : "Ad Platforms & Analytics Integration"}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {isRTL 
+                    ? "أضف أكواد التتبع (Pixels) لتحليل حملاتك الإعلانية وسلوك زوار موقعك"
+                    : "Add tracking pixels to analyze your ad campaigns and visitor behavior"}
+                </p>
+              </div>
+              <TrackingIntegrations />
             </div>
           </TabsContent>
 
