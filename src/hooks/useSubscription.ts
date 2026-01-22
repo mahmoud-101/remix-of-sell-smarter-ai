@@ -1,39 +1,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { PLAN_FEATURES, PlanType } from "@/lib/paymentConfig";
 
+// Re-export PLANS for backward compatibility
 export const PLANS = {
   free: {
-    name: "Free Trial",
-    nameAr: "تجربة مجانية",
+    name: "Free",
+    nameAr: "مجاني",
     price: 0,
-    features: ["5 credits total", "Try all tools", "Standard speed"],
-    featuresAr: ["5 محاولات مجانية", "تجرية كل الأدوات", "سرعة عادية"],
-    limit: 5
-  },
-  start: {
-    name: "Starter",
-    nameAr: "تاجر (بداية)",
-    price: 5,
-    features: ["50 Products/mo", "Ads Copywriting", "Basic Support"],
-    featuresAr: ["وصف 50 منتج شهرياً", "كتابة إعلانات احترافية", "دعم فني أساسي"],
-    limit: 50
+    features: PLAN_FEATURES.free.features,
+    featuresAr: PLAN_FEATURES.free.featuresAr,
+    limit: PLAN_FEATURES.free.limits.productDescriptions
   },
   pro: {
     name: "Pro",
-    nameAr: "المحترف (الأكثر طلباً)",
-    price: 12,
-    features: ["Unlimited Text", "50 AI Images", "Competitor Analysis", "Priority Support"],
-    featuresAr: ["نصوص لا محدودة ♾️", "50 صورة بالذكاء الاصطناعي", "تحليل المنافسين", "أولوية في الدعم"],
-    limit: 1000 // رقم كبير يعامل معاملة اللامحدود للنصوص
+    nameAr: "المحترف",
+    price: PLAN_FEATURES.pro.price,
+    features: PLAN_FEATURES.pro.features,
+    featuresAr: PLAN_FEATURES.pro.featuresAr,
+    limit: -1 // Unlimited
   },
-  enterprise: {
+  business: {
     name: "Business",
-    nameAr: "بيزنس (شركات)",
-    price: 29,
-    features: ["Unlimited Everything", "High-Res Images", "Direct WhatsApp Support", "Early Access"],
-    featuresAr: ["كل شيء لا محدود 🚀", "صور بدقة عالية 4K", "دعم مباشر واتساب", "وصول مبكر للتحديثات"],
-    limit: -1
+    nameAr: "بيزنس",
+    price: PLAN_FEATURES.business.price,
+    features: PLAN_FEATURES.business.features,
+    featuresAr: PLAN_FEATURES.business.featuresAr,
+    limit: -1 // Unlimited
   }
 };
 
@@ -76,7 +70,7 @@ export const useSubscription = () => {
     enabled: !!user,
   });
 
-  const currentPlan = subscription?.plan || 'free';
+  const currentPlan = (subscription?.plan || 'free') as PlanType;
   const planDetails = PLANS[currentPlan as keyof typeof PLANS] || PLANS.free;
 
   return {
