@@ -65,6 +65,7 @@ const UseCases = lazyWithRetry(() => import("./pages/UseCases"), "UseCases");
 const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
 const Terms = lazyWithRetry(() => import("./pages/Terms"), "Terms");
 const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
+const Contact = lazyWithRetry(() => import("./pages/Contact"), "Contact");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
 // Loading fallback component
@@ -302,6 +303,7 @@ function AppRoutes() {
         />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>

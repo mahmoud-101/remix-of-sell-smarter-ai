@@ -13,6 +13,7 @@ import {
   Users,
   Video,
   Search,
+  ShoppingBag,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -188,6 +189,28 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
+
+        {/* Quick Access - Synced Products */}
+        <Link to="/dashboard/synced-products" className="block">
+          <div className="glass-card rounded-xl p-4 border-2 border-dashed border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-all group cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <ShoppingBag className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold group-hover:text-primary transition-colors">
+                    {isRTL ? "المنتجات المتزامنة" : "Synced Products"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {isRTL ? "إدارة منتجات متجرك وتوليد محتوى AI" : "Manage your store products & generate AI content"}
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className={`w-5 h-5 text-muted-foreground group-hover:text-primary transition-all ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+            </div>
+          </div>
+        </Link>
 
         {/* Main Tools Section */}
         <div>

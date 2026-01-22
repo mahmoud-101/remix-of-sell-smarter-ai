@@ -390,11 +390,15 @@ export default function StoreIntegrations() {
                           placeholder="shpat_xxxxx..."
                           value={apiKey}
                           onChange={(e) => setApiKey(e.target.value)}
-                          className="font-mono pr-10"
+                          className="font-mono"
+                          autoComplete="off"
                         />
                       </div>
-                      <p className="text-xs text-destructive mt-2">
-                        {isRTL 
+                      <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                        🔒 {isRTL ? 'يتم تخزين التوكن بشكل آمن ومشفر' : 'Token is stored securely and encrypted'}
+                      </p>
+                      <p className="text-xs text-destructive mt-1">
+                        {isRTL
                           ? '⚠️ هذا الكود يظهر مرة واحدة فقط! احفظه في مكان آمن'
                           : '⚠️ This token is shown only once! Save it somewhere safe'}
                       </p>
