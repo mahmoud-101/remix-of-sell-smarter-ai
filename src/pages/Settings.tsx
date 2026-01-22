@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Globe, Bell, Shield, Save, Loader2, Palette, MessageCircle, Moon, Sun } from "lucide-react";
+import { User, Mail, Globe, Bell, Shield, Save, Loader2, Palette, MessageCircle, Moon, Sun, Store } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import { useTheme } from "next-themes";
 import BrandVoiceSettings from "@/components/settings/BrandVoiceSettings";
 import RealWhatsAppIntegration from "@/components/whatsapp/RealWhatsAppIntegration";
 import WhatsAppBusinessSetup from "@/components/whatsapp/WhatsAppBusinessSetup";
+import StoreIntegrations from "@/components/settings/StoreIntegrations";
 import {
   Select,
   SelectContent,
@@ -103,7 +104,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-[700px]">
+          <TabsList className="grid w-full grid-cols-7 lg:w-[800px]">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">{isRTL ? "الملف" : "Profile"}</span>
@@ -111,6 +112,10 @@ export default function Settings() {
             <TabsTrigger value="preferences" className="flex items-center gap-2">
               <Globe className="w-4 h-4" />
               <span className="hidden sm:inline">{isRTL ? "التفضيلات" : "Prefs"}</span>
+            </TabsTrigger>
+            <TabsTrigger value="stores" className="flex items-center gap-2">
+              <Store className="w-4 h-4" />
+              <span className="hidden sm:inline">{isRTL ? "المتاجر" : "Stores"}</span>
             </TabsTrigger>
             <TabsTrigger value="brand" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
@@ -222,6 +227,13 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Store Integrations Tab */}
+          <TabsContent value="stores" className="space-y-6">
+            <div className="glass-card rounded-2xl p-6">
+              <StoreIntegrations />
             </div>
           </TabsContent>
 
