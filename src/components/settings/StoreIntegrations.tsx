@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Store, Link2, Unlink, RefreshCw, ShoppingBag, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Store, Link2, Unlink, RefreshCw, ShoppingBag, CheckCircle2, AlertCircle, Loader2, ExternalLink, Copy, Check, ArrowRight } from 'lucide-react';
 
 interface StoreConnection {
   id: string;
@@ -33,6 +33,8 @@ export default function StoreIntegrations() {
   const [syncing, setSyncing] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPlatform, setSelectedPlatform] = useState<'shopify' | 'woocommerce'>('shopify');
+  const [currentStep, setCurrentStep] = useState(1);
+  const [copied, setCopied] = useState(false);
   
   // Form state
   const [storeName, setStoreName] = useState('');
@@ -63,10 +65,10 @@ export default function StoreIntegrations() {
   };
 
   const handleConnect = async () => {
-    if (!storeName || !storeUrl || !apiKey) {
+    if (!storeUrl || !apiKey) {
       toast({
         title: isRTL ? 'خطأ' : 'Error',
-        description: isRTL ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields',
+        description: isRTL ? 'يرجى إدخال Access Token' : 'Please enter the Access Token',
         variant: 'destructive'
       });
       return;
@@ -83,11 +85,14 @@ export default function StoreIntegrations() {
 
     setConnecting(true);
     try {
+      // Extract store name from URL
+      const extractedStoreName = storeUrl.replace(/^https?:\/\//, '').replace('.myshopify.com', '').replace(/\/$/, '');
+      
       const { data, error } = await supabase.functions.invoke('store-sync', {
         body: {
           action: 'connect',
           platform: selectedPlatform,
-          storeName,
+          storeName: storeName || extractedStoreName,
           storeUrl,
           apiKey,
           apiSecret: selectedPlatform === 'woocommerce' ? apiSecret : null
@@ -98,7 +103,7 @@ export default function StoreIntegrations() {
       if (data.error) throw new Error(data.error);
 
       toast({
-        title: isRTL ? 'تم الاتصال بنجاح!' : 'Connected Successfully!',
+        title: isRTL ? 'تم الاتصال بنجاح! 🎉' : 'Connected Successfully! 🎉',
         description: data.message
       });
 
@@ -173,6 +178,13 @@ export default function StoreIntegrations() {
     setStoreUrl('');
     setApiKey('');
     setApiSecret('');
+    setCurrentStep(1);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const formatDate = (dateStr: string | null) => {
@@ -188,6 +200,11 @@ export default function StoreIntegrations() {
 
   const shopifyConnection = connections.find(c => c.platform === 'shopify');
   const wooConnection = connections.find(c => c.platform === 'woocommerce');
+
+  const getShopifyAdminUrl = () => {
+    const cleanUrl = storeUrl.replace(/^https?:\/\//, '').replace('.myshopify.com', '').replace(/\/$/, '');
+    return `https://admin.shopify.com/store/${cleanUrl}/settings/apps/development`;
+  };
 
   if (loading) {
     return (
@@ -211,7 +228,7 @@ export default function StoreIntegrations() {
           </p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button>
               <Link2 className="mr-2 h-4 w-4" />
@@ -221,16 +238,16 @@ export default function StoreIntegrations() {
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
-                {isRTL ? 'ربط متجرك' : 'Connect Your Store'}
+                {isRTL ? 'ربط متجرك بخطوات بسيطة' : 'Connect Your Store - Easy Steps'}
               </DialogTitle>
               <DialogDescription>
                 {isRTL 
-                  ? 'أدخل بيانات متجرك للاتصال ومزامنة المنتجات'
-                  : 'Enter your store details to connect and sync products'}
+                  ? 'اتبع الخطوات التالية لربط متجرك بضغطة زر'
+                  : 'Follow these simple steps to connect your store'}
               </DialogDescription>
             </DialogHeader>
 
-            <Tabs value={selectedPlatform} onValueChange={(v) => setSelectedPlatform(v as 'shopify' | 'woocommerce')}>
+            <Tabs value={selectedPlatform} onValueChange={(v) => { setSelectedPlatform(v as 'shopify' | 'woocommerce'); setCurrentStep(1); }}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="shopify" disabled={!!shopifyConnection}>
                   <Store className="mr-2 h-4 w-4" />
@@ -243,39 +260,180 @@ export default function StoreIntegrations() {
               </TabsList>
 
               <TabsContent value="shopify" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label>{isRTL ? 'اسم المتجر' : 'Store Name'}</Label>
-                  <Input 
-                    placeholder={isRTL ? 'مثال: متجري' : 'e.g., My Store'}
-                    value={storeName}
-                    onChange={(e) => setStoreName(e.target.value)}
-                  />
+                {/* Progress Steps */}
+                <div className="flex items-center justify-center gap-2 mb-6">
+                  {[1, 2, 3].map((step) => (
+                    <div key={step} className="flex items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                        currentStep >= step 
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {currentStep > step ? <Check className="h-4 w-4" /> : step}
+                      </div>
+                      {step < 3 && (
+                        <ArrowRight className={`h-4 w-4 mx-2 ${currentStep > step ? 'text-primary' : 'text-muted-foreground'}`} />
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <Label>{isRTL ? 'رابط المتجر' : 'Store URL'}</Label>
-                  <Input 
-                    placeholder="mystore.myshopify.com"
-                    value={storeUrl}
-                    onChange={(e) => setStoreUrl(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {isRTL ? 'اسم المتجر فقط بدون https://' : 'Store name only without https://'}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Access Token</Label>
-                  <Input 
-                    type="password"
-                    placeholder="shpat_xxxxx..."
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {isRTL 
-                      ? 'من Settings → Apps → Develop apps → Admin API access token'
-                      : 'From Settings → Apps → Develop apps → Admin API access token'}
-                  </p>
-                </div>
+
+                {/* Step 1: Enter Store URL */}
+                {currentStep === 1 && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">1</span>
+                        {isRTL ? 'أدخل رابط متجرك' : 'Enter Your Store URL'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {isRTL ? 'فقط اسم المتجر بدون .myshopify.com' : 'Just the store name without .myshopify.com'}
+                      </p>
+                      <Input 
+                        placeholder="your-store-name"
+                        value={storeUrl}
+                        onChange={(e) => setStoreUrl(e.target.value)}
+                        className="text-center font-mono"
+                      />
+                      <p className="text-xs text-muted-foreground mt-2 text-center">
+                        {isRTL ? 'مثال: my-awesome-store' : 'Example: my-awesome-store'}
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => setCurrentStep(2)} 
+                      disabled={!storeUrl}
+                      className="w-full"
+                    >
+                      {isRTL ? 'التالي' : 'Next'}
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Step 2: Create App */}
+                {currentStep === 2 && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">2</span>
+                        {isRTL ? 'أنشئ تطبيق في Shopify' : 'Create App in Shopify'}
+                      </h3>
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          {isRTL 
+                            ? '1. اضغط على الزر أدناه لفتح إعدادات Shopify'
+                            : '1. Click the button below to open Shopify settings'}
+                        </p>
+                        <Button variant="outline" className="w-full" asChild>
+                          <a href={getShopifyAdminUrl()} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            {isRTL ? 'فتح إعدادات Shopify' : 'Open Shopify Settings'}
+                          </a>
+                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                          {isRTL 
+                            ? '2. اضغط "Create an app" ثم "Create app"'
+                            : '2. Click "Create an app" then "Create app"'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {isRTL 
+                            ? '3. اختر اسم للتطبيق (مثلاً: Store Sync)'
+                            : '3. Choose an app name (e.g., Store Sync)'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {isRTL 
+                            ? '4. اضغط "Configure Admin API scopes" واختر الصلاحيات التالية:'
+                            : '4. Click "Configure Admin API scopes" and select:'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {['read_products', 'write_products', 'read_inventory'].map((scope) => (
+                            <Badge key={scope} variant="secondary" className="font-mono text-xs">
+                              {scope}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {isRTL 
+                            ? '5. اضغط "Save" ثم "Install app"'
+                            : '5. Click "Save" then "Install app"'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
+                        {isRTL ? 'السابق' : 'Back'}
+                      </Button>
+                      <Button onClick={() => setCurrentStep(3)} className="flex-1">
+                        {isRTL ? 'تم، التالي' : 'Done, Next'}
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Paste Access Token */}
+                {currentStep === 3 && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted/50 rounded-lg border">
+                      <h3 className="font-semibold mb-2 flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs">3</span>
+                        {isRTL ? 'انسخ الـ Access Token' : 'Copy the Access Token'}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {isRTL 
+                          ? 'في صفحة التطبيق، اضغط "Reveal token once" وانسخ الكود'
+                          : 'In the app page, click "Reveal token once" and copy the token'}
+                      </p>
+                      <div className="relative">
+                        <Input 
+                          type="password"
+                          placeholder="shpat_xxxxx..."
+                          value={apiKey}
+                          onChange={(e) => setApiKey(e.target.value)}
+                          className="font-mono pr-10"
+                        />
+                      </div>
+                      <p className="text-xs text-destructive mt-2">
+                        {isRTL 
+                          ? '⚠️ هذا الكود يظهر مرة واحدة فقط! احفظه في مكان آمن'
+                          : '⚠️ This token is shown only once! Save it somewhere safe'}
+                      </p>
+                    </div>
+
+                    {/* Optional: Store Name */}
+                    <div className="space-y-2">
+                      <Label>{isRTL ? 'اسم المتجر (اختياري)' : 'Store Name (optional)'}</Label>
+                      <Input 
+                        placeholder={isRTL ? 'مثال: متجري الرائع' : 'e.g., My Awesome Store'}
+                        value={storeName}
+                        onChange={(e) => setStoreName(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
+                        {isRTL ? 'السابق' : 'Back'}
+                      </Button>
+                      <Button 
+                        onClick={handleConnect} 
+                        disabled={connecting || !apiKey} 
+                        className="flex-1 bg-[#96bf48] hover:bg-[#7ea53c] text-white"
+                      >
+                        {connecting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {isRTL ? 'جاري الربط...' : 'Connecting...'}
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            {isRTL ? 'ربط المتجر' : 'Connect Store'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="woocommerce" className="space-y-4 mt-4">
@@ -318,22 +476,21 @@ export default function StoreIntegrations() {
                       : 'From WooCommerce → Settings → Advanced → REST API'}
                   </p>
                 </div>
+                <Button onClick={handleConnect} disabled={connecting} className="w-full mt-4 bg-purple-600 hover:bg-purple-700">
+                  {connecting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isRTL ? 'جاري الاتصال...' : 'Connecting...'}
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      {isRTL ? 'اتصال ومزامنة' : 'Connect & Sync'}
+                    </>
+                  )}
+                </Button>
               </TabsContent>
             </Tabs>
-
-            <Button onClick={handleConnect} disabled={connecting} className="w-full mt-4">
-              {connecting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isRTL ? 'جاري الاتصال...' : 'Connecting...'}
-                </>
-              ) : (
-                <>
-                  <Link2 className="mr-2 h-4 w-4" />
-                  {isRTL ? 'اتصال ومزامنة' : 'Connect & Sync'}
-                </>
-              )}
-            </Button>
           </DialogContent>
         </Dialog>
       </div>
@@ -341,7 +498,7 @@ export default function StoreIntegrations() {
       {/* Connected Stores */}
       <div className="grid md:grid-cols-2 gap-4">
         {/* Shopify Card */}
-        <Card className={shopifyConnection ? 'border-green-500/50' : ''}>
+        <Card className={shopifyConnection ? 'border-[#96bf48]/50' : ''}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -356,7 +513,7 @@ export default function StoreIntegrations() {
                 </div>
               </div>
               {shopifyConnection && (
-                <Badge variant="default" className="bg-green-500">
+                <Badge variant="default" className="bg-[#96bf48]">
                   <CheckCircle2 className="mr-1 h-3 w-3" />
                   {isRTL ? 'متصل' : 'Connected'}
                 </Badge>
@@ -404,9 +561,13 @@ export default function StoreIntegrations() {
             ) : (
               <div className="text-center py-4">
                 <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                   {isRTL ? 'اربط متجر Shopify لاستيراد منتجاتك' : 'Connect your Shopify store to import products'}
                 </p>
+                <Button variant="outline" size="sm" onClick={() => { setSelectedPlatform('shopify'); setDialogOpen(true); }}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  {isRTL ? 'ربط الآن' : 'Connect Now'}
+                </Button>
               </div>
             )}
           </CardContent>
@@ -476,45 +637,18 @@ export default function StoreIntegrations() {
             ) : (
               <div className="text-center py-4">
                 <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                   {isRTL ? 'اربط متجر WooCommerce لاستيراد منتجاتك' : 'Connect your WooCommerce store to import products'}
                 </p>
+                <Button variant="outline" size="sm" onClick={() => { setSelectedPlatform('woocommerce'); setDialogOpen(true); }}>
+                  <Link2 className="mr-2 h-4 w-4" />
+                  {isRTL ? 'ربط الآن' : 'Connect Now'}
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Help Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">
-            {isRTL ? 'كيفية الحصول على بيانات الاتصال' : 'How to Get Connection Credentials'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <div>
-            <h4 className="font-semibold mb-2">Shopify:</h4>
-            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-              <li>{isRTL ? 'افتح لوحة تحكم Shopify' : 'Open Shopify Admin'}</li>
-              <li>{isRTL ? 'اذهب إلى Settings → Apps and sales channels' : 'Go to Settings → Apps and sales channels'}</li>
-              <li>{isRTL ? 'اضغط على Develop apps → Create an app' : 'Click Develop apps → Create an app'}</li>
-              <li>{isRTL ? 'فعّل Admin API scopes (read_products)' : 'Enable Admin API scopes (read_products)'}</li>
-              <li>{isRTL ? 'اضغط Install app وانسخ Access Token' : 'Click Install app and copy Access Token'}</li>
-            </ol>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-2">WooCommerce:</h4>
-            <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
-              <li>{isRTL ? 'افتح لوحة تحكم WordPress' : 'Open WordPress Admin'}</li>
-              <li>{isRTL ? 'اذهب إلى WooCommerce → Settings → Advanced → REST API' : 'Go to WooCommerce → Settings → Advanced → REST API'}</li>
-              <li>{isRTL ? 'اضغط Add Key' : 'Click Add Key'}</li>
-              <li>{isRTL ? 'اختر Permissions: Read' : 'Select Permissions: Read'}</li>
-              <li>{isRTL ? 'انسخ Consumer Key و Consumer Secret' : 'Copy Consumer Key and Consumer Secret'}</li>
-            </ol>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
