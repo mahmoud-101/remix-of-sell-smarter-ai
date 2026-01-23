@@ -11,7 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Store, Link2, Unlink, RefreshCw, ShoppingBag, CheckCircle2, AlertCircle, Loader2, ExternalLink, Copy, Check, ArrowRight } from 'lucide-react';
-
+import { ShopifyConnection } from '@/components/shopify/ShopifyConnection';
 interface StoreConnection {
   id: string;
   platform: 'shopify' | 'woocommerce';
@@ -500,84 +500,11 @@ export default function StoreIntegrations() {
       </div>
 
       {/* Connected Stores */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Shopify Card */}
-        <Card className={shopifyConnection ? 'border-[#96bf48]/50' : ''}>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-[#96bf48]/20 flex items-center justify-center">
-                  <Store className="h-5 w-5 text-[#96bf48]" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Shopify</CardTitle>
-                  <CardDescription>
-                    {shopifyConnection ? shopifyConnection.store_name : (isRTL ? 'غير متصل' : 'Not connected')}
-                  </CardDescription>
-                </div>
-              </div>
-              {shopifyConnection && (
-                <Badge variant="default" className="bg-[#96bf48]">
-                  <CheckCircle2 className="mr-1 h-3 w-3" />
-                  {isRTL ? 'متصل' : 'Connected'}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {shopifyConnection ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">{isRTL ? 'المنتجات' : 'Products'}</p>
-                    <p className="font-bold text-lg">{shopifyConnection.products_count}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">{isRTL ? 'آخر مزامنة' : 'Last Sync'}</p>
-                    <p className="font-medium text-sm">{formatDate(shopifyConnection.last_sync_at)}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => handleSync(shopifyConnection.id)}
-                    disabled={syncing === shopifyConnection.id}
-                  >
-                    {syncing === shopifyConnection.id ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                    )}
-                    {isRTL ? 'مزامنة' : 'Sync'}
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleDisconnect(shopifyConnection.id)}
-                  >
-                    <Unlink className="mr-2 h-4 w-4" />
-                    {isRTL ? 'فصل' : 'Disconnect'}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground mb-3">
-                  {isRTL ? 'اربط متجر Shopify لاستيراد منتجاتك' : 'Connect your Shopify store to import products'}
-                </p>
-                <Button variant="outline" size="sm" onClick={() => { setSelectedPlatform('shopify'); setDialogOpen(true); }}>
-                  <Link2 className="mr-2 h-4 w-4" />
-                  {isRTL ? 'ربط الآن' : 'Connect Now'}
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Shopify - One Click OAuth Connection */}
+        <ShopifyConnection />
 
-        {/* WooCommerce Card */}
+        {/* WooCommerce Card - Still uses manual API keys */}
         <Card className={wooConnection ? 'border-purple-500/50' : ''}>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
