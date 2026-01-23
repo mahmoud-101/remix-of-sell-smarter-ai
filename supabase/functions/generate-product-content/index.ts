@@ -6,17 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-
 interface ProductData {
   id: string;
   title: string;
   price: string;
   description: string;
-  descriptionText: string;
+  descriptionText?: string;
   image: string | null;
-  vendor: string;
-  productType: string;
+  vendor?: string;
+  productType?: string;
 }
 
 type ContentType = 
@@ -77,7 +75,6 @@ function buildPrompt(
 - مناسب للسوق المصري/العربي
 - طول النص: ${lengthGuides[length]}`;
 
-  // Add specific instructions per content type
   switch (contentType) {
     case 'product_description':
       return basePrompt + `
@@ -199,6 +196,14 @@ serve(async (req) => {
       );
     }
 
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'LOVABLE_API_KEY is not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     console.log(`Generating content for product: ${product.title}, types: ${contentTypes.join(', ')}`);
 
     const results: Record<ContentType, string> = {} as any;
@@ -207,14 +212,14 @@ serve(async (req) => {
     for (const contentType of contentTypes) {
       const prompt = buildPrompt(product, contentType, tone || 'friendly', length || 'medium');
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
+          model: 'google/gemini-2.5-flash',
           messages: [
             { role: 'system', content: 'أنت خبير في كتابة المحتوى التسويقي باللغة العربية.' },
             { role: 'user', content: prompt }
@@ -225,8 +230,20 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (response.status === 402) {
+          return new Response(
+            JSON.stringify({ error: 'Payment required. Please add credits.' }),
+            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
         const errorData = await response.text();
-        console.error('OpenAI error:', errorData);
+        console.error('AI Gateway error:', errorData);
         throw new Error('Failed to generate content');
       }
 
@@ -251,7 +268,6 @@ serve(async (req) => {
 
     if (saveError) {
       console.error('Save error:', saveError);
-      // Don't fail the request, just log
     }
 
     // Log usage
