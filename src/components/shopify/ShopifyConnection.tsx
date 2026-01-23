@@ -30,6 +30,42 @@ export function ShopifyConnection() {
   const [connecting, setConnecting] = useState(false);
   const [shopInput, setShopInput] = useState('');
   const [showInput, setShowInput] = useState(false);
+  const [pendingAuthUrl, setPendingAuthUrl] = useState<string | null>(null);
+
+  const isInIframe = (() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  })();
+
+  const normalizeShopInput = (input: string): string | null => {
+    let s = input.trim().toLowerCase();
+    if (!s) return null;
+
+    // Strip protocol + leading www
+    s = s.replace(/^https?:\/\//, '').replace(/^www\./, '');
+
+    // Support Shopify's new admin URLs: admin.shopify.com/store/{store}/...
+    const adminMatch = s.match(/^admin\.shopify\.com\/store\/([^/]+)/);
+    if (adminMatch?.[1]) {
+      s = `${adminMatch[1]}.myshopify.com`;
+    }
+
+    // If user pasted a myshopify URL (maybe with /admin), keep hostname only
+    const myshopifyIdx = s.indexOf('.myshopify.com');
+    if (myshopifyIdx !== -1) {
+      s = s.slice(0, myshopifyIdx + '.myshopify.com'.length);
+    } else {
+      // Otherwise take first segment as store name
+      s = s.split('/')[0];
+      if (!s) return null;
+      s = `${s}.myshopify.com`;
+    }
+
+    return s;
+  };
 
   useEffect(() => {
     if (user) {
@@ -63,19 +99,19 @@ export function ShopifyConnection() {
     if (!shopInput.trim()) {
       toast({
         title: isRTL ? 'خطأ' : 'Error',
-        description: isRTL ? 'أدخل اسم متجرك' : 'Enter your store name',
+        description: isRTL ? 'أدخل اسم المتجر أو رابط لوحة التحكم' : 'Enter store name or admin URL',
         variant: 'destructive'
       });
       return;
     }
 
     setConnecting(true);
+    setPendingAuthUrl(null);
+    const popup = isInIframe ? window.open('about:blank', '_blank', 'noopener,noreferrer') : null;
     try {
-      // Clean the shop input
-      let cleanShop = shopInput.trim().toLowerCase();
-      cleanShop = cleanShop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      if (!cleanShop.includes('.myshopify.com')) {
-        cleanShop = `${cleanShop}.myshopify.com`;
+      const cleanShop = normalizeShopInput(shopInput);
+      if (!cleanShop) {
+        throw new Error(isRTL ? 'صيغة رابط المتجر غير صحيحة' : 'Invalid store URL format');
       }
 
       const redirectUri = `${window.location.origin}/shopify/callback`;
@@ -92,21 +128,44 @@ export function ShopifyConnection() {
 
       if (data.authUrl) {
         // Store state and shop for CSRF validation
+        // localStorage works across tabs (needed when we open Shopify in a new tab)
+        localStorage.setItem('shopify_oauth_state', data.state);
+        localStorage.setItem('shopify_shop', data.shop);
+        // keep sessionStorage as fallback
         sessionStorage.setItem('shopify_oauth_state', data.state);
         sessionStorage.setItem('shopify_shop', data.shop);
-        
-        // Redirect to Shopify OAuth
+
+        // Shopify blocks being embedded in iframes; opening in the preview iframe can look like a blank page.
+        if (isInIframe) {
+          if (popup) {
+            popup.location.href = data.authUrl;
+          } else {
+            setPendingAuthUrl(data.authUrl);
+            window.open(data.authUrl, '_blank', 'noopener,noreferrer');
+          }
+          toast({
+            title: isRTL ? 'افتح Shopify في تبويب جديد' : 'Open Shopify in a new tab',
+            description: isRTL ? 'كمّل الموافقة هناك وارجع هنا.' : 'Complete approval there, then come back here.',
+          });
+          return;
+        }
+
+        // Normal navigation (non-iframe)
         window.location.href = data.authUrl;
       } else if (data.error) {
         throw new Error(data.error);
       }
     } catch (error: any) {
+      if (popup) {
+        try { popup.close(); } catch {}
+      }
       console.error('Connect error:', error);
       toast({
         title: isRTL ? 'خطأ في الربط' : 'Connection Error',
         description: error.message || (isRTL ? 'فشل في الاتصال بـ Shopify' : 'Failed to connect to Shopify'),
         variant: 'destructive'
       });
+    } finally {
       setConnecting(false);
     }
   };
@@ -156,16 +215,16 @@ export function ShopifyConnection() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-b">
+      <CardHeader className="bg-muted/30 border-b">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+          <div className="p-3 bg-background rounded-xl shadow-sm border">
             <img src={shopifyLogo} alt="Shopify" className="h-10 w-10" />
           </div>
           <div className="flex-1">
             <CardTitle className="text-xl flex items-center gap-2">
               Shopify
               {connection && (
-                <Badge className="bg-green-500 text-white">
+                <Badge>
                   {isRTL ? 'متصل' : 'Connected'}
                 </Badge>
               )}
@@ -183,13 +242,13 @@ export function ShopifyConnection() {
         {connection ? (
           // ✅ Connected State
           <div className="space-y-5">
-            <div className="flex items-center gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-              <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0" />
+            <div className="flex items-center gap-4 p-4 bg-muted/40 rounded-xl border border-border">
+              <CheckCircle2 className="h-8 w-8 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-green-800 dark:text-green-200 truncate">
+                <p className="font-semibold truncate">
                   {connection.shop_name}
                 </p>
-                <p className="text-sm text-green-600 dark:text-green-400 truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   {connection.shop_url}
                 </p>
               </div>
@@ -219,7 +278,7 @@ export function ShopifyConnection() {
               </Button>
               <Button 
                 variant="ghost" 
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleDisconnect}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -249,8 +308,9 @@ export function ShopifyConnection() {
 
                 <Button 
                   onClick={handleConnectClick}
-                  className="w-full h-14 text-lg bg-[#96bf48] hover:bg-[#7aa93c] text-white font-semibold"
-                  size="lg"
+                  className="w-full text-lg font-semibold"
+                  size="xl"
+                  variant="hero"
                 >
                   <img src={shopifyLogo} alt="" className="h-6 w-6 mr-3" />
                   {isRTL ? 'ربط Shopify الآن' : 'Connect Shopify Now'}
@@ -265,8 +325,8 @@ export function ShopifyConnection() {
                   </h3>
                   <p className="text-muted-foreground text-sm">
                     {isRTL 
-                      ? 'اسم المتجر بدون .myshopify.com'
-                      : 'Store name without .myshopify.com'}
+                      ? 'اكتب اسم المتجر أو رابط لوحة التحكم (مرة واحدة)'
+                      : 'Enter store name or admin URL (one-time)'}
                   </p>
                 </div>
 
@@ -274,18 +334,24 @@ export function ShopifyConnection() {
                   <div className="relative">
                     <Input
                       type="text"
-                      placeholder={isRTL ? "مثال: my-store" : "Example: my-store"}
+                      placeholder={isRTL ? "مثال: my-store أو https://my-store.myshopify.com/admin" : "Example: my-store or https://my-store.myshopify.com/admin"}
                       value={shopInput}
                       onChange={(e) => setShopInput(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleConnectShopify()}
-                      className="h-12 text-lg pr-36 rtl:pr-4 rtl:pl-36"
+                      className="h-12 text-lg"
                       dir="ltr"
                       autoFocus
                     />
-                    <span className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                      .myshopify.com
-                    </span>
                   </div>
+
+                  {pendingAuthUrl && (
+                    <Button asChild variant="outline" className="w-full">
+                      <a href={pendingAuthUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {isRTL ? 'افتح صفحة Shopify' : 'Open Shopify page'}
+                      </a>
+                    </Button>
+                  )}
 
                   <div className="flex gap-3">
                     <Button 
@@ -301,7 +367,8 @@ export function ShopifyConnection() {
                     <Button 
                       onClick={handleConnectShopify}
                       disabled={connecting || !shopInput.trim()}
-                      className="flex-1 bg-[#96bf48] hover:bg-[#7aa93c] text-white"
+                      className="flex-1"
+                      variant="hero"
                     >
                       {connecting ? (
                         <>
@@ -326,11 +393,11 @@ export function ShopifyConnection() {
                 {isRTL ? 'آمن 100%' : '100% Secure'}
               </span>
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                <CheckCircle2 className="h-3 w-3 text-primary" />
                 {isRTL ? 'OAuth رسمي' : 'Official OAuth'}
               </span>
               <span className="flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                <CheckCircle2 className="h-3 w-3 text-primary" />
                 {isRTL ? 'ربط فوري' : 'Instant sync'}
               </span>
             </div>
