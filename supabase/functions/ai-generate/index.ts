@@ -107,6 +107,63 @@ Target: ${input.targetAudience || "General"}
 Return ONLY raw JSON, no markdown.`;
         break;
 
+      case "video-script":
+        systemRole = `You are a viral video content expert for TikTok and Instagram Reels.
+${langInstruction}
+
+Create engaging video scripts that grab attention in the first 3 seconds.
+
+Return ONLY valid JSON (no markdown) with this structure:
+{
+  "variations": [
+    {
+      "hook": "Attention-grabbing opening line (first 3 seconds)",
+      "body": "Main content with clear points",
+      "cta": "Strong call to action",
+      "duration": "15-30 seconds",
+      "viralElements": ["Element 1", "Element 2"],
+      "bestPostingTime": "Recommended posting time"
+    }
+  ]
+}`;
+        userPrompt = `Create 3 viral video script variations for:
+
+Product/Topic: ${input.productName || input.topic}
+${input.productDescription ? `Description: ${input.productDescription}` : ''}
+Target Audience: ${input.targetAudience || "General"}
+Platform: ${input.platform || "TikTok/Reels"}
+Style: ${input.style || "Engaging and trendy"}
+Duration: ${input.duration || "15-30 seconds"}
+
+Return ONLY raw JSON, no markdown.`;
+        break;
+
+      case "seo-content":
+        systemRole = `You are an SEO expert specializing in e-commerce optimization.
+${langInstruction}
+
+Return ONLY valid JSON (no markdown) with SEO-optimized content:
+{
+  "metaTitle": "SEO optimized title (50-60 chars)",
+  "metaDescription": "SEO meta description (150-160 chars)",
+  "keywords": ["keyword1", "keyword2", "keyword3"],
+  "headings": {
+    "h1": "Main heading",
+    "h2": ["Subheading 1", "Subheading 2"]
+  },
+  "altTexts": ["Image alt text 1", "Image alt text 2"],
+  "urlSlug": "seo-friendly-url"
+}`;
+        userPrompt = `Generate SEO content for:
+
+Product/Page: ${input.productName || input.pageName}
+Description: ${input.productDescription || input.description}
+Target Keywords: ${input.keywords || "auto-generate"}
+Industry: ${input.industry || "E-commerce"}
+
+Return ONLY raw JSON, no markdown.`;
+        break;
+
       default:
         throw new Error(`Tool type "${toolType}" not supported`);
     }
