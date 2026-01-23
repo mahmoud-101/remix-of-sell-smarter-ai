@@ -2,12 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 serve(async (req) => {
-  // 1. التعامل مع CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Validate authentication
   const { data: authData, error: authError } = await validateAuth(req);
   if (authError) {
     return authError;
@@ -17,94 +15,111 @@ serve(async (req) => {
 
   try {
     const { toolType, input, language } = await req.json();
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     console.log(`Processing ${toolType} request for user ${authData?.userId} with language: ${language}`);
 
-    // 2. تحديد هوية الخبير بناءً على نوع الأداة
     let systemRole = "";
     let userPrompt = "";
 
-    // التأكد من اللغة المطلوبة
     const langInstruction = language === 'ar' 
       ? "Output language: Arabic (Professional, persuasive marketing Arabic)." 
       : "Output language: English (Native, professional marketing English).";
 
     switch (toolType) {
       case "product-copy":
-        systemRole = `
-          You are a world-class Copywriter & CRO Expert.
-          Your goal is to write product descriptions that SELL directly.
-          Focus on: Pain points, Benefits, and Emotional triggers.
-          ${langInstruction}
-          
-          RETURN JSON ONLY with keys: "title", "description", "bullets", "benefits", "cta".
-        `;
-        userPrompt = `
-          Product: ${input.productName}
-          Description Notes: ${input.productDescription}
-          Target Audience: ${input.targetAudience}
-          Tone: ${input.tone}
-        `;
+        systemRole = `You are a world-class Copywriter & CRO Expert.
+Your goal is to write product descriptions that SELL directly.
+Focus on: Pain points, Benefits, and Emotional triggers.
+${langInstruction}
+
+RETURN JSON ONLY with keys: "title", "description", "bullets", "benefits", "cta".`;
+
+        userPrompt = `Product: ${input.productName}
+Description Notes: ${input.productDescription}
+Target Audience: ${input.targetAudience}
+Tone: ${input.tone}
+
+Return ONLY valid JSON.`;
         break;
 
       case "ads-copy":
-        systemRole = `
-          You are a Meta & Google Ads Expert.
-          Create high-converting ad copy with strong hooks and clear CTAs.
-          ${langInstruction}
-          RETURN JSON ONLY with keys: "primaryText", "headline", "description".
-        `;
-        userPrompt = `
-          Product: ${input.productName}
-          Platform: ${input.platform || "Facebook/Instagram"}
-          Goal: ${input.goal || "Sales"}
-        `;
+        systemRole = `You are a Meta & Google Ads Expert.
+Create high-converting ad copy with strong hooks and clear CTAs.
+${langInstruction}
+RETURN JSON ONLY with keys: "primaryText", "headline", "description".`;
+
+        userPrompt = `Product: ${input.productName}
+Platform: ${input.platform || "Facebook/Instagram"}
+Goal: ${input.goal || "Sales"}
+
+Return ONLY valid JSON.`;
         break;
         
-      // يمكنك إضافة cases لباقي الأدوات هنا بنفس الطريقة
-      
       default:
         throw new Error("Tool type not supported yet");
     }
 
-    console.log(`Calling OpenAI with system role for ${toolType}`);
+    console.log(`Calling Lovable AI Gateway for ${toolType}`);
 
-    // 3. الاتصال بـ OpenAI (GPT-4o)
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemRole },
           { role: "user", content: userPrompt }
         ],
-        response_format: { type: "json_object" },
         temperature: 0.7,
       }),
     });
 
-    const data = await response.json();
-    
-    if (data.error) {
-      console.error("OpenAI Error:", data.error);
-      throw new Error(data.error.message);
+    if (!response.ok) {
+      if (response.status === 429) {
+        console.error("Rate limit exceeded");
+        return new Response(
+          JSON.stringify({ error: language === 'ar' ? 'تم تجاوز الحد المسموح، حاول لاحقاً' : 'Rate limit exceeded. Please try again later.' }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        console.error("Payment required");
+        return new Response(
+          JSON.stringify({ error: language === 'ar' ? 'يرجى إضافة رصيد للمتابعة' : 'Please add credits to continue.' }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const errorText = await response.text();
+      console.error("AI Gateway Error:", response.status, errorText);
+      throw new Error(`AI Gateway failed: ${response.status}`);
     }
 
-    const result = JSON.parse(data.choices[0].message.content);
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || "";
+    
+    // Parse JSON from the response
+    let result;
+    try {
+      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+      const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
+      result = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError, "Content:", content);
+      throw new Error("Failed to parse AI response as JSON");
+    }
+
     console.log(`Successfully generated ${toolType} content for user ${authData?.userId}`);
 
-    // 4. إرجاع النتيجة للفرونت-إند
     return new Response(
-      JSON.stringify({ result: result }),
+      JSON.stringify({ result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
