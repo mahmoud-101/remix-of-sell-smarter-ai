@@ -35,6 +35,9 @@ serve(async (req) => {
     let userPrompt = "";
     let model = "google/gemini-2.5-flash";
     let temperature = 0.8;
+    let maxTokens = 2200;
+    let toolSchema: any | null = null;
+    const toolName = "return_payload";
 
     switch (toolType) {
       case "product-copy":
@@ -94,6 +97,58 @@ Content Length: ${input.contentLength || "medium"}
 
 Generate 3 compelling variations for each output type. Return ONLY raw JSON, no markdown.`;
         temperature = 0.75;
+        maxTokens = 2600;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["title", "description", "bullets", "benefits", "cta"],
+          properties: {
+            title: {
+              type: "object",
+              additionalProperties: false,
+              required: ["variations"],
+              properties: { variations: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 3 } }
+            },
+            description: {
+              type: "object",
+              additionalProperties: false,
+              required: ["variations"],
+              properties: { variations: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 3 } }
+            },
+            bullets: {
+              type: "object",
+              additionalProperties: false,
+              required: ["variations"],
+              properties: {
+                variations: {
+                  type: "array",
+                  minItems: 3,
+                  maxItems: 3,
+                  items: { type: "array", minItems: 4, maxItems: 4, items: { type: "string" } }
+                }
+              }
+            },
+            benefits: {
+              type: "object",
+              additionalProperties: false,
+              required: ["variations"],
+              properties: {
+                variations: {
+                  type: "array",
+                  minItems: 3,
+                  maxItems: 3,
+                  items: { type: "array", minItems: 4, maxItems: 4, items: { type: "string" } }
+                }
+              }
+            },
+            cta: {
+              type: "object",
+              additionalProperties: false,
+              required: ["variations"],
+              properties: { variations: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 3 } }
+            }
+          }
+        };
         break;
 
       case "ads-copy":
@@ -118,6 +173,29 @@ Target Audience: ${input.targetAudience || "General"}
 
 Return ONLY raw JSON, no markdown.`;
         temperature = 0.85;
+        maxTokens = 1600;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["variations"],
+          properties: {
+            variations: {
+              type: "array",
+              minItems: 3,
+              maxItems: 3,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["headline", "primaryText", "cta"],
+                properties: {
+                  headline: { type: "string" },
+                  primaryText: { type: "string" },
+                  cta: { type: "string" }
+                }
+              }
+            }
+          }
+        };
         break;
 
       case "video-script":
@@ -153,7 +231,32 @@ Rules:
 
 Return ONLY raw JSON, no markdown.`;
         model = "google/gemini-2.5-pro";
-        temperature = 0.9;
+        temperature = 0.7;
+        maxTokens = 2400;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["scripts", "viral_elements", "best_posting_times"],
+          properties: {
+            scripts: {
+              type: "array",
+              minItems: 3,
+              maxItems: 3,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["hook", "body", "cta"],
+                properties: {
+                  hook: { type: "string" },
+                  body: { type: "string" },
+                  cta: { type: "string" }
+                }
+              }
+            },
+            viral_elements: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 8 },
+            best_posting_times: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 6 }
+          }
+        };
         break;
 
       case "seo-optimizer":
@@ -182,6 +285,17 @@ Target Keywords (optional): ${input.targetKeywords || ""}
 Return ONLY raw JSON, no markdown.`;
         model = "google/gemini-2.5-pro";
         temperature = 0.55;
+        maxTokens = 900;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["title", "description", "keywords"],
+          properties: {
+            title: { type: "string" },
+            description: { type: "string" },
+            keywords: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 10 }
+          }
+        };
         break;
 
       case "competitor":
@@ -212,7 +326,20 @@ My Business (optional): ${input.yourBusiness || ""}
 
 Return ONLY raw JSON, no markdown.`;
         model = "google/gemini-2.5-pro";
-        temperature = 0.65;
+        temperature = 0.35;
+        maxTokens = 1800;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["strengths", "weaknesses", "opportunities", "pricingStrategy", "messagingStyle"],
+          properties: {
+            strengths: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 },
+            weaknesses: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 },
+            opportunities: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 },
+            pricingStrategy: { type: "string" },
+            messagingStyle: { type: "string" }
+          }
+        };
         break;
 
       // Backward compatibility for SyncedProducts.tsx
@@ -235,6 +362,29 @@ Tone: ${input.tone || "professional"}
 
 Return ONLY raw JSON, no markdown.`;
         temperature = 0.75;
+        maxTokens = 1800;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["variations"],
+          properties: {
+            variations: {
+              type: "array",
+              minItems: 3,
+              maxItems: 3,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["title", "description", "bullets"],
+                properties: {
+                  title: { type: "string" },
+                  description: { type: "string" },
+                  bullets: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 }
+                }
+              }
+            }
+          }
+        };
         break;
 
       case "seo-content":
@@ -261,30 +411,204 @@ Target Keywords: ${input.keywords || "auto-generate"}
 Industry: ${input.industry || "E-commerce"}
 
 Return ONLY raw JSON, no markdown.`;
+        maxTokens = 2000;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["metaTitle", "metaDescription", "keywords", "headings", "altTexts", "urlSlug"],
+          properties: {
+            metaTitle: { type: "string" },
+            metaDescription: { type: "string" },
+            keywords: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 10 },
+            headings: {
+              type: "object",
+              additionalProperties: false,
+              required: ["h1", "h2"],
+              properties: {
+                h1: { type: "string" },
+                h2: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 6 }
+              }
+            },
+            altTexts: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 10 },
+            urlSlug: { type: "string" }
+          }
+        };
         break;
 
       default:
         throw new Error(`Tool type "${toolType}" not supported`);
     }
 
+    const parseJsonLike = (raw: string) => {
+      let jsonStr = raw.trim();
+
+      // Strip markdown code fences if present (```json...``` or ```...```)
+      const fenceMatch = jsonStr.match(/^```(?:json)?\s*([\s\S]*?)```$/);
+      if (fenceMatch) jsonStr = fenceMatch[1].trim();
+
+      // Some models wrap in leading/trailing backticks only
+      jsonStr = jsonStr.replace(/^`+|`+$/g, '').trim();
+
+      // Repair common "almost JSON" issues:
+      // 1) Unescaped newlines inside strings (invalid JSON) -> convert to \n
+      // 2) Trailing commas before } or ]
+      const escapeNewlinesInsideStrings = (text: string) => {
+        let out = '';
+        let inString = false;
+        let escaped = false;
+
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+
+          if (!inString) {
+            if (ch === '"') inString = true;
+            out += ch;
+            continue;
+          }
+
+          if (escaped) {
+            out += ch;
+            escaped = false;
+            continue;
+          }
+
+          if (ch === '\\') {
+            out += ch;
+            escaped = true;
+            continue;
+          }
+
+          if (ch === '"') {
+            out += ch;
+            inString = false;
+            continue;
+          }
+
+          if (ch === '\n') {
+            out += '\\n';
+            continue;
+          }
+
+          if (ch === '\r') {
+            continue;
+          }
+
+          out += ch;
+        }
+        return out;
+      };
+
+      jsonStr = escapeNewlinesInsideStrings(jsonStr);
+      jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
+
+      return JSON.parse(jsonStr);
+    };
+
     // Use Lovable AI Gateway instead of OpenAI
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const callGateway = async (opts?: { retry?: boolean }) => {
+      const retry = !!opts?.retry;
+
+      const strictSystemAddon = retry
+        ? "\n\nCRITICAL: Return COMPLETE JSON only. Keep each string single-line; if you need line breaks use \\n. Keep bullets short."
+        : "\n\nCRITICAL: Return JSON only. Keep each string single-line; if you need line breaks use \\n. Do not add any extra keys.";
+
+      const body: any = {
         model,
         messages: [
-          { role: "system", content: systemRole },
+          { role: "system", content: systemRole + strictSystemAddon },
           { role: "user", content: userPrompt }
         ],
-        temperature,
-        max_tokens: 2000,
-        response_format: { type: "json_object" }, // Force JSON output
-      }),
-    });
+        temperature: retry ? Math.min(0.25, temperature) : temperature,
+        max_tokens: retry ? Math.max(3500, maxTokens) : maxTokens,
+      };
+
+      if (toolSchema) {
+        body.tools = [
+          {
+            type: "function",
+            function: {
+              name: toolName,
+              description: "Return the structured result as JSON arguments.",
+              parameters: toolSchema,
+            },
+          },
+        ];
+        body.tool_choice = { type: "function", function: { name: toolName } };
+      } else {
+        // Fallback for any tool types without schemas
+        body.response_format = { type: "json_object" };
+      }
+
+      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!resp.ok) {
+        if (resp.status === 429) {
+          console.error("Rate limit exceeded");
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        if (resp.status === 402) {
+          console.error("Payment required");
+          return new Response(
+            JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+            { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        const errorText = await resp.text();
+        console.error("AI Gateway Error:", resp.status, errorText);
+        throw new Error(`AI Gateway failed: ${resp.status}`);
+      }
+
+      return resp;
+    };
+
+    // Attempt 1 + retry once if JSON is malformed / truncated
+    let response: Response | null = null;
+    let data: any = null;
+    let result: any = null;
+    let lastContentPreview = "";
+    let finishReason: string | undefined;
+
+    for (let attempt = 0; attempt < 2; attempt++) {
+      response = await callGateway({ retry: attempt === 1 });
+      // If callGateway returned an early Response (429/402), return it directly.
+      if (response instanceof Response && (response.status === 429 || response.status === 402)) {
+        return response;
+      }
+
+      data = await (response as Response).json();
+      const message = data?.choices?.[0]?.message;
+      finishReason = data?.choices?.[0]?.finish_reason;
+
+      const toolArgs: string | undefined = message?.tool_calls?.[0]?.function?.arguments;
+      const content: string | undefined = typeof message?.content === 'string' ? message.content : undefined;
+      const raw = toolArgs ?? content;
+      lastContentPreview = (raw ?? "").slice(0, 500);
+
+      if (!raw) {
+        if (attempt === 0) continue;
+        throw new Error("AI returned empty response");
+      }
+
+      try {
+        result = parseJsonLike(raw);
+        break;
+      } catch (e) {
+        console.error("JSON parse error:", e, "finish_reason:", finishReason, "Content:", lastContentPreview);
+        if (attempt === 0) continue;
+        throw new Error("Failed to parse AI response as JSON");
+      }
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -306,39 +630,9 @@ Return ONLY raw JSON, no markdown.`;
       throw new Error(`AI Gateway failed: ${response.status}`);
     }
 
-    const data = await response.json();
-    const content = data.choices[0].message.content;
-    
-    // Parse JSON from the response - handle various edge cases
-    let result;
-    try {
-      let jsonStr = content.trim();
-      
-      // Strip markdown code fences if present (```json...``` or ```...```)
-      const fenceMatch = jsonStr.match(/^```(?:json)?\s*([\s\S]*?)```$/);
-      if (fenceMatch) {
-        jsonStr = fenceMatch[1].trim();
-      }
-      
-      // Some models wrap in leading/trailing backticks only
-      jsonStr = jsonStr.replace(/^`+|`+$/g, '').trim();
-      
-      // Try direct parse
-      result = JSON.parse(jsonStr);
-    } catch (parseError) {
-      // Fallback: try to find the first { ... } or [ ... ] block
-      const jsonBlockMatch = content.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
-      if (jsonBlockMatch) {
-        try {
-          result = JSON.parse(jsonBlockMatch[1]);
-        } catch {
-          console.error("JSON parse error (fallback failed):", parseError, "Content:", content.slice(0, 500));
-          throw new Error("Failed to parse AI response as JSON");
-        }
-      } else {
-        console.error("JSON parse error:", parseError, "Content:", content.slice(0, 500));
-        throw new Error("Failed to parse AI response as JSON");
-      }
+    if (result === null || result === undefined) {
+      console.error("❌ Error: result is empty", "finish_reason:", finishReason, "Content:", lastContentPreview);
+      throw new Error("Failed to parse AI response as JSON");
     }
 
     console.log(`✅ Generated ${toolType} for user ${authData?.userId}`);
