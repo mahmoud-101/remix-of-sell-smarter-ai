@@ -16,13 +16,49 @@ serve(async (req) => {
   }
 
   try {
-    const { action, shop, code, redirectUri } = await req.json();
+    const { action, shop, code, redirectUri, state: clientState } = await req.json();
     
-    console.log(`Shopify OAuth action: ${action}, shop: ${shop}`);
+    console.log(`Shopify OAuth action: ${action}`);
 
     switch (action) {
+      // ============================================
+      // ONE-CLICK INSTALL: Generate Shopify App Install URL
+      // User clicks one button -> redirected to Shopify to pick their store
+      // ============================================
+      case 'get_install_url': {
+        const state = crypto.randomUUID(); // CSRF protection
+        
+        // Shopify Partner App install URL - user will select their store on Shopify's side
+        // This is the "App Store" flow where Shopify handles store selection
+        const installUrl = `https://apps.shopify.com/sellmata?` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `state=${state}`;
+        
+        // Fallback: If app not in store yet, use direct OAuth with store prompt
+        // Shopify will show store selector if no shop is specified
+        const directAuthUrl = `https://www.shopify.com/admin/oauth/authorize?` +
+          `client_id=${SHOPIFY_CLIENT_ID}&` +
+          `scope=${SCOPES}&` +
+          `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+          `state=${state}&` +
+          `grant_options[]=per-user`;
+
+        console.log('Generated install URL with state:', state);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            installUrl: directAuthUrl, // Use direct OAuth for now
+            state
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // ============================================
+      // LEGACY: Generate OAuth URL for specific shop (if user provides URL)
+      // ============================================
       case 'get_auth_url': {
-        // Generate OAuth URL for Shopify
         if (!shop) {
           return new Response(
             JSON.stringify({ error: 'Shop URL is required' }),
@@ -36,7 +72,7 @@ serve(async (req) => {
           cleanShop = `${cleanShop}.myshopify.com`;
         }
 
-        const state = crypto.randomUUID(); // For CSRF protection
+        const state = crypto.randomUUID();
         
         const authUrl = `https://${cleanShop}/admin/oauth/authorize?` + 
           `client_id=${SHOPIFY_CLIENT_ID}&` +
@@ -55,8 +91,10 @@ serve(async (req) => {
         );
       }
 
+      // ============================================
+      // EXCHANGE: Trade authorization code for access token
+      // ============================================
       case 'exchange_token': {
-        // Exchange authorization code for access token
         const authHeader = req.headers.get('Authorization');
         if (!authHeader) {
           return new Response(
@@ -93,6 +131,8 @@ serve(async (req) => {
           cleanShop = `${cleanShop}.myshopify.com`;
         }
 
+        console.log(`Exchanging token for shop: ${cleanShop}, user: ${user.id}`);
+
         // Exchange code for token
         const tokenResponse = await fetch(`https://${cleanShop}/admin/oauth/access_token`, {
           method: 'POST',
@@ -117,6 +157,8 @@ serve(async (req) => {
         const accessToken = tokenData.access_token;
         const scope = tokenData.scope;
 
+        console.log('Token exchanged successfully, fetching shop info...');
+
         // Get shop info
         const shopResponse = await fetch(`https://${cleanShop}/admin/api/2024-01/shop.json`, {
           headers: {
@@ -131,7 +173,9 @@ serve(async (req) => {
           shopName = shopData.shop?.name || cleanShop;
         }
 
-        // Save connection with encrypted token
+        console.log(`Shop info fetched: ${shopName}`);
+
+        // Save connection with encrypted token (trigger handles encryption)
         const { data: connection, error: insertError } = await supabase
           .from('shopify_connections')
           .upsert({
@@ -153,6 +197,8 @@ serve(async (req) => {
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
+
+        console.log(`✅ Connection saved successfully for ${shopName}`);
 
         return new Response(
           JSON.stringify({ 

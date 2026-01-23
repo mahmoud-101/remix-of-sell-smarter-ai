@@ -4,10 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Store, Link2, CheckCircle2, XCircle, Loader2, ExternalLink } from 'lucide-react';
+import { Store, CheckCircle2, XCircle, Loader2, ExternalLink, ShoppingBag } from 'lucide-react';
+import shopifyLogo from '@/assets/shopify-logo.svg';
 
 interface ShopifyConnectionData {
   id: string;
@@ -27,7 +27,6 @@ export function ShopifyConnection() {
   const [connection, setConnection] = useState<ShopifyConnectionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
-  const [shopUrl, setShopUrl] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -53,37 +52,29 @@ export function ShopifyConnection() {
     }
   };
 
-  const handleConnect = async () => {
-    if (!shopUrl.trim()) {
-      toast({
-        title: isRTL ? 'خطأ' : 'Error',
-        description: isRTL ? 'يرجى إدخال رابط المتجر' : 'Please enter store URL',
-        variant: 'destructive'
-      });
-      return;
-    }
-
+  const handleConnectShopify = async () => {
     setConnecting(true);
     try {
+      // Get the Shopify App installation URL from our backend
       const redirectUri = `${window.location.origin}/shopify/callback`;
       
       const { data, error } = await supabase.functions.invoke('shopify-oauth', {
         body: {
-          action: 'get_auth_url',
-          shop: shopUrl,
+          action: 'get_install_url',
           redirectUri
         }
       });
 
       if (error) throw error;
 
-      if (data.authUrl) {
+      if (data.installUrl) {
         // Store state for CSRF validation
         sessionStorage.setItem('shopify_oauth_state', data.state);
-        sessionStorage.setItem('shopify_shop', data.shop);
         
-        // Redirect to Shopify OAuth
-        window.location.href = data.authUrl;
+        // Redirect to Shopify App installation
+        window.location.href = data.installUrl;
+      } else if (data.error) {
+        throw new Error(data.error);
       }
     } catch (error: any) {
       console.error('Connect error:', error);
@@ -132,7 +123,7 @@ export function ShopifyConnection() {
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-2 border-dashed">
         <CardContent className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </CardContent>
@@ -141,46 +132,49 @@ export function ShopifyConnection() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-            <Store className="h-6 w-6 text-green-600 dark:text-green-400" />
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-b">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+            <img src={shopifyLogo} alt="Shopify" className="h-10 w-10" />
           </div>
-          <div>
-            <CardTitle className="text-xl">
-              {isRTL ? 'ربط متجر Shopify' : 'Connect Shopify Store'}
+          <div className="flex-1">
+            <CardTitle className="text-xl flex items-center gap-2">
+              Shopify
+              {connection && (
+                <Badge className="bg-green-500 text-white">
+                  {isRTL ? 'متصل' : 'Connected'}
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>
               {isRTL 
-                ? 'اربط متجرك لسحب المنتجات وتوليد المحتوى تلقائياً'
-                : 'Connect your store to fetch products and generate content automatically'}
+                ? 'اسحب منتجاتك تلقائياً وولّد محتوى احترافي'
+                : 'Auto-sync products and generate professional content'}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      
+      <CardContent className="p-6">
         {connection ? (
-          // Connected State
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
-              <div className="flex-1">
-                <p className="font-medium text-green-800 dark:text-green-200">
-                  {isRTL ? `✅ تم ربط ${connection.shop_name} بنجاح!` : `✅ ${connection.shop_name} connected!`}
+          // ✅ Connected State
+          <div className="space-y-5">
+            <div className="flex items-center gap-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+              <CheckCircle2 className="h-8 w-8 text-green-600 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-green-800 dark:text-green-200 truncate">
+                  {connection.shop_name}
                 </p>
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <p className="text-sm text-green-600 dark:text-green-400 truncate">
                   {connection.shop_url}
                 </p>
               </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                {isRTL ? 'متصل' : 'Connected'}
-              </Badge>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 rounded-lg p-4">
               <div>
-                <p className="text-muted-foreground">{isRTL ? 'تاريخ الربط' : 'Connected on'}</p>
+                <p className="text-muted-foreground">{isRTL ? 'تاريخ الربط' : 'Connected'}</p>
                 <p className="font-medium">{formatDate(connection.connected_at)}</p>
               </div>
               {connection.last_used_at && (
@@ -198,10 +192,11 @@ export function ShopifyConnection() {
                 onClick={() => window.open(`https://${connection.shop_url}/admin`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                {isRTL ? 'فتح لوحة Shopify' : 'Open Shopify Admin'}
+                {isRTL ? 'فتح Shopify' : 'Open Shopify'}
               </Button>
               <Button 
-                variant="destructive" 
+                variant="ghost" 
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 onClick={handleDisconnect}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -210,57 +205,54 @@ export function ShopifyConnection() {
             </div>
           </div>
         ) : (
-          // Not Connected State
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                {isRTL ? 'رابط المتجر' : 'Store URL'}
-              </label>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="mystore.myshopify.com"
-                  value={shopUrl}
-                  onChange={(e) => setShopUrl(e.target.value)}
-                  className="flex-1"
-                  dir="ltr"
-                />
+          // ❌ Not Connected State - ONE BUTTON ONLY
+          <div className="space-y-6">
+            <div className="text-center py-6">
+              <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-2xl flex items-center justify-center">
+                <ShoppingBag className="h-10 w-10 text-green-600" />
               </div>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="text-lg font-semibold mb-2">
+                {isRTL ? 'اربط متجرك بضغطة واحدة' : 'Connect Your Store in One Click'}
+              </h3>
+              <p className="text-muted-foreground text-sm max-w-sm mx-auto">
                 {isRTL 
-                  ? 'أدخل اسم المتجر فقط (مثال: mystore) أو الرابط الكامل'
-                  : 'Enter store name (e.g., mystore) or full URL'}
+                  ? 'سيتم توجيهك لـ Shopify للموافقة على الربط. لا تحتاج إدخال أي بيانات!'
+                  : "You'll be redirected to Shopify to approve the connection. No data entry needed!"}
               </p>
             </div>
 
             <Button 
-              onClick={handleConnect}
-              disabled={connecting || !shopUrl.trim()}
-              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={handleConnectShopify}
+              disabled={connecting}
+              className="w-full h-14 text-lg bg-[#96bf48] hover:bg-[#7aa93c] text-white font-semibold"
               size="lg"
             >
               {connecting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {isRTL ? 'جارٍ الربط...' : 'Connecting...'}
+                  <Loader2 className="h-5 w-5 mr-3 animate-spin" />
+                  {isRTL ? 'جارٍ التوجيه...' : 'Redirecting...'}
                 </>
               ) : (
                 <>
-                  <Link2 className="h-4 w-4 mr-2" />
-                  {isRTL ? 'ربط المتجر الآن' : 'Connect Store Now'}
+                  <img src={shopifyLogo} alt="" className="h-6 w-6 mr-3" />
+                  {isRTL ? 'ربط Shopify الآن' : 'Connect Shopify Now'}
                 </>
               )}
             </Button>
 
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
-                <Store className="h-4 w-4" />
-                {isRTL ? 'الصلاحيات المطلوبة:' : 'Required Permissions:'}
-              </h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• {isRTL ? 'قراءة المنتجات' : 'Read products'}</li>
-                <li>• {isRTL ? 'تعديل المنتجات' : 'Write products'}</li>
-                <li>• {isRTL ? 'قراءة المخزون' : 'Read inventory'}</li>
-              </ul>
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                {isRTL ? 'آمن 100%' : '100% Secure'}
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                {isRTL ? 'بدون بيانات يدوية' : 'No manual data'}
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                {isRTL ? 'ربط فوري' : 'Instant sync'}
+              </span>
             </div>
           </div>
         )}
