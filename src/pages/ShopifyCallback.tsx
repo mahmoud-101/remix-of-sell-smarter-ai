@@ -21,10 +21,24 @@ export default function ShopifyCallback() {
 
   const handleCallback = async () => {
     try {
+      const oauthError = searchParams.get('error');
+      const oauthErrorDescription = searchParams.get('error_description');
+
+      if (oauthError) {
+        throw new Error(oauthErrorDescription || oauthError);
+      }
+
       const code = searchParams.get('code');
       const state = searchParams.get('state');
-      const shop = searchParams.get('shop') || sessionStorage.getItem('shopify_shop');
-      const savedState = sessionStorage.getItem('shopify_oauth_state');
+      // NOTE: Shopify OAuth might be completed in a new tab (to avoid iframe blocking).
+      // sessionStorage does NOT persist across tabs, so we also read localStorage.
+      const shop =
+        searchParams.get('shop') ||
+        sessionStorage.getItem('shopify_shop') ||
+        localStorage.getItem('shopify_shop');
+      const savedState =
+        sessionStorage.getItem('shopify_oauth_state') ||
+        localStorage.getItem('shopify_oauth_state');
 
       // Validate state for CSRF protection
       if (state !== savedState) {
@@ -57,9 +71,11 @@ export default function ShopifyCallback() {
         setShopName(data.connection?.shop_name || shop);
         setMessage(data.message || `✅ تم ربط ${data.connection?.shop_name} بنجاح!`);
         
-        // Clean up session storage
+        // Clean up storage (both session + local)
         sessionStorage.removeItem('shopify_oauth_state');
         sessionStorage.removeItem('shopify_shop');
+        localStorage.removeItem('shopify_oauth_state');
+        localStorage.removeItem('shopify_shop');
 
         toast({
           title: 'تم الربط بنجاح!',
