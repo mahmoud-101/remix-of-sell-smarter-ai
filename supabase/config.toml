@@ -32,3 +32,15 @@ verify_jwt = false
 
 [functions.search-facebook-ads]
 verify_jwt = false
+
+[functions.store-sync]
+verify_jwt = false
+
+[functions.shopify-oauth]
+verify_jwt = false
+
+[functions.shopify-products]
+verify_jwt = false
+
+[functions.generate-product-content]
+verify_jwt = false
