@@ -282,6 +282,7 @@ Return ONLY raw JSON, no markdown.`;
         ],
         temperature,
         max_tokens: 2000,
+        response_format: { type: "json_object" }, // Force JSON output
       }),
     });
 
@@ -308,16 +309,36 @@ Return ONLY raw JSON, no markdown.`;
     const data = await response.json();
     const content = data.choices[0].message.content;
     
-    // Parse JSON from the response (handle markdown code blocks if present)
+    // Parse JSON from the response - handle various edge cases
     let result;
     try {
-      // Try to extract JSON from markdown code block if present
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-      const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
+      let jsonStr = content.trim();
+      
+      // Strip markdown code fences if present (```json...``` or ```...```)
+      const fenceMatch = jsonStr.match(/^```(?:json)?\s*([\s\S]*?)```$/);
+      if (fenceMatch) {
+        jsonStr = fenceMatch[1].trim();
+      }
+      
+      // Some models wrap in leading/trailing backticks only
+      jsonStr = jsonStr.replace(/^`+|`+$/g, '').trim();
+      
+      // Try direct parse
       result = JSON.parse(jsonStr);
     } catch (parseError) {
-      console.error("JSON parse error:", parseError, "Content:", content);
-      throw new Error("Failed to parse AI response as JSON");
+      // Fallback: try to find the first { ... } or [ ... ] block
+      const jsonBlockMatch = content.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+      if (jsonBlockMatch) {
+        try {
+          result = JSON.parse(jsonBlockMatch[1]);
+        } catch {
+          console.error("JSON parse error (fallback failed):", parseError, "Content:", content.slice(0, 500));
+          throw new Error("Failed to parse AI response as JSON");
+        }
+      } else {
+        console.error("JSON parse error:", parseError, "Content:", content.slice(0, 500));
+        throw new Error("Failed to parse AI response as JSON");
+      }
     }
 
     console.log(`✅ Generated ${toolType} for user ${authData?.userId}`);
