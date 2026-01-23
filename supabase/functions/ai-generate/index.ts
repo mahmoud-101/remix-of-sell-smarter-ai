@@ -12,7 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const { toolType, input, language } = await req.json();
+    const payload = await req.json();
+    // Backward compatible parsing:
+    // - New callers send: { toolType, input, language }
+    // - Some older callers send: { type, ...inputFields }
+    const toolType: string | undefined = payload?.toolType ?? payload?.type;
+    const input = payload?.input ?? payload;
+    const language = payload?.language;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -27,6 +33,8 @@ serve(async (req) => {
 
     let systemRole = "";
     let userPrompt = "";
+    let model = "google/gemini-2.5-flash";
+    let temperature = 0.8;
 
     switch (toolType) {
       case "product-copy":
@@ -85,6 +93,7 @@ ${input.preferredCTA ? `Preferred CTA Style: ${input.preferredCTA}` : ''}
 Content Length: ${input.contentLength || "medium"}
 
 Generate 3 compelling variations for each output type. Return ONLY raw JSON, no markdown.`;
+        temperature = 0.75;
         break;
 
       case "ads-copy":
@@ -99,43 +108,133 @@ Return ONLY valid JSON (no markdown) with 3 ad variations:
     {"headline": "Hook 3", "primaryText": "Ad copy 3", "cta": "Get Offer"}
   ]
 }`;
-        userPrompt = `Product: ${input.productName}
+        userPrompt = `Create 3 high-performing ad variations.
+
+Product: ${input.productName || ""}
+Product Description: ${input.productDescription || ""}
 Platform: ${input.platform || "Facebook/Instagram"}
 Goal: ${input.goal || "Sales"}
-Target: ${input.targetAudience || "General"}
+Target Audience: ${input.targetAudience || "General"}
 
 Return ONLY raw JSON, no markdown.`;
+        temperature = 0.85;
         break;
 
       case "video-script":
-        systemRole = `You are a viral video content expert for TikTok and Instagram Reels.
+        // IMPORTANT: The frontend expects { scripts, viral_elements, best_posting_times }
+        systemRole = `You are a viral short-form video scriptwriter for TikTok/Reels.
 ${langInstruction}
 
-Create engaging video scripts that grab attention in the first 3 seconds.
+Write 3 distinct scripts. Each script MUST have:
+- hook (first 1–3 seconds)
+- body (beats / scenes / what to say + what to show)
+- cta (single clear action)
+
+Return ONLY valid JSON (no markdown) with EXACT structure:
+{
+  "scripts": [
+    {"hook": "...", "body": "...", "cta": "..."}
+  ],
+  "viral_elements": ["..."],
+  "best_posting_times": ["..."]
+}`;
+        userPrompt = `Create 3 viral scripts.
+
+Product Name: ${input.productName || ""}
+Product Description: ${input.productDescription || ""}
+Platform: ${input.platform || "tiktok"}
+Duration (seconds): ${input.duration || "30"}
+Style: ${input.style || "viral"}
+
+Rules:
+- Write in ${language === 'ar' ? 'Arabic' : 'English'}.
+- Make it punchy, specific, and sales-driven.
+- Include concrete filming directions inside the body (e.g., [Show close-up], [Text on screen]).
+
+Return ONLY raw JSON, no markdown.`;
+        model = "google/gemini-2.5-pro";
+        temperature = 0.9;
+        break;
+
+      case "seo-optimizer":
+        // Matches src/pages/SEOAnalyzer.tsx expectations: { title, description, keywords }
+        systemRole = `You are an e-commerce SEO specialist.
+${langInstruction}
+
+Return ONLY valid JSON (no markdown) with EXACT structure:
+{
+  "title": "SEO product title (55–70 chars)",
+  "description": "SEO meta-like product description (140–170 chars)",
+  "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"]
+}
+
+Rules:
+- Title must include primary keyword early.
+- Description must include benefit + trust cue + CTA.
+- Keywords should be buyer-intent phrases (Arabic if language=ar).`;
+        userPrompt = `Optimize SEO for this product:
+
+Current Title: ${input.productTitle || ""}
+Current Description: ${input.productDescription || ""}
+Category: ${input.category || ""}
+Target Keywords (optional): ${input.targetKeywords || ""}
+
+Return ONLY raw JSON, no markdown.`;
+        model = "google/gemini-2.5-pro";
+        temperature = 0.55;
+        break;
+
+      case "competitor":
+        // Matches src/pages/CompetitorAnalysis.tsx expectations
+        systemRole = `You are a competitive intelligence analyst for e-commerce.
+${langInstruction}
+
+Return ONLY valid JSON (no markdown) with EXACT structure:
+{
+  "strengths": ["..."],
+  "weaknesses": ["..."],
+  "opportunities": ["..."],
+  "pricingStrategy": "...",
+  "messagingStyle": "..."
+}
+
+Rules:
+- Be practical and actionable.
+- Keep strengths/weaknesses/opportunities as 4–6 bullets each.
+- If info is missing, infer cautiously and say so indirectly (no apologies).`;
+        userPrompt = `Analyze this competitor:
+
+Competitor Name: ${input.competitorName || ""}
+Website: ${input.website || ""}
+Description: ${input.description || ""}
+
+My Business (optional): ${input.yourBusiness || ""}
+
+Return ONLY raw JSON, no markdown.`;
+        model = "google/gemini-2.5-pro";
+        temperature = 0.65;
+        break;
+
+      // Backward compatibility for SyncedProducts.tsx
+      case "product":
+        systemRole = `You are an expert e-commerce copywriter.
+${langInstruction}
 
 Return ONLY valid JSON (no markdown) with this structure:
 {
   "variations": [
-    {
-      "hook": "Attention-grabbing opening line (first 3 seconds)",
-      "body": "Main content with clear points",
-      "cta": "Strong call to action",
-      "duration": "15-30 seconds",
-      "viralElements": ["Element 1", "Element 2"],
-      "bestPostingTime": "Recommended posting time"
-    }
+    {"title": "...", "description": "...", "bullets": ["...", "...", "...", "..."]}
   ]
 }`;
-        userPrompt = `Create 3 viral video script variations for:
+        userPrompt = `Generate 3 improved product title + description variations for:
 
-Product/Topic: ${input.productName || input.topic}
-${input.productDescription ? `Description: ${input.productDescription}` : ''}
+Product Name: ${input.productName || ""}
+Product Description: ${input.productDescription || ""}
 Target Audience: ${input.targetAudience || "General"}
-Platform: ${input.platform || "TikTok/Reels"}
-Style: ${input.style || "Engaging and trendy"}
-Duration: ${input.duration || "15-30 seconds"}
+Tone: ${input.tone || "professional"}
 
 Return ONLY raw JSON, no markdown.`;
+        temperature = 0.75;
         break;
 
       case "seo-content":
@@ -176,12 +275,12 @@ Return ONLY raw JSON, no markdown.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: systemRole },
           { role: "user", content: userPrompt }
         ],
-        temperature: 0.8,
+        temperature,
         max_tokens: 2000,
       }),
     });
