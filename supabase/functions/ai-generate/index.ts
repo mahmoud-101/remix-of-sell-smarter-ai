@@ -610,26 +610,6 @@ Return ONLY raw JSON, no markdown.`;
       }
     }
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        console.error("Rate limit exceeded");
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        console.error("Payment required");
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI Gateway Error:", response.status, errorText);
-      throw new Error(`AI Gateway failed: ${response.status}`);
-    }
-
     if (result === null || result === undefined) {
       console.error("❌ Error: result is empty", "finish_reason:", finishReason, "Content:", lastContentPreview);
       throw new Error("Failed to parse AI response as JSON");
