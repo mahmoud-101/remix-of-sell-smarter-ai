@@ -33,9 +33,10 @@ serve(async (req) => {
 
     let systemRole = "";
     let userPrompt = "";
+    // Use flash models for speed - they're 3x faster than pro
     let model = "google/gemini-2.5-flash";
-    let temperature = 0.8;
-    let maxTokens = 2200;
+    let temperature = 0.7;
+    let maxTokens = 1800;
     let toolSchema: any | null = null;
     const toolName = "return_payload";
 
@@ -96,8 +97,8 @@ ${input.preferredCTA ? `Preferred CTA Style: ${input.preferredCTA}` : ''}
 Content Length: ${input.contentLength || "medium"}
 
 Generate 3 compelling variations for each output type. Return ONLY raw JSON, no markdown.`;
-        temperature = 0.75;
-        maxTokens = 2600;
+        temperature = 0.7;
+        maxTokens = 2000;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -172,8 +173,8 @@ Goal: ${input.goal || "Sales"}
 Target Audience: ${input.targetAudience || "General"}
 
 Return ONLY raw JSON, no markdown.`;
-        temperature = 0.85;
-        maxTokens = 1600;
+        temperature = 0.75;
+        maxTokens = 1200;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -230,9 +231,10 @@ Rules:
 - Include concrete filming directions inside the body (e.g., [Show close-up], [Text on screen]).
 
 Return ONLY raw JSON, no markdown.`;
-        model = "google/gemini-2.5-pro";
-        temperature = 0.7;
-        maxTokens = 2400;
+        // Use flash for speed - still high quality for scripts
+        model = "google/gemini-2.5-flash";
+        temperature = 0.65;
+        maxTokens = 1800;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -283,9 +285,10 @@ Category: ${input.category || ""}
 Target Keywords (optional): ${input.targetKeywords || ""}
 
 Return ONLY raw JSON, no markdown.`;
-        model = "google/gemini-2.5-pro";
-        temperature = 0.55;
-        maxTokens = 900;
+        // Use flash for speed
+        model = "google/gemini-2.5-flash";
+        temperature = 0.5;
+        maxTokens = 700;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -325,9 +328,10 @@ Description: ${input.description || ""}
 My Business (optional): ${input.yourBusiness || ""}
 
 Return ONLY raw JSON, no markdown.`;
-        model = "google/gemini-2.5-pro";
-        temperature = 0.35;
-        maxTokens = 1800;
+        // Use flash for speed
+        model = "google/gemini-2.5-flash";
+        temperature = 0.4;
+        maxTokens = 1400;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -361,8 +365,8 @@ Target Audience: ${input.targetAudience || "General"}
 Tone: ${input.tone || "professional"}
 
 Return ONLY raw JSON, no markdown.`;
-        temperature = 0.75;
-        maxTokens = 1800;
+        temperature = 0.65;
+        maxTokens = 1400;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -411,7 +415,7 @@ Target Keywords: ${input.keywords || "auto-generate"}
 Industry: ${input.industry || "E-commerce"}
 
 Return ONLY raw JSON, no markdown.`;
-        maxTokens = 2000;
+        maxTokens = 1500;
         toolSchema = {
           type: "object",
           additionalProperties: false,
