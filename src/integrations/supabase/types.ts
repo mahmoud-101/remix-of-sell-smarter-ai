@@ -22,6 +22,10 @@ export type Database = {
           id: string
           input_data: Json
           output_data: Json
+          product_id: string | null
+          product_image: string | null
+          product_title: string | null
+          tone: string | null
           user_id: string
         }
         Insert: {
@@ -31,6 +35,10 @@ export type Database = {
           id?: string
           input_data: Json
           output_data: Json
+          product_id?: string | null
+          product_image?: string | null
+          product_title?: string | null
+          tone?: string | null
           user_id: string
         }
         Update: {
@@ -40,6 +48,10 @@ export type Database = {
           id?: string
           input_data?: Json
           output_data?: Json
+          product_id?: string | null
+          product_image?: string | null
+          product_title?: string | null
+          tone?: string | null
           user_id?: string
         }
         Relationships: []
@@ -149,6 +161,48 @@ export type Database = {
           preferred_language?: string | null
           tracking_config?: Json | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      shopify_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          connected_at: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          scopes: string | null
+          shop_name: string | null
+          shop_url: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          connected_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          scopes?: string | null
+          shop_name?: string | null
+          shop_url: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          connected_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          scopes?: string | null
+          shop_name?: string | null
+          shop_url?: string
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -428,6 +482,7 @@ export type Database = {
         Returns: string
       }
       encrypt_api_credential: { Args: { credential: string }; Returns: string }
+      get_shopify_token: { Args: { connection_uuid: string }; Returns: string }
       get_store_credentials: {
         Args: { connection_uuid: string }
         Returns: {
