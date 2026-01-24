@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      content_exports: {
+        Row: {
+          content_text: string
+          created_at: string
+          export_format: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_text: string
+          created_at?: string
+          export_format: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_text?: string
+          created_at?: string
+          export_format?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       generated_content: {
         Row: {
           content_type: string

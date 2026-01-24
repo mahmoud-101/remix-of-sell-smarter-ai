@@ -15,9 +15,14 @@ import {
   Megaphone,
   Instagram,
   Video,
-  MessageSquare
+  MessageSquare,
+  FileDown,
+  FileType,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Product {
   id: string;
@@ -62,11 +67,13 @@ const contentTypeLabels: Record<ContentType, { ar: string; en: string }> = {
 export function ResultDisplay({ product, results, onRegenerate, regenerating }: ResultDisplayProps) {
   const { language } = useLanguage();
   const { toast } = useToast();
+  const { user } = useAuth();
   const isRTL = language === 'ar';
 
   const [editedContent, setEditedContent] = useState<Record<ContentType, string>>(results);
   const [copiedType, setCopiedType] = useState<ContentType | null>(null);
   const [savingType, setSavingType] = useState<ContentType | null>(null);
+  const [exporting, setExporting] = useState<string | null>(null);
 
   const contentTypes = Object.keys(results) as ContentType[];
 
@@ -101,6 +108,121 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
   };
 
   const getCharCount = (text: string) => text.length;
+
+  const logExport = async (content: string, format: string) => {
+    if (!user) return;
+    try {
+      await supabase.from('content_exports').insert({
+        user_id: user.id,
+        content_text: content.substring(0, 5000),
+        export_format: format
+      });
+    } catch (error) {
+      console.error('Failed to log export:', error);
+    }
+  };
+
+  const handleExport = async (type: ContentType, format: 'txt' | 'docx' | 'pdf') => {
+    setExporting(`${type}-${format}`);
+    const content = editedContent[type];
+    const label = contentTypeLabels[type][isRTL ? 'ar' : 'en'];
+    
+    try {
+      await logExport(content, format);
+      
+      if (format === 'txt') {
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        downloadBlob(blob, `${product.title}-${label}.txt`);
+      } else if (format === 'docx') {
+        const htmlContent = `<!DOCTYPE html>
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
+<head><meta charset="UTF-8"><title>${label}</title></head>
+<body style="font-family: ${isRTL ? 'Tajawal, ' : ''}Calibri, sans-serif; direction: ${isRTL ? 'rtl' : 'ltr'};">
+<h1 style="color: #6366f1;">${product.title}</h1>
+<h2>${label}</h2>
+<p style="line-height: 1.8; white-space: pre-wrap;">${content}</p>
+</body></html>`;
+        const blob = new Blob([htmlContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        downloadBlob(blob, `${product.title}-${label}.doc`);
+      } else if (format === 'pdf') {
+        const htmlContent = `<!DOCTYPE html>
+<html lang="${isRTL ? 'ar' : 'en'}" dir="${isRTL ? 'rtl' : 'ltr'}">
+<head><meta charset="UTF-8"><title>${label}</title>
+<style>body { font-family: ${isRTL ? 'Tajawal, ' : ''}system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+h1 { color: #6366f1; } p { line-height: 1.8; white-space: pre-wrap; }</style>
+</head>
+<body><h1>${product.title}</h1><h2>${label}</h2><p>${content}</p></body></html>`;
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          printWindow.print();
+        }
+      }
+      
+      toast({
+        title: isRTL ? 'تم التصدير!' : 'Exported!',
+        description: isRTL ? `تم تصدير ${label} بنجاح` : `${label} exported successfully`
+      });
+    } catch (error) {
+      toast({
+        title: isRTL ? 'خطأ' : 'Error',
+        description: isRTL ? 'فشل التصدير' : 'Export failed',
+        variant: 'destructive'
+      });
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const ExportButtons = ({ type }: { type: ContentType }) => (
+    <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+      <span className="text-xs text-muted-foreground self-center">
+        {isRTL ? 'تصدير:' : 'Export:'}
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleExport(type, 'txt')}
+        disabled={exporting === `${type}-txt`}
+        className="h-7 px-2 text-xs"
+      >
+        {exporting === `${type}-txt` ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
+        <span className="hidden sm:inline ms-1">Text</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleExport(type, 'docx')}
+        disabled={exporting === `${type}-docx`}
+        className="h-7 px-2 text-xs"
+      >
+        {exporting === `${type}-docx` ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileType className="h-3 w-3" />}
+        <span className="hidden sm:inline ms-1">Word</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleExport(type, 'pdf')}
+        disabled={exporting === `${type}-pdf`}
+        className="h-7 px-2 text-xs"
+      >
+        {exporting === `${type}-pdf` ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3" />}
+        <span className="hidden sm:inline ms-1">PDF</span>
+      </Button>
+    </div>
+  );
 
   if (contentTypes.length === 1) {
     const type = contentTypes[0];
@@ -144,7 +266,7 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
               variant="outline"
               onClick={() => handleCopy(type)}
             >
-              {copiedType === type ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+              {copiedType === type ? <Check className="h-4 w-4 me-2" /> : <Copy className="h-4 w-4 me-2" />}
               {isRTL ? 'نسخ' : 'Copy'}
             </Button>
             <Button 
@@ -152,7 +274,7 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
               onClick={() => onRegenerate(type)}
               disabled={regenerating === type}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${regenerating === type ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 me-2 ${regenerating === type ? 'animate-spin' : ''}`} />
               {isRTL ? 'إعادة التوليد' : 'Regenerate'}
             </Button>
             <Button 
@@ -160,10 +282,12 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
               onClick={() => handleSave(type)}
               disabled={savingType === type}
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 me-2" />
               {isRTL ? 'حفظ' : 'Save'}
             </Button>
           </div>
+          
+          <ExportButtons type={type} />
         </CardContent>
       </Card>
     );
@@ -218,7 +342,7 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
                   size="sm"
                   onClick={() => handleCopy(type)}
                 >
-                  {copiedType === type ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                  {copiedType === type ? <Check className="h-4 w-4 me-1" /> : <Copy className="h-4 w-4 me-1" />}
                   {isRTL ? 'نسخ' : 'Copy'}
                 </Button>
                 <Button 
@@ -227,10 +351,12 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
                   onClick={() => onRegenerate(type)}
                   disabled={regenerating === type}
                 >
-                  <RefreshCw className={`h-4 w-4 mr-1 ${regenerating === type ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 me-1 ${regenerating === type ? 'animate-spin' : ''}`} />
                   {isRTL ? 'إعادة' : 'Redo'}
                 </Button>
               </div>
+              
+              <ExportButtons type={type} />
             </TabsContent>
           ))}
         </Tabs>
