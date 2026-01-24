@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { ProductSelector } from '@/components/shopify/ProductSelector';
 import { ResultDisplay } from '@/components/shopify/ResultDisplay';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -9,9 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Separator } from '@/components/ui/separator';
 import { 
   Sparkles, 
   FileText, 
@@ -21,7 +21,8 @@ import {
   Video, 
   MessageSquare,
   Loader2,
-  Rocket
+  Rocket,
+  Package
 } from 'lucide-react';
 
 interface Product {
@@ -77,7 +78,9 @@ export default function CreateContent() {
   const { toast } = useToast();
   const isRTL = language === 'ar';
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [productTitle, setProductTitle] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [productPrice, setProductPrice] = useState('');
   const [selectedContentTypes, setSelectedContentTypes] = useState<ContentType[]>(['product_description']);
   const [tone, setTone] = useState<Tone>('friendly');
   const [length, setLength] = useState<ContentLength>('medium');
@@ -103,10 +106,10 @@ export default function CreateContent() {
   };
 
   const handleGenerate = async () => {
-    if (!selectedProduct) {
+    if (!productTitle.trim()) {
       toast({
-        title: isRTL ? 'اختر منتج' : 'Select Product',
-        description: isRTL ? 'يرجى اختيار منتج أولاً' : 'Please select a product first',
+        title: isRTL ? 'أدخل اسم المنتج' : 'Enter Product Name',
+        description: isRTL ? 'يرجى إدخال اسم المنتج أولاً' : 'Please enter a product name first',
         variant: 'destructive'
       });
       return;
@@ -124,10 +127,20 @@ export default function CreateContent() {
     setGenerating(true);
     setResults(null);
 
+    const product: Product = {
+      id: Date.now().toString(),
+      title: productTitle,
+      handle: productTitle.toLowerCase().replace(/\s+/g, '-'),
+      price: productPrice || '0',
+      image: null,
+      description: productDescription,
+      url: ''
+    };
+
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-content', {
         body: {
-          product: selectedProduct,
+          product,
           contentTypes: selectedContentTypes,
           tone,
           length
@@ -158,13 +171,23 @@ export default function CreateContent() {
   };
 
   const handleRegenerate = async (contentType: ContentType) => {
-    if (!selectedProduct) return;
+    if (!productTitle.trim()) return;
+
+    const product: Product = {
+      id: Date.now().toString(),
+      title: productTitle,
+      handle: productTitle.toLowerCase().replace(/\s+/g, '-'),
+      price: productPrice || '0',
+      image: null,
+      description: productDescription,
+      url: ''
+    };
 
     setRegenerating(contentType);
     try {
       const { data, error } = await supabase.functions.invoke('generate-product-content', {
         body: {
-          product: selectedProduct,
+          product,
           contentTypes: [contentType],
           tone,
           length
@@ -193,6 +216,16 @@ export default function CreateContent() {
     }
   };
 
+  const selectedProduct: Product | null = productTitle.trim() ? {
+    id: Date.now().toString(),
+    title: productTitle,
+    handle: productTitle.toLowerCase().replace(/\s+/g, '-'),
+    price: productPrice || '0',
+    image: null,
+    description: productDescription,
+    url: ''
+  } : null;
+
   return (
     <DashboardLayout>
       <div className="container max-w-5xl mx-auto py-6 space-y-6">
@@ -204,31 +237,54 @@ export default function CreateContent() {
           </h1>
           <p className="text-muted-foreground">
             {isRTL 
-              ? 'اختر منتج من متجرك وحدد نوع المحتوى المطلوب'
-              : 'Select a product from your store and choose the content type'}
+              ? 'أدخل بيانات المنتج وحدد نوع المحتوى المطلوب'
+              : 'Enter product details and choose the content type'}
           </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Left Column - Product Selection & Settings */}
+          {/* Left Column - Product Input & Settings */}
           <div className="space-y-6">
-            {/* Product Selection */}
+            {/* Product Input */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">
-                  {isRTL ? '1. اختر المنتج' : '1. Select Product'}
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  {isRTL ? '1. أدخل بيانات المنتج' : '1. Enter Product Details'}
                 </CardTitle>
                 <CardDescription>
                   {isRTL 
-                    ? 'الصق رابط المنتج أو ابحث في متجرك'
-                    : 'Paste product URL or search your store'}
+                    ? 'أدخل اسم المنتج ووصفه وسعره'
+                    : 'Enter product name, description, and price'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <ProductSelector 
-                  onProductSelect={setSelectedProduct}
-                  selectedProduct={selectedProduct}
-                />
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{isRTL ? 'اسم المنتج *' : 'Product Name *'}</Label>
+                  <Input
+                    placeholder={isRTL ? 'مثال: ساعة ذكية سبورت' : 'e.g., Smart Sport Watch'}
+                    value={productTitle}
+                    onChange={(e) => setProductTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{isRTL ? 'وصف المنتج (اختياري)' : 'Product Description (optional)'}</Label>
+                  <Textarea
+                    placeholder={isRTL ? 'أضف وصفاً للمنتج لنتائج أفضل...' : 'Add a description for better results...'}
+                    value={productDescription}
+                    onChange={(e) => setProductDescription(e.target.value)}
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{isRTL ? 'السعر (اختياري)' : 'Price (optional)'}</Label>
+                  <Input
+                    type="number"
+                    placeholder={isRTL ? '299' : '299'}
+                    value={productPrice}
+                    onChange={(e) => setProductPrice(e.target.value)}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -318,7 +374,7 @@ export default function CreateContent() {
               size="lg" 
               className="w-full h-14 text-lg"
               onClick={handleGenerate}
-              disabled={generating || !selectedProduct || selectedContentTypes.length === 0}
+              disabled={generating || !productTitle.trim() || selectedContentTypes.length === 0}
             >
               {generating ? (
                 <>
@@ -352,8 +408,8 @@ export default function CreateContent() {
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {isRTL 
-                      ? 'اختر منتج ونوع المحتوى ثم اضغط "توليد"'
-                      : 'Select a product and content type, then click "Generate"'}
+                      ? 'أدخل بيانات المنتج ونوع المحتوى ثم اضغط "توليد"'
+                      : 'Enter product details and content type, then click "Generate"'}
                   </p>
                 </CardContent>
               </Card>

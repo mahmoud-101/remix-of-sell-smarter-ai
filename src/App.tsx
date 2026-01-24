@@ -60,9 +60,7 @@ const ImageGenerator = lazyWithRetry(() => import("./pages/ImageGenerator"), "Im
 const CreativeFactory = lazyWithRetry(() => import("./pages/CreativeFactory"), "CreativeFactory");
 const AdDesigner = lazyWithRetry(() => import("./pages/AdDesigner"), "AdDesigner");
 const ProductResearch = lazyWithRetry(() => import("./pages/ProductResearch"), "ProductResearch");
-const SyncedProducts = lazyWithRetry(() => import("./pages/SyncedProducts"), "SyncedProducts");
 const CreateContent = lazyWithRetry(() => import("./pages/CreateContent"), "CreateContent");
-const ShopifyCallback = lazyWithRetry(() => import("./pages/ShopifyCallback"), "ShopifyCallback");
 const About = lazyWithRetry(() => import("./pages/About"), "About");
 const UseCases = lazyWithRetry(() => import("./pages/UseCases"), "UseCases");
 const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
@@ -287,26 +285,10 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/dashboard/synced-products"
-          element={
-            <ProtectedRoute>
-              <SyncedProducts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/create-content"
           element={
             <ProtectedRoute>
               <CreateContent />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/shopify/callback"
-          element={
-            <ProtectedRoute>
-              <ShopifyCallback />
             </ProtectedRoute>
           }
         />

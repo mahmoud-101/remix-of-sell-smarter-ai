@@ -11,7 +11,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Store, Link2, Unlink, RefreshCw, ShoppingBag, CheckCircle2, AlertCircle, Loader2, ExternalLink, Copy, Check, ArrowRight } from 'lucide-react';
-import { ShopifyConnection } from '@/components/shopify/ShopifyConnection';
+
 interface StoreConnection {
   id: string;
   platform: 'shopify' | 'woocommerce';
@@ -501,8 +501,6 @@ export default function StoreIntegrations() {
 
       {/* Connected Stores */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Shopify - One Click OAuth Connection */}
-        <ShopifyConnection />
 
         {/* WooCommerce Card - Still uses manual API keys */}
         <Card className={wooConnection ? 'border-purple-500/50' : ''}>
