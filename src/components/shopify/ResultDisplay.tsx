@@ -9,7 +9,6 @@ import {
   Copy, 
   RefreshCw, 
   Save, 
-  Upload, 
   Check, 
   ImageIcon,
   FileText,
@@ -19,7 +18,6 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface Product {
   id: string;
@@ -69,7 +67,6 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
   const [editedContent, setEditedContent] = useState<Record<ContentType, string>>(results);
   const [copiedType, setCopiedType] = useState<ContentType | null>(null);
   const [savingType, setSavingType] = useState<ContentType | null>(null);
-  const [updatingShopify, setUpdatingShopify] = useState(false);
 
   const contentTypes = Object.keys(results) as ContentType[];
 
@@ -94,7 +91,6 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
   const handleSave = async (type: ContentType) => {
     setSavingType(type);
     try {
-      // Content is already saved when generated, this is for explicit saves
       toast({
         title: isRTL ? 'تم الحفظ' : 'Saved',
         description: isRTL ? 'تم حفظ المحتوى' : 'Content saved successfully'
@@ -104,40 +100,9 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
     }
   };
 
-  const handleUpdateShopify = async () => {
-    if (!editedContent.product_description) return;
-
-    setUpdatingShopify(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('shopify-products', {
-        body: {
-          action: 'update_description',
-          productId: product.id,
-          newDescription: editedContent.product_description
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: isRTL ? 'تم التحديث' : 'Updated',
-        description: isRTL ? 'تم تحديث المنتج في Shopify بنجاح' : 'Product updated in Shopify'
-      });
-    } catch (error: any) {
-      toast({
-        title: isRTL ? 'خطأ' : 'Error',
-        description: error.message,
-        variant: 'destructive'
-      });
-    } finally {
-      setUpdatingShopify(false);
-    }
-  };
-
   const getCharCount = (text: string) => text.length;
 
   if (contentTypes.length === 1) {
-    // Single result - simpler layout
     const type = contentTypes[0];
     return (
       <Card>
@@ -198,23 +163,12 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
               <Save className="h-4 w-4 mr-2" />
               {isRTL ? 'حفظ' : 'Save'}
             </Button>
-            {type === 'product_description' && (
-              <Button 
-                onClick={handleUpdateShopify}
-                disabled={updatingShopify}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                {isRTL ? 'تحديث في Shopify' : 'Update in Shopify'}
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Multiple results - tabbed layout
   return (
     <Card>
       <CardHeader>
@@ -276,17 +230,6 @@ export function ResultDisplay({ product, results, onRegenerate, regenerating }: 
                   <RefreshCw className={`h-4 w-4 mr-1 ${regenerating === type ? 'animate-spin' : ''}`} />
                   {isRTL ? 'إعادة' : 'Redo'}
                 </Button>
-                {type === 'product_description' && (
-                  <Button 
-                    size="sm"
-                    onClick={handleUpdateShopify}
-                    disabled={updatingShopify}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    {isRTL ? 'تحديث Shopify' : 'Update Shopify'}
-                  </Button>
-                )}
               </div>
             </TabsContent>
           ))}
