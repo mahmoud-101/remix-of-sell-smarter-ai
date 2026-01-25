@@ -135,9 +135,29 @@ export default function CreateContent() {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractedData, setExtractedData] = useState<ExtractedProductData | null>(null);
   const [nanobrowserInstalled, setNanobrowserInstalled] = useState<boolean | null>(null);
+  const [isInIframe, setIsInIframe] = useState(false);
+
+  // Check if running in iframe (Lovable preview)
+  const checkIfInIframe = useCallback(() => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  }, []);
 
   // Check if Nanobrowser extension is installed
   const checkNanobrowserInstalled = useCallback(() => {
+    // Check if in iframe first
+    const inIframe = checkIfInIframe();
+    setIsInIframe(inIframe);
+    
+    if (inIframe) {
+      // In iframe, chrome extension APIs won't work
+      setNanobrowserInstalled(false);
+      return;
+    }
+
     if (typeof chrome === 'undefined' || !chrome.runtime) {
       setNanobrowserInstalled(false);
       return;
@@ -164,7 +184,7 @@ export default function CreateContent() {
       clearTimeout(timeout);
       setNanobrowserInstalled(false);
     }
-  }, []);
+  }, [checkIfInIframe]);
 
   useEffect(() => {
     checkNanobrowserInstalled();
@@ -495,8 +515,23 @@ export default function CreateContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Nanobrowser Installation Alert */}
-                {nanobrowserInstalled === false && (
+                {/* Iframe Warning - Show when in Lovable preview */}
+                {isInIframe && (
+                  <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800">
+                    <ExternalLink className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="text-amber-800 dark:text-amber-300">
+                      {isRTL ? '⚠️ افتح التطبيق في نافذة جديدة' : '⚠️ Open App in New Window'}
+                    </AlertTitle>
+                    <AlertDescription className="text-amber-700 dark:text-amber-400">
+                      {isRTL 
+                        ? 'ميزة الاستخراج الذكي تعمل فقط عند فتح التطبيق في Chrome. انشر التطبيق وافتحه في نافذة جديدة.'
+                        : 'AI extraction only works when the app is opened in Chrome. Publish the app and open it in a new window.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Nanobrowser Installation Alert - Show only when not in iframe */}
+                {!isInIframe && nanobrowserInstalled === false && (
                   <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
                     <Sparkles className="h-4 w-4 text-blue-600" />
                     <AlertTitle className="text-blue-800 dark:text-blue-300">
