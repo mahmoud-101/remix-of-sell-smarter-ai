@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ResultDisplay } from '@/components/shopify/ResultDisplay';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { 
   Sparkles, 
   FileText, 
@@ -22,8 +23,49 @@ import {
   MessageSquare,
   Loader2,
   Rocket,
-  Package
+  Package,
+  CheckCircle2,
+  ExternalLink,
+  Globe
 } from 'lucide-react';
+
+// Nanobrowser extension ID
+const NANOBROWSER_EXTENSION_ID = 'imbddededgmcgfhfpcjmijokokekbkal';
+const CHROME_STORE_URL = `https://chromewebstore.google.com/detail/${NANOBROWSER_EXTENSION_ID}`;
+
+// Chrome extension API type declarations
+declare global {
+  interface Window {
+    chrome?: typeof chrome;
+  }
+}
+
+declare const chrome: {
+  runtime?: {
+    sendMessage: (
+      extensionId: string,
+      message: Record<string, unknown>,
+      callback: (response: any) => void
+    ) => void;
+    lastError?: { message: string };
+  };
+};
+
+interface ExtractedProductData {
+  title?: string;
+  brand?: string;
+  price?: string | number;
+  currency?: string;
+  originalPrice?: string | number;
+  discount?: string;
+  description?: string;
+  features?: string[];
+  rating?: number;
+  reviewCount?: number;
+  images?: string[];
+  stock?: string | number;
+}
+
 
 interface Product {
   id: string;
@@ -87,6 +129,200 @@ export default function CreateContent() {
   const [generating, setGenerating] = useState(false);
   const [results, setResults] = useState<Record<ContentType, string> | null>(null);
   const [regenerating, setRegenerating] = useState<ContentType | null>(null);
+  
+  // Nanobrowser states
+  const [productUrl, setProductUrl] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedData, setExtractedData] = useState<ExtractedProductData | null>(null);
+  const [nanobrowserInstalled, setNanobrowserInstalled] = useState<boolean | null>(null);
+
+  // Check if Nanobrowser extension is installed
+  const checkNanobrowserInstalled = useCallback(() => {
+    if (typeof chrome === 'undefined' || !chrome.runtime) {
+      setNanobrowserInstalled(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setNanobrowserInstalled(false);
+    }, 2000);
+
+    try {
+      chrome.runtime.sendMessage(
+        NANOBROWSER_EXTENSION_ID,
+        { type: 'PING' },
+        (response) => {
+          clearTimeout(timeout);
+          if (chrome.runtime.lastError) {
+            setNanobrowserInstalled(false);
+          } else {
+            setNanobrowserInstalled(true);
+          }
+        }
+      );
+    } catch {
+      clearTimeout(timeout);
+      setNanobrowserInstalled(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkNanobrowserInstalled();
+  }, [checkNanobrowserInstalled]);
+
+  // Extract product data using Nanobrowser
+  const extractWithNanobrowser = async () => {
+    // Validate URL
+    if (!productUrl.trim()) {
+      toast({
+        title: isRTL ? 'أدخل رابط المنتج' : 'Enter Product URL',
+        description: isRTL ? 'يرجى إدخال رابط المنتج أولاً' : 'Please enter a product URL first',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      new URL(productUrl);
+    } catch {
+      toast({
+        title: isRTL ? 'رابط غير صالح' : 'Invalid URL',
+        description: isRTL ? 'يرجى إدخال رابط صحيح' : 'Please enter a valid URL',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!nanobrowserInstalled) {
+      toast({
+        title: isRTL ? 'Nanobrowser غير مثبت' : 'Nanobrowser Not Installed',
+        description: isRTL ? 'ثبّت إضافة Nanobrowser للاستخراج التلقائي' : 'Install Nanobrowser extension for auto-extraction',
+        variant: 'destructive',
+        action: (
+          <a 
+            href={CHROME_STORE_URL} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="underline font-medium"
+          >
+            {isRTL ? 'تثبيت' : 'Install'}
+          </a>
+        )
+      });
+      return;
+    }
+
+    setIsExtracting(true);
+    setExtractedData(null);
+
+    const task = `Navigate to ${productUrl} and extract: title, brand, price, currency, originalPrice, discount, description, features (array), rating, reviewCount, images (array), stock. Return clean JSON only.`;
+
+    const timeout = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('TIMEOUT')), 45000)
+    );
+
+    try {
+      const extractPromise = new Promise<ExtractedProductData>((resolve, reject) => {
+        chrome.runtime.sendMessage(
+          NANOBROWSER_EXTENSION_ID,
+          { type: 'EXTRACT', task, url: productUrl },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error('EXTENSION_NOT_FOUND'));
+            } else if (response?.error) {
+              reject(new Error(response.error));
+            } else if (response?.data) {
+              resolve(response.data);
+            } else {
+              reject(new Error('NO_DATA'));
+            }
+          }
+        );
+      });
+
+      const data = await Promise.race([extractPromise, timeout]);
+      
+      // Clean extracted data
+      const cleanNumber = (val: string | number | undefined): string => {
+        if (!val) return '';
+        return String(val).replace(/[^\d.]/g, '');
+      };
+
+      const cleanedData: ExtractedProductData = {
+        ...data,
+        price: cleanNumber(data.price),
+        originalPrice: cleanNumber(data.originalPrice),
+        rating: typeof data.rating === 'number' ? data.rating : parseFloat(String(data.rating)) || undefined,
+        reviewCount: typeof data.reviewCount === 'number' ? data.reviewCount : parseInt(String(data.reviewCount)) || undefined,
+      };
+
+      setExtractedData(cleanedData);
+
+      // Auto-fill form fields
+      if (cleanedData.title) {
+        const fullTitle = cleanedData.brand 
+          ? `${cleanedData.brand} - ${cleanedData.title}`
+          : cleanedData.title;
+        setProductTitle(fullTitle);
+      }
+      
+      if (cleanedData.description) {
+        let description = cleanedData.description;
+        if (cleanedData.features && cleanedData.features.length > 0) {
+          const topFeatures = cleanedData.features.slice(0, 5).join('\n• ');
+          description = `${description}\n\n• ${topFeatures}`;
+        }
+        setProductDescription(description);
+      }
+      
+      if (cleanedData.price) {
+        const priceStr = cleanedData.currency 
+          ? `${cleanedData.price} ${cleanedData.currency}`
+          : String(cleanedData.price);
+        setProductPrice(priceStr);
+      }
+
+      toast({
+        title: isRTL ? '✅ تم الاستخراج بنجاح!' : '✅ Extraction Successful!',
+        description: cleanedData.title || (isRTL ? 'تم استخراج بيانات المنتج' : 'Product data extracted'),
+      });
+
+    } catch (error: any) {
+      setExtractedData(null);
+      
+      if (error.message === 'EXTENSION_NOT_FOUND') {
+        toast({
+          title: isRTL ? 'الإضافة غير موجودة' : 'Extension Not Found',
+          description: isRTL ? 'ثبّت إضافة Nanobrowser من متجر Chrome' : 'Install Nanobrowser from Chrome Web Store',
+          variant: 'destructive',
+          action: (
+            <a 
+              href={CHROME_STORE_URL} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline font-medium"
+            >
+              {isRTL ? 'تثبيت' : 'Install'}
+            </a>
+          )
+        });
+      } else if (error.message === 'TIMEOUT') {
+        toast({
+          title: isRTL ? 'انتهت المهلة' : 'Request Timeout',
+          description: isRTL ? 'استغرق الاستخراج وقتاً طويلاً، حاول مرة أخرى' : 'Extraction took too long, please try again',
+          variant: 'destructive'
+        });
+      } else {
+        toast({
+          title: isRTL ? 'فشل الاستخراج' : 'Extraction Failed',
+          description: error.message || (isRTL ? 'حدث خطأ أثناء الاستخراج' : 'An error occurred during extraction'),
+          variant: 'destructive'
+        });
+      }
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   const lengthValue = length === 'short' ? 0 : length === 'medium' ? 50 : 100;
 
@@ -259,6 +495,95 @@ export default function CreateContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Nanobrowser Installation Alert */}
+                {nanobrowserInstalled === false && (
+                  <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                    <Sparkles className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-800 dark:text-blue-300">
+                      {isRTL ? '🚀 فعّل الاستخراج الذكي' : '🚀 Unlock AI Data Extraction'}
+                    </AlertTitle>
+                    <AlertDescription className="text-blue-700 dark:text-blue-400">
+                      <a 
+                        href={CHROME_STORE_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 underline font-medium hover:text-blue-900 dark:hover:text-blue-200"
+                      >
+                        {isRTL ? 'ثبّت Nanobrowser (مجاني)' : 'Install Nanobrowser (free)'}
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Product URL Section */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    {isRTL ? 'رابط المنتج' : 'Product URL'}
+                    {nanobrowserInstalled && (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    )}
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="url"
+                      placeholder={isRTL ? 'https://noon.com/egypt/...' : 'https://noon.com/egypt/...'}
+                      value={productUrl}
+                      onChange={(e) => setProductUrl(e.target.value)}
+                      className="flex-1"
+                      dir="ltr"
+                    />
+                    <Button
+                      type="button"
+                      onClick={extractWithNanobrowser}
+                      disabled={isExtracting || !productUrl.trim() || !nanobrowserInstalled}
+                      className="min-w-[140px] gap-2"
+                      variant="secondary"
+                    >
+                      {isExtracting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {isRTL ? 'جارٍ الاستخراج...' : 'Extracting...'}
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" />
+                          {isRTL ? 'استخراج ذكي' : 'AI Extract'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Extracted Data Preview */}
+                {extractedData && (
+                  <div className="p-3 rounded-lg bg-green-50 border border-green-200 dark:bg-green-950/30 dark:border-green-800">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                      <div className="space-y-1 text-xs">
+                        <p className="font-medium text-green-800 dark:text-green-300">
+                          {isRTL ? 'تم استخراج البيانات' : 'Data Extracted Successfully'}
+                        </p>
+                        <div className="text-green-700 dark:text-green-400 space-y-0.5">
+                          {extractedData.brand && (
+                            <p><span className="font-medium">{isRTL ? 'العلامة:' : 'Brand:'}</span> {extractedData.brand}</p>
+                          )}
+                          {extractedData.price && (
+                            <p><span className="font-medium">{isRTL ? 'السعر:' : 'Price:'}</span> {extractedData.price} {extractedData.currency || ''}</p>
+                          )}
+                          {extractedData.rating && (
+                            <p><span className="font-medium">{isRTL ? 'التقييم:' : 'Rating:'}</span> {extractedData.rating}⭐</p>
+                          )}
+                          {extractedData.features && extractedData.features.length > 0 && (
+                            <p><span className="font-medium">{isRTL ? 'الميزات:' : 'Features:'}</span> {extractedData.features.length} {isRTL ? 'ميزة' : 'items'}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>{isRTL ? 'اسم المنتج *' : 'Product Name *'}</Label>
                   <Input
@@ -279,7 +604,6 @@ export default function CreateContent() {
                 <div className="space-y-2">
                   <Label>{isRTL ? 'السعر (اختياري)' : 'Price (optional)'}</Label>
                   <Input
-                    type="number"
                     placeholder={isRTL ? '299' : '299'}
                     value={productPrice}
                     onChange={(e) => setProductPrice(e.target.value)}
