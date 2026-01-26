@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
+import { ProductData } from "@/lib/api/firecrawl";
 
 interface GeneratedImage {
   url: string;
@@ -312,6 +314,18 @@ export default function CreativeFactory() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Product URL Extractor */}
+            <ProductUrlExtractor 
+              onExtract={(data: ProductData) => {
+                if (data.title || data.brand) {
+                  setProductText((data.brand ? data.brand + ' - ' : '') + (data.title || ''));
+                }
+                if (data.features && data.features.length > 0) {
+                  setUserIdeas(data.features.slice(0, 3).join(', '));
+                }
+              }}
+            />
+
             {/* Product Text */}
             <div className="space-y-2">
               <Label>{isRTL ? "اسم/وصف المنتج *" : "Product Name/Description *"}</Label>

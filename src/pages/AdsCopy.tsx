@@ -26,6 +26,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAI } from "@/hooks/useAI";
 import { useHistory } from "@/hooks/useHistory";
 import { ExportButtons } from "@/components/export/ExportButtons";
+import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
+import { ProductData } from "@/lib/api/firecrawl";
 
 const platforms = [
   { id: "facebook", label: "Facebook", icon: Facebook, color: "from-blue-600 to-blue-700" },
@@ -131,6 +133,19 @@ export default function AdsCopy() {
           <div className="lg:col-span-2 space-y-6">
             <div className="glass-card rounded-2xl p-6 space-y-5">
               <h2 className="font-semibold">{t("adDetails")}</h2>
+
+              {/* Product URL Extractor */}
+              <ProductUrlExtractor 
+                onExtract={(data: ProductData) => {
+                  if (data.title) setProductName(data.title);
+                  if (data.description) setProductDescription(data.description);
+                  if (data.features && data.features.length > 0) {
+                    setProductDescription(prev => 
+                      prev + (prev ? '\n\n' : '') + data.features!.slice(0, 5).join('\n')
+                    );
+                  }
+                }}
+              />
 
               <div className="space-y-2">
                 <Label htmlFor="productName">{t("productName")} *</Label>
