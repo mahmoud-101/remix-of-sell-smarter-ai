@@ -10,6 +10,8 @@ import { Video, Sparkles, Loader2, Copy, Check, Clock, Flame } from "lucide-reac
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAI } from "@/hooks/useAI";
 import { useToast } from "@/hooks/use-toast";
+import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
+import { ProductData } from "@/lib/api/firecrawl";
 
 const VideoScripts = () => {
   const { language } = useLanguage();
@@ -130,6 +132,19 @@ const VideoScripts = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Product URL Extractor */}
+              <ProductUrlExtractor 
+                onExtract={(data: ProductData) => {
+                  if (data.title) setProductName(data.title);
+                  if (data.description) setProductDescription(data.description);
+                  if (data.features && data.features.length > 0) {
+                    setProductDescription(prev => 
+                      prev + (prev ? '\n\n' : '') + data.features!.slice(0, 5).join('\n')
+                    );
+                  }
+                }}
+              />
+
               <div className="space-y-2">
                 <Label>{isRTL ? "اسم المنتج *" : "Product Name *"}</Label>
                 <Input
