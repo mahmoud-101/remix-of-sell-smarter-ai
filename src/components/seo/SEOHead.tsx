@@ -11,9 +11,9 @@ interface SEOHeadProps {
 }
 
 const defaultMeta = {
-  title: "SellGenius | منصة كتابة المحتوى التسويقي بالذكاء الاصطناعي",
-  description: "أنشئ نصوص منتجات، إعلانات، وحملات تسويقية احترافية في ثوانٍ باستخدام الذكاء الاصطناعي. وفر الوقت وزد مبيعاتك حتى 40%.",
-  keywords: "كتابة محتوى, ذكاء اصطناعي, تسويق, إعلانات, نصوص منتجات, التجارة الإلكترونية, AI, marketing, copywriting",
+  title: "SellGenius | نمو براندات الأزياء Shopify في MENA",
+  description: "محتوى منتجات وإعلانات Meta وسكريبتات فيديو قصيرة—مصمم لبراندات الأزياء Shopify/DTC في مصر والسعودية والإمارات لزيادة التحويلات والمبيعات.",
+  keywords: "Shopify, fashion, MENA, Meta Ads, Facebook ads, Instagram ads, وصف منتجات, إعلانات فيسبوك, إعلانات انستجرام, براند أزياء, التجارة الإلكترونية",
   image: "https://sellgenius.app/og-image.png",
   type: "website"
 };

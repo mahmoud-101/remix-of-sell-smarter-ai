@@ -65,8 +65,8 @@ export default function Footer() {
             </Link>
             <p className="text-muted-foreground text-sm mb-6 max-w-sm leading-relaxed">
               {isRTL 
-                ? "منصة ذكاء اصطناعي متخصصة في التجارة الإلكترونية. نساعدك على إنشاء محتوى تسويقي احترافي يزيد مبيعاتك."
-                : "AI platform specialized in e-commerce. We help you create professional marketing content that increases your sales."}
+                ? "منصة ذكاء اصطناعي لبراندات الأزياء Shopify في الشرق الأوسط. نساعدك على إنشاء محتوى وإعلانات Meta احترافية تزيد المبيعات."
+                : "AI platform for Shopify fashion brands in MENA. Create MENA-ready copy and Meta ads that drive sales."}
             </p>
             
             {/* Social Links */}

@@ -31,6 +31,11 @@ serve(async (req) => {
       ? "Output in Arabic (Professional marketing Arabic)." 
       : "Output in English (Professional marketing English).";
 
+    // Default positioning for the whole product (can be made configurable later)
+    const segmentContext = language === 'ar'
+      ? `Segment Context (always apply):\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads (Facebook/Instagram)\n- Goal: higher CTR + CVR + AOV with premium-yet-direct fashion tone\n- Constraints: Arabic-first (with occasional English fashion terms), COD-friendly objections, size/fit concerns, shipping/returns trust signals\n\nAlways tailor angles, examples, and CTAs to fashion e-commerce in MENA. Never sound generic.`
+      : `Segment Context (always apply):\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads (Facebook/Instagram)\n- Goal: higher CTR + CVR + AOV with a premium-yet-direct fashion tone\n- Constraints: Arabic-first market (allow light EN fashion terms), COD objections, size/fit concerns, shipping/returns trust signals\n\nAlways tailor angles, examples, and CTAs to fashion e-commerce in MENA. Never sound generic.`;
+
     let systemRole = "";
     let userPrompt = "";
     // Use flash models for speed - they're 3x faster than pro
@@ -43,6 +48,8 @@ serve(async (req) => {
     switch (toolType) {
       case "product-copy":
         systemRole = `You are an expert e-commerce copywriter specialized in high-converting product content.
+
+${segmentContext}
 
 Generate 3 variations for EACH output type to enable A/B testing.
 ${langInstruction}
@@ -154,6 +161,7 @@ Generate 3 compelling variations for each output type. Return ONLY raw JSON, no 
 
       case "ads-copy":
         systemRole = `You are a Meta & Google Ads expert specializing in high-CTR ad copy.
+${segmentContext}
 ${langInstruction}
 
 Return ONLY valid JSON (no markdown) with 3 ad variations:
@@ -202,6 +210,7 @@ Return ONLY raw JSON, no markdown.`;
       case "video-script":
         // IMPORTANT: The frontend expects { scripts, viral_elements, best_posting_times }
         systemRole = `You are a viral short-form video scriptwriter for TikTok/Reels.
+${segmentContext}
 ${langInstruction}
 
 Write 3 distinct scripts. Each script MUST have:
@@ -264,6 +273,7 @@ Return ONLY raw JSON, no markdown.`;
       case "seo-optimizer":
         // Matches src/pages/SEOAnalyzer.tsx expectations: { title, description, keywords }
         systemRole = `You are an e-commerce SEO specialist.
+${segmentContext}
 ${langInstruction}
 
 Return ONLY valid JSON (no markdown) with EXACT structure:
@@ -304,6 +314,7 @@ Return ONLY raw JSON, no markdown.`;
       case "competitor":
         // Matches src/pages/CompetitorAnalysis.tsx expectations
         systemRole = `You are a competitive intelligence analyst for e-commerce.
+${segmentContext}
 ${langInstruction}
 
 Return ONLY valid JSON (no markdown) with EXACT structure:
@@ -349,6 +360,7 @@ Return ONLY raw JSON, no markdown.`;
       // Backward compatibility for SyncedProducts.tsx
       case "product":
         systemRole = `You are an expert e-commerce copywriter.
+${segmentContext}
 ${langInstruction}
 
 Return ONLY valid JSON (no markdown) with this structure:

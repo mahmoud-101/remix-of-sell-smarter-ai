@@ -27,6 +27,10 @@ interface BusinessContext {
 
 const getSystemPrompt = (analysisType: string, language: string = 'ar'): string => {
   const isArabic = language === 'ar';
+
+  const segmentContext = isArabic
+    ? `\n\nسياق إلزامي (تمركز المنصة):\n- الشريحة: براندات أزياء (Fashion) Shopify/DTC في الشرق الأوسط (مصر/السعودية/الإمارات)\n- القناة الأساسية: إعلانات ميتا (فيسبوك/إنستجرام)\n- اعتراضات شائعة: المقاس/الفيت، جودة القماش، الاستبدال/الاسترجاع، الدفع عند الاستلام\n- لازم توصياتك تبقى مناسبة للسوق العربي: لغة بسيطة + خطوات قابلة للتنفيذ + أمثلة Fashion واقعية\n- ممنوع النصائح العامة.`
+    : `\n\nMandatory positioning context:\n- Segment: Shopify/DTC Fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads (Facebook/Instagram)\n- Common objections: sizing/fit, fabric quality, returns/exchanges, cash-on-delivery\n- Recommendations must be MENA-appropriate, concrete and executable\n- No generic advice.`;
   
   const basePersona = isArabic 
     ? `أنت مستشار أعمال التجارة الإلكترونية الأول في الشرق الأوسط، تجمع بين خبرة:
@@ -46,6 +50,7 @@ const getSystemPrompt = (analysisType: string, language: string = 'ar'): string 
 - مرحلة القمع (وعي، اهتمام، تحويل، احتفاظ)
 - منصة الإعلان (فيسبوك، انستجرام، جوجل، تيكتوك)
 - هدف العمل (مبيعات، ربح، توسع، اختبار)`
+    + segmentContext
     : `You are the top e-commerce business consultant, combining expertise as:
 - Senior Business Consultant
 - Performance Marketer
@@ -63,6 +68,9 @@ Context you always consider:
 - Funnel stage (awareness, consideration, conversion, retention)
 - Ad platform (Facebook, Instagram, Google, TikTok)
 - Business goal (sales, profit, scale, testing)`;
+
+  // Apply the same mandatory segment context in English too
+  const basePersonaFinal = isArabic ? basePersona : (basePersona + segmentContext);
 
   const prompts: Record<string, { ar: string; en: string }> = {
     "campaign-diagnosis": {
@@ -116,7 +124,7 @@ Context you always consider:
     "withoutChanges": "التوقع بدون تغييرات"
   }
 }`,
-      en: `${basePersona}
+      en: `${basePersonaFinal}
 
 Your task: Analyze campaign data and diagnose problems
 
@@ -215,7 +223,7 @@ Return result in JSON only:
     "budget": "ميزانية الاختبار المقترحة"
   }
 }`,
-      en: `${basePersona}
+      en: `${basePersonaFinal}
 
 Your task: Create high-converting ad copy
 
@@ -302,7 +310,7 @@ Return result in JSON only:
     "reason": "السبب"
   }
 }`,
-      en: `${basePersona}
+      en: `${basePersonaFinal}
 
 Your task: Optimize product page and copy for increased conversions
 
@@ -377,7 +385,7 @@ Return result in JSON only:
   },
   "testingRecommendation": "أي مفهوم تختبر أولاً ولماذا"
 }`,
-      en: `${basePersona}
+      en: `${basePersonaFinal}
 
 Your task: Create effective ad image concepts
 
@@ -441,7 +449,7 @@ Return result in JSON only:
     "day5_7": "التركيز على"
   }
 }`,
-      en: `${basePersona}
+      en: `${basePersonaFinal}
 
 Your task: Convert analyses into executable tasks
 
