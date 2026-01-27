@@ -44,10 +44,10 @@ export const translations = {
     networkError: "خطأ في الاتصال، حاول مرة أخرى",
     
     // Landing
-    heroTagline: "منصة نمو التجارة الإلكترونية بالذكاء الاصطناعي",
-    heroTitle: "عزز مبيعاتك",
-    heroTitleHighlight: "بالذكاء الاصطناعي",
-    heroDescription: "أنشئ وصف منتجات مقنع، وإعلانات عالية التحويل، وخطط حملات تسويقية، وتفوق على منافسيك - كل ذلك بقوة الذكاء الاصطناعي.",
+    heroTagline: "منصة نمو براندات الأزياء Shopify في الشرق الأوسط",
+    heroTitle: "كبر مبيعات",
+    heroTitleHighlight: "براند الأزياء",
+    heroDescription: "وصف منتجات + إعلانات Meta جاهزة + سكريبتات فيديو قصيرة—مُصمم لبراندات الأزياء Shopify/DTC في مصر والسعودية والإمارات.",
     startFreeTrialBtn: "ابدأ تجربة مجانية",
     viewDemo: "مشاهدة عرض توضيحي",
     noCreditCard: "بدون بطاقة ائتمان • تجربة 14 يوم • إلغاء في أي وقت",
@@ -77,9 +77,9 @@ export const translations = {
     
     // Dashboard
     dashboard: "لوحة التحكم",
-    welcomeToDashboard: "مرحباً بك في سيل جينيوس",
-    readyToSupercharge: "مستعد لتعزيز مبيعاتك؟",
-    chooseToolBelow: "اختر أداة من الأسفل للبدء بتوليد محتوى بالذكاء الاصطناعي.",
+    welcomeToDashboard: "مرحباً بك — مساحة نمو براندات الأزياء",
+    readyToSupercharge: "جاهز ترفع مبيعات Shopify بإعلانات Meta؟",
+    chooseToolBelow: "اختر أداة لتوليد محتوى وإعلانات موجهة لبراند أزياء في الشرق الأوسط.",
     generateContent: "توليد محتوى",
     aiTools: "أدوات الذكاء الاصطناعي",
     quickTips: "نصائح سريعة",
@@ -308,10 +308,10 @@ export const translations = {
     networkError: "Network error, please try again",
     
     // Landing
-    heroTagline: "AI-Powered E-commerce Growth Platform",
-    heroTitle: "Supercharge Your",
-    heroTitleHighlight: "E-commerce Sales",
-    heroDescription: "Generate compelling product copy, create high-converting ads, plan marketing campaigns, and outperform competitors—all powered by advanced AI.",
+    heroTagline: "AI Growth for Shopify Fashion in MENA",
+    heroTitle: "Scale Your",
+    heroTitleHighlight: "Fashion Brand",
+    heroDescription: "Product copy + Meta ad creatives + short-form scripts—built for Shopify/DTC fashion brands across EG/KSA/UAE.",
     startFreeTrialBtn: "Start Free Trial",
     viewDemo: "View Demo",
     noCreditCard: "No credit card required • 14-day free trial • Cancel anytime",
@@ -341,9 +341,9 @@ export const translations = {
     
     // Dashboard
     dashboard: "Dashboard",
-    welcomeToDashboard: "Welcome to SellGenius",
-    readyToSupercharge: "Ready to supercharge your sales?",
-    chooseToolBelow: "Choose a tool below to get started with AI-powered content generation.",
+    welcomeToDashboard: "Welcome — Fashion Growth Workspace",
+    readyToSupercharge: "Ready to scale Shopify sales with Meta Ads?",
+    chooseToolBelow: "Pick a tool to generate MENA-ready fashion copy & Meta ads.",
     generateContent: "Generate Content",
     aiTools: "AI Tools",
     quickTips: "Quick Tips",
