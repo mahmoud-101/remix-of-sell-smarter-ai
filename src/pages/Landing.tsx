@@ -3,10 +3,7 @@ import {
   Sparkles,
   FileText,
   Megaphone,
-  Palette,
-  Target,
   ArrowRight,
-  Check,
   Zap,
   Shield,
   BarChart3,
@@ -50,48 +47,26 @@ export default function Landing() {
 
   const features = [
     {
-      icon: Palette,
-      title: isRTL ? "مصنع الكريتيفات" : "Creative Factory",
-      description: isRTL 
-        ? "صمم صور منتجات وإعلانات سوشيال ميديا احترافية بالذكاء الاصطناعي بضغطة زر واحدة." 
-        : "Design professional product photos and social media ads with AI in one click.",
-      badge: isRTL ? "الأكثر استخداماً" : "Most Popular",
-    },
-    {
       icon: FileText,
       title: isRTL ? "وصف المنتجات" : "Product Descriptions",
       description: isRTL 
-        ? "اكتب وصف منتجات بيعي واحترافي يزيد من مبيعاتك ويحسن ظهورك في محركات البحث." 
+        ? "اكتب وصف منتجات أزياء (مقاسات/خامات/ستايل) يزيد التحويل ويقلل المرتجعات." 
         : "Write compelling product descriptions that boost sales and improve SEO.",
+      badge: isRTL ? "Fashion + MENA" : "Fashion + MENA",
     },
     {
       icon: Megaphone,
       title: isRTL ? "كاتب الإعلانات" : "Ad Copywriter",
       description: isRTL 
-        ? "نصوص إعلانية مقنعة لفيسبوك وإنستجرام وتيك توك وجوجل مع نسخ A/B للاختبار." 
-        : "Persuasive ad copies for Facebook, Instagram, TikTok & Google with A/B variations.",
-    },
-    {
-      icon: Play,
-      title: isRTL ? "سكريبتات الفيديو" : "Video Scripts",
-      description: isRTL 
-        ? "اكتب سكريبتات ريلز وتيك توك فيرال (Viral) تجذب العملاء وتزيد المبيعات." 
-        : "Create viral TikTok & Reels scripts that attract customers and boost sales.",
-      badge: isRTL ? "جديد 🔥" : "New 🔥",
+        ? "زوايا وإعلانات Meta عالية التحويل لبراندات الأزياء في مصر/السعودية/الإمارات + اعتراضات COD/Prepaid." 
+        : "High-converting Meta ad angles for fashion brands in MENA (COD/Prepaid objections included).",
     },
     {
       icon: BarChart3,
       title: isRTL ? "خبير السيو" : "SEO Expert",
       description: isRTL 
-        ? "حسّن منتجاتك ومتجرك لتظهر في الصفحة الأولى من جوجل وتجلب زوار مجانيين." 
+        ? "حسّن عنوان المنتج وMeta Description وكلمات البحث لتزيد الزيارات المجانية والتحويل." 
         : "Optimize your products to rank #1 on Google and get free organic traffic.",
-    },
-    {
-      icon: Target,
-      title: isRTL ? "تحليل المنافسين" : "Competitor Analysis",
-      description: isRTL 
-        ? "تجسس على إعلانات ومنتجات منافسيك واكتشف نقاط قوتهم وضعفهم." 
-        : "Spy on competitors' ads and products to discover their strengths and weaknesses.",
     },
   ];
 
@@ -271,8 +246,8 @@ export default function Landing() {
             
             <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto text-balance font-medium leading-relaxed">
               {isRTL 
-                ? "وصف منتجات + نصوص إعلانية + سكريبتات فيديو + صور احترافية = كل اللي تحتاجه لمضاعفة مبيعاتك بالذكاء الاصطناعي 🎯"
-                : "Product descriptions + Ad copies + Video scripts + Professional photos = Everything you need to double your sales with AI 🎯"}
+                ? "محتوى براند أزياء جاهز للنشر: وصف منتجات + إعلانات Meta + SEO—مخصص لمتاجر Shopify/DTC في MENA 🎯"
+                : "Publish-ready fashion growth copy: Product descriptions + Meta Ads + SEO—built for Shopify/DTC in MENA 🎯"}
             </p>
             
             {/* Stats inline */}
@@ -317,10 +292,10 @@ export default function Landing() {
           {/* Benefits list */}
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6">
             {[
-              isRTL ? "✅ وصف منتجات بيعي" : "✅ Selling Product Descriptions",
-              isRTL ? "✅ إعلانات عالية التحويل" : "✅ High-Converting Ads", 
-              isRTL ? "✅ سكريبتات فيرال" : "✅ Viral Scripts",
-              isRTL ? "✅ صور احترافية" : "✅ Professional Photos",
+                isRTL ? "✅ وصف أزياء يقلل المرتجعات" : "✅ Fashion copy that reduces returns",
+                isRTL ? "✅ إعلانات Meta عالية التحويل" : "✅ High-converting Meta Ads",
+                isRTL ? "✅ SEO للمنتجات والمتجر" : "✅ Product + store SEO",
+                isRTL ? "✅ اعتراضات COD/Prepaid + سياسة مرتجعات" : "✅ COD/Prepaid + returns policy",
             ].map((benefit, index) => (
               <div
                 key={index}
@@ -373,8 +348,8 @@ export default function Landing() {
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {isRTL
-                ? "6 أدوات ذكاء اصطناعي صُممت خصيصاً لأصحاب المتاجر والمسوقين - وفر ساعات من العمل يومياً"
-                : "6 AI tools designed specifically for store owners and marketers - save hours of work daily"}
+                ? "3 أدوات أساسية لبراندات الأزياء على Shopify/DTC في مصر/السعودية/الإمارات—مركّزة على Meta Ads ورفع التحويل"
+                : "3 core tools for Shopify/DTC fashion brands in MENA—focused on Meta Ads and conversion"}
             </p>
           </div>
 

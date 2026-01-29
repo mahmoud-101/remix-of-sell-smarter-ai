@@ -36,19 +36,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { signOut } = useAuth();
   const { t, isRTL, language, setLanguage } = useLanguage();
 
+  // Focused nav for Fashion Shopify/DTC (MENA) + Meta Ads.
+  // We keep non-core pages/routes available, but hide them from primary navigation.
   const navItems = [
     { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
-    { icon: TrendingUp, label: isRTL ? "البحث عن المنتجات" : "Product Research", path: "/dashboard/product-research" },
-    { icon: Brush, label: isRTL ? "مصنع الكريتيفات" : "Creative Factory", path: "/dashboard/creative-factory" },
-    { icon: ImagePlus, label: isRTL ? "مصمم الإعلانات" : "Ad Designer", path: "/dashboard/ad-designer" },
+
+    // Core tools
     { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
     { icon: Megaphone, label: t("navigation.adsCopy"), path: "/dashboard/ads-copy" },
-    { icon: Video, label: isRTL ? "سكريبتات الفيديو" : "Video Scripts", path: "/dashboard/video-scripts" },
     { icon: Search, label: isRTL ? "خبير السيو" : "SEO Expert", path: "/dashboard/seo-analyzer" },
-    { icon: Target, label: t("navigation.competitor"), path: "/dashboard/competitor" },
+
+    // Useful ops pages
     { icon: Users, label: isRTL ? "العملاء" : "Leads", path: "/dashboard/leads" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
-    { icon: BarChart3, label: isRTL ? "الإحصائيات" : "Analytics", path: "/dashboard/analytics" },
   ];
 
   const bottomNavItems = [
