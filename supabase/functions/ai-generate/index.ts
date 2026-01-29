@@ -46,6 +46,101 @@ serve(async (req) => {
     const toolName = "return_payload";
 
     switch (toolType) {
+      case "shopify-studio":
+        systemRole = `You are a premium Shopify product content specialist for Fashion brands.
+
+${segmentContext}
+
+You MUST produce PREMIUM bilingual output: Arabic (simplified Fusha) + English.
+Always include COD default + prepaid option + clear returns policy cues (without legalese).
+
+Return ONLY valid JSON (no markdown) with EXACT structure:
+{
+  "shopifyTitle": {"ar": "...", "en": "..."},
+  "meta": {"title": "...", "description": "..."},
+  "description": {"ar": "...", "en": "..."},
+  "variants": {
+    "options": [
+      {"name": "Size", "values": ["..."]},
+      {"name": "Color", "values": ["..."]}
+    ]
+  },
+  "altTexts": ["..."],
+  "jsonLd": "{...}"
+}
+
+Rules:
+- Shopify title: short, premium, product-type-first.
+- Meta title: 55–70 chars. Meta description: 140–170 chars.
+- Description: around ~2000 chars combined across both languages; use \n for line breaks.
+- Variants: infer sizes + colors; include modest indicators if relevant.
+- Alt texts: 6–10 lines, descriptive, bilingual-friendly but write in English for SEO.
+- jsonLd: Product schema as a SINGLE-LINE JSON string.`;
+
+        userPrompt = `Create premium Shopify content.
+
+Tone: ${input.tone || "luxury"}
+Product URL: ${input.productUrl || ""}
+Extracted product data (may be partial): ${JSON.stringify(input.productData || {}, null, 0)}
+
+Focus on: fabric, fit, sizing reassurance, modest styling notes (if applicable), MENA trust signals (COD, shipping, returns).
+Return ONLY raw JSON.`;
+
+        model = "google/gemini-2.5-flash";
+        temperature = 0.55;
+        maxTokens = 2200;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["shopifyTitle", "meta", "description", "variants", "altTexts", "jsonLd"],
+          properties: {
+            shopifyTitle: {
+              type: "object",
+              additionalProperties: false,
+              required: ["ar", "en"],
+              properties: { ar: { type: "string" }, en: { type: "string" } },
+            },
+            meta: {
+              type: "object",
+              additionalProperties: false,
+              required: ["title", "description"],
+              properties: {
+                title: { type: "string" },
+                description: { type: "string" },
+              },
+            },
+            description: {
+              type: "object",
+              additionalProperties: false,
+              required: ["ar", "en"],
+              properties: { ar: { type: "string" }, en: { type: "string" } },
+            },
+            variants: {
+              type: "object",
+              additionalProperties: false,
+              required: ["options"],
+              properties: {
+                options: {
+                  type: "array",
+                  minItems: 1,
+                  maxItems: 3,
+                  items: {
+                    type: "object",
+                    additionalProperties: false,
+                    required: ["name", "values"],
+                    properties: {
+                      name: { type: "string" },
+                      values: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 12 },
+                    },
+                  },
+                },
+              },
+            },
+            altTexts: { type: "array", items: { type: "string" }, minItems: 6, maxItems: 10 },
+            jsonLd: { type: "string" },
+          },
+        };
+        break;
       case "product-copy":
         systemRole = `You are an expert e-commerce copywriter specialized in high-converting product content.
 

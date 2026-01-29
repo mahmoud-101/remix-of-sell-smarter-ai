@@ -3,22 +3,14 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   FileText,
-  Megaphone,
-  Video,
-  Search,
-  Target,
   History,
   Settings,
   ChevronLeft,
   Sparkles,
   LogOut,
   Globe,
-  BarChart3,
-  Users,
-  Brush,
   CreditCard,
-  ImagePlus,
-  TrendingUp,
+  ShoppingBag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,19 +28,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { signOut } = useAuth();
   const { t, isRTL, language, setLanguage } = useLanguage();
 
-  // Focused nav for Fashion Shopify/DTC (MENA) + Meta Ads.
-  // We keep non-core pages/routes available, but hide them from primary navigation.
+  // Premium MVP navigation: keep it extremely focused.
   const navItems = [
     { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
-
-    // Core tools
-    { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
-    { icon: Megaphone, label: t("navigation.adsCopy"), path: "/dashboard/ads-copy" },
-    { icon: Search, label: isRTL ? "خبير السيو" : "SEO Expert", path: "/dashboard/seo-analyzer" },
-
-    // Useful ops pages
-    { icon: Users, label: isRTL ? "العملاء" : "Leads", path: "/dashboard/leads" },
+    { icon: ShoppingBag, label: isRTL ? "منتجات Shopify" : "Shopify Products", path: "/dashboard/synced-products" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
+    // Keep Product Copy accessible but not a primary workflow.
+    { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
   ];
 
   const bottomNavItems = [

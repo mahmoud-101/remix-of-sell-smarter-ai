@@ -1,301 +1,358 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  FileText,
-  Megaphone,
-  Palette,
-  Target,
-  ArrowRight,
-  Sparkles,
-  Clock,
-  Zap,
-  TrendingUp,
-  Users,
-  Video,
-  Search,
-  ShoppingBag,
-} from "lucide-react";
+import { useMemo, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import SalesChatbot from "@/components/chat/SalesChatbot";
-import { UsageBanner } from "@/components/usage/UsageBanner";
+import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
+import type { ProductData } from "@/lib/api/firecrawl";
+
+type StudioResult = {
+  shopifyTitle: { ar: string; en: string };
+  meta: { title: string; description: string };
+  description: { ar: string; en: string };
+  variants: {
+    options: Array<{ name: string; values: string[] }>;
+  };
+  altTexts: string[];
+  jsonLd: string;
+};
 
 export default function Dashboard() {
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    contentGenerated: 0,
-    leadsCount: 0,
-    timeSaved: 0,
-  });
+  const { toast } = useToast();
 
-  useEffect(() => {
-    if (user) {
-      fetchStats();
-    }
-  }, [user]);
+  const [productUrl, setProductUrl] = useState("");
+  const [extracted, setExtracted] = useState<ProductData | null>(null);
+  const [tone, setTone] = useState<"luxury" | "professional" | "modest" | "elegant">("luxury");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<StudioResult | null>(null);
 
-  const fetchStats = async () => {
+  const tones = useMemo(
+    () => [
+      { value: "luxury", label: isRTL ? "فاخر" : "Luxury" },
+      { value: "professional", label: isRTL ? "احترافي" : "Professional" },
+      { value: "modest", label: isRTL ? "محتشم" : "Modest" },
+      { value: "elegant", label: isRTL ? "أنيق" : "Elegant" },
+    ],
+    [isRTL]
+  );
+
+  const copy = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+    toast({
+      title: isRTL ? "تم النسخ" : "Copied",
+      description: isRTL ? "تم نسخ المحتوى" : "Content copied",
+    });
+  };
+
+  const copyAll = async () => {
+    if (!result) return;
+    const payload = [
+      `Shopify Title (AR): ${result.shopifyTitle.ar}`,
+      `Shopify Title (EN): ${result.shopifyTitle.en}`,
+      "",
+      `Meta Title: ${result.meta.title}`,
+      `Meta Description: ${result.meta.description}`,
+      "",
+      "Description (AR):",
+      result.description.ar,
+      "",
+      "Description (EN):",
+      result.description.en,
+      "",
+      "Variants:",
+      ...result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`),
+      "",
+      "Alt Texts:",
+      ...result.altTexts,
+      "",
+      "Schema JSON-LD:",
+      result.jsonLd,
+    ].join("\n");
+    await copy(payload);
+  };
+
+  const handleGenerate = async () => {
     if (!user) return;
-    try {
-      const { count: historyCount } = await supabase
-        .from("history")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      const { count: leadsCount } = await supabase
-        .from("leads")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      setStats({
-        contentGenerated: historyCount || 0,
-        leadsCount: leadsCount || 0,
-        timeSaved: Math.round((historyCount || 0) * 0.5),
+    if (!productUrl.trim()) {
+      toast({
+        title: isRTL ? "أدخل رابط المنتج" : "Enter product URL",
+        description: isRTL ? "أدخل رابط المنتج أولاً" : "Please paste the product URL first",
+        variant: "destructive",
       });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
+      return;
+    }
+
+    setLoading(true);
+    setResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-generate", {
+        body: {
+          toolType: "shopify-studio",
+          language: "ar",
+          input: {
+            productUrl,
+            tone,
+            productData: extracted,
+          },
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const res = data?.result as StudioResult | undefined;
+      if (!res?.shopifyTitle?.ar || !res?.description?.ar) {
+        throw new Error(isRTL ? "استجابة غير صالحة" : "Invalid response");
+      }
+      setResult(res);
+    } catch (e: any) {
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: e?.message || (isRTL ? "فشل التوليد" : "Generation failed"),
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ------------------------------------------------------------------
-  // 1. الأدوات الأساسية (Core Tools)
-  // ------------------------------------------------------------------
-  const mainTools = [
-    {
-      icon: Palette,
-      title: isRTL ? "مصنع الكريتيفات" : "Creative Factory",
-      description: isRTL 
-        ? "تصميم صور منتجات وإعلانات سوشيال ميديا بضغطة زر" 
-        : "Generate product photos & social media ads instantly",
-      path: "/dashboard/creative-factory",
-      color: "text-purple-600",
-      bgColor: "bg-purple-100 dark:bg-purple-900/20",
-      badge: isRTL ? "الأكثر استخداماً" : "Popular",
-    },
-    {
-      icon: FileText,
-      title: isRTL ? "وصف المنتجات" : "Product Descriptions",
-      description: isRTL 
-        ? "اكتب وصف بيعي احترافي يزود مبيعات متجرك" 
-        : "Write professional product descriptions that sell",
-      path: "/dashboard/product-copy",
-      color: "text-blue-600",
-      bgColor: "bg-blue-100 dark:bg-blue-900/20",
-    },
-    {
-      icon: Megaphone,
-      title: isRTL ? "كاتب الإعلانات" : "Ad Copywriter",
-      description: isRTL 
-        ? "نصوص إعلانية مقنعة لفيسبوك، إنستجرام، وتيك توك" 
-        : "Persuasive ad copies for Facebook, Instagram & TikTok",
-      path: "/dashboard/ads-copy",
-      color: "text-pink-600",
-      bgColor: "bg-pink-100 dark:bg-pink-900/20",
-    },
-  ];
+  const handleSaveToLibrary = async () => {
+    if (!user || !result) return;
+    try {
+      const { error } = await supabase.from("generated_content").insert([
+        {
+          user_id: user.id,
+          content_type: "shopify_studio",
+          input_data: { productUrl, tone, productData: extracted ?? null } as any,
+          output_data: result as any,
+          product_title: extracted?.title ?? null,
+          product_image: extracted?.images?.[0] ?? null,
+        } as any,
+      ]);
+      if (error) throw error;
+      toast({
+        title: isRTL ? "تم الحفظ" : "Saved",
+        description: isRTL ? "تم حفظ المحتوى في المكتبة" : "Saved to library",
+      });
+    } catch (e: any) {
+      toast({
+        title: isRTL ? "فشل الحفظ" : "Save failed",
+        description: e?.message || (isRTL ? "تعذر الحفظ" : "Could not save"),
+        variant: "destructive",
+      });
+    }
+  };
 
-  // ------------------------------------------------------------------
-  // 2. أدوات الفيديو والنمو (New Tools - Video & SEO)
-  // ------------------------------------------------------------------
-  const growthTools = [
-    {
-      icon: Video,
-      title: isRTL ? "صانع سكريبتات الفيديو" : "Video Script Maker",
-      description: isRTL 
-        ? "اكتب سكريبتات ريلز وتيك توك فيرال (Viral) لمنتجاتك" 
-        : "Create viral scripts for TikTok & Reels instantly",
-      path: "/dashboard/video-scripts", 
-      color: "text-red-600",
-      bgColor: "bg-red-100 dark:bg-red-900/20",
-      badge: isRTL ? "جديد 🔥" : "New",
-    },
-    {
-      icon: Search,
-      title: isRTL ? "خبير سيو المتاجر" : "E-commerce SEO",
-      description: isRTL 
-        ? "حسن منتجاتك لتظهر في الصفحة الأولى من جوجل" 
-        : "Optimize products to rank #1 on Google Search",
-      path: "/dashboard/seo-analyzer",
-      color: "text-green-600",
-      bgColor: "bg-green-100 dark:bg-green-900/20",
-    },
-    {
-      icon: Target,
-      title: isRTL ? "تحليل المنافسين" : "Competitor Analysis",
-      description: isRTL 
-        ? "تجسس على إعلانات منافسيك واعرف نقاط قوتهم" 
-        : "Spy on competitors' ads and uncover their secrets",
-      path: "/dashboard/competitor",
-      color: "text-indigo-600",
-      bgColor: "bg-indigo-100 dark:bg-indigo-900/20",
-    },
-  ];
+  const handleCreateInShopify = async () => {
+    if (!result) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("shopify-create-product", {
+        body: {
+          studioResult: result,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-  const statsData = [
-    { label: isRTL ? "محتوى مولد" : "Content Generated", value: stats.contentGenerated.toString(), icon: FileText },
-    { label: isRTL ? "العملاء المحتملين" : "Leads", value: stats.leadsCount.toString(), icon: Users },
-    { label: isRTL ? "ساعات موفرة" : "Time Saved", value: `${stats.timeSaved}h`, icon: Clock },
-  ];
+      toast({
+        title: isRTL ? "تم إنشاء المنتج" : "Product created",
+        description: isRTL ? "تم إنشاء المنتج في Shopify" : "Created in Shopify",
+      });
 
-  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "";
+      const url = data?.productAdminUrl as string | undefined;
+      if (url) window.open(url, "_blank");
+    } catch (e: any) {
+      toast({
+        title: isRTL ? "تعذر الإنشاء" : "Create failed",
+        description:
+          e?.message ||
+          (isRTL
+            ? "تأكد من ربط Shopify من صفحة منتجات Shopify أولاً"
+            : "Please connect Shopify first in Synced Products"),
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        <UsageBanner />
-        
-        {/* Welcome Section */}
-        <div className="glass-card rounded-2xl p-6 md:p-8 relative overflow-hidden border-primary/20">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
-          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  {t("welcomeToDashboard")}
-                </span>
-              </div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">
-                {isRTL ? `مرحباً${firstName ? ` ${firstName}` : ""}! 👋` : `Welcome${firstName ? ` ${firstName}` : ""}! 👋`}
-              </h1>
-              <p className="text-muted-foreground">
-                {isRTL ? "جاهز لمضاعفة مبيعاتك اليوم؟ اختر أداة وابدأ." : "Ready to scale your sales? Pick a tool to start."}
-              </p>
+      <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
+        <div>
+          <h1 className="text-2xl font-bold">
+            {isRTL ? "استوديو منتجات Shopify" : "Shopify Product Studio"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {isRTL
+              ? "سير عمل واحد سريع: استخرج المنتج ثم ولّد محتوى فاخر ثنائي اللغة." 
+              : "Single workflow: extract then generate premium bilingual content."}
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{isRTL ? "1) رابط المنتج" : "1) Product URL"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>{isRTL ? "رابط المنتج الجديد (Shein/BrandsGateway/Peppela/Namshi)" : "Product URL"}</Label>
+              <Input
+                value={productUrl}
+                onChange={(e) => setProductUrl(e.target.value)}
+                placeholder={isRTL ? "https://..." : "https://..."}
+                inputMode="url"
+              />
             </div>
-            <Link to="/dashboard/product-copy">
-              <Button variant="hero" className="group">
-                {t("generateContent")}
-                <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
+
+            <ProductUrlExtractor
+              onExtract={(d) => {
+                setExtracted(d);
+                toast({
+                  title: isRTL ? "تم الاستخراج" : "Extracted",
+                  description: isRTL
+                    ? "تم سحب بيانات المنتج من الرابط"
+                    : "Product data extracted from URL",
+                });
+              }}
+            />
+
+            <div className="space-y-2">
+              <Label>{isRTL ? "2) النبرة" : "2) Tone"}</Label>
+              <Select value={tone} onValueChange={(v) => setTone(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {tones.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button size="lg" className="w-full h-14 text-lg" onClick={handleGenerate} disabled={loading}>
+              {loading ? (isRTL ? "جارٍ التوليد..." : "Generating...") : isRTL ? "Generate Shopify Content" : "Generate Shopify Content"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>{isRTL ? "Shopify Title (عربي + إنجليزي)" : "Shopify Title (AR + EN)"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea readOnly value={result ? `${result.shopifyTitle.ar}\n\n${result.shopifyTitle.en}` : ""} rows={6} />
+              <Button variant="outline" onClick={() => copy(result ? `${result.shopifyTitle.ar}\n${result.shopifyTitle.en}` : "")} disabled={!result}>
+                {isRTL ? "نسخ" : "Copy"}
               </Button>
-            </Link>
-          </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{isRTL ? "Meta Title/Description (SEO)" : "Meta Title/Description (SEO)"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea readOnly value={result ? `${result.meta.title}\n\n${result.meta.description}` : ""} rows={6} />
+              <Button variant="outline" onClick={() => copy(result ? `${result.meta.title}\n${result.meta.description}` : "")} disabled={!result}>
+                {isRTL ? "نسخ" : "Copy"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{isRTL ? "Full Description (ثنائي اللغة ~2000 حرف)" : "Full Description (bilingual ~2000 chars)"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea readOnly value={result ? `${result.description.ar}\n\n${result.description.en}` : ""} rows={10} />
+              <Button variant="outline" onClick={() => copy(result ? `${result.description.ar}\n\n${result.description.en}` : "")} disabled={!result}>
+                {isRTL ? "نسخ" : "Copy"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{isRTL ? "Size/Color Variants" : "Size/Color Variants"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea
+                readOnly
+                value={
+                  result
+                    ? result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join("\n")
+                    : ""
+                }
+                rows={10}
+              />
+              <Button
+                variant="outline"
+                onClick={() =>
+                  copy(
+                    result ? result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join("\n") : ""
+                  )
+                }
+                disabled={!result}
+              >
+                {isRTL ? "نسخ" : "Copy"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{isRTL ? "Image Alt Text" : "Image Alt Text"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea readOnly value={result ? result.altTexts.join("\n") : ""} rows={10} />
+              <Button variant="outline" onClick={() => copy(result ? result.altTexts.join("\n") : "")} disabled={!result}>
+                {isRTL ? "نسخ" : "Copy"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>{isRTL ? "Schema JSON-LD" : "Schema JSON-LD"}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Textarea readOnly value={result ? result.jsonLd : ""} rows={10} />
+              <Button variant="outline" onClick={() => copy(result ? result.jsonLd : "")} disabled={!result}>
+                {isRTL ? "نسخ" : "Copy"}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {statsData.map((stat, index) => (
-            <div key={index} className="glass-card rounded-xl p-5 flex items-center gap-4 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <stat.icon className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Access - Synced Products */}
-        <Link to="/dashboard/synced-products" className="block">
-          <div className="glass-card rounded-xl p-4 border-2 border-dashed border-primary/30 hover:border-primary/50 hover:bg-primary/5 transition-all group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <ShoppingBag className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold group-hover:text-primary transition-colors">
-                    {isRTL ? "المنتجات المتزامنة" : "Synced Products"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {isRTL ? "إدارة منتجات متجرك وتوليد محتوى AI" : "Manage your store products & generate AI content"}
-                  </p>
-                </div>
-              </div>
-              <ArrowRight className={`w-5 h-5 text-muted-foreground group-hover:text-primary transition-all ${isRTL ? "rotate-180 group-hover:-translate-x-1" : "group-hover:translate-x-1"}`} />
-            </div>
-          </div>
-        </Link>
-
-        {/* Main Tools Section */}
-        <div>
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            {isRTL ? "الأدوات الأساسية" : "Core Tools"}
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mainTools.map((tool, index) => (
-              <Link key={index} to={tool.path} className="feature-card group relative overflow-hidden">
-                {tool.badge && (
-                  <span className="absolute top-3 left-3 px-2 py-1 text-xs font-bold bg-primary text-primary-foreground rounded-full shadow-sm z-10">
-                    {tool.badge}
-                  </span>
-                )}
-                <div className="flex flex-col h-full">
-                  <div className={`w-14 h-14 rounded-2xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <tool.icon className={`w-7 h-7 ${tool.color}`} />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
-                      {tool.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                      {tool.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center text-sm text-primary font-medium mt-auto pt-2">
-                    {isRTL ? "جرب الآن" : "Try Now"}
-                    <ArrowRight className={`w-4 h-4 transition-transform ${isRTL ? "rotate-180 mr-1 group-hover:-translate-x-1" : "ml-1 group-hover:translate-x-1"}`} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Growth Tools Section */}
-        <div>
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-violet-500" />
-            {isRTL ? "أدوات الفيديو والنمو" : "Video & Growth Tools"}
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {growthTools.map((tool, index) => (
-              <Link key={index} to={tool.path} className="feature-card group">
-                <div className="flex flex-col h-full">
-                  <div className={`w-12 h-12 rounded-xl ${tool.bgColor} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <tool.icon className={`w-6 h-6 ${tool.color}`} />
-                  </div>
-                  <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">
-                    {tool.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                    {tool.description}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Tips */}
-        <div className="glass-card rounded-2xl p-6 border-accent/20 bg-accent/5">
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-accent" />
-            <h2 className="text-lg font-bold">{t("quickTips")}</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <h3 className="font-bold mb-1 text-sm">{t("beSpecific")}</h3>
-              <p className="text-xs text-muted-foreground">{t("beSpecificDesc")}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <h3 className="font-bold mb-1 text-sm">{t("iterateRefine")}</h3>
-              <p className="text-xs text-muted-foreground">{t("iterateRefineDesc")}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-background/50 border border-border/50">
-              <h3 className="font-bold mb-1 text-sm">{isRTL ? "استخدم القوالب" : "Use Templates"}</h3>
-              <p className="text-xs text-muted-foreground">{isRTL ? "ابدأ بالقوالب الجاهزة لنتائج أسرع." : "Start with templates for faster results."}</p>
-            </div>
-          </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Button size="lg" onClick={handleCreateInShopify} disabled={!result}>
+            ➤ {isRTL ? "إنشاء في Shopify" : "Create in Shopify"}
+          </Button>
+          <Button size="lg" variant="outline" onClick={handleSaveToLibrary} disabled={!result}>
+            💾 {isRTL ? "حفظ في المكتبة" : "Save to Library"}
+          </Button>
+          <Button size="lg" variant="outline" onClick={copyAll} disabled={!result}>
+            📋 {isRTL ? "نسخ كل المحتوى" : "Copy All Content"}
+          </Button>
         </div>
       </div>
-      <SalesChatbot />
     </DashboardLayout>
   );
 }
