@@ -44,29 +44,19 @@ const Login = lazyWithRetry(() => import("./pages/Login"), "Login");
 const Signup = lazyWithRetry(() => import("./pages/Signup"), "Signup");
 const ForgotPassword = lazyWithRetry(() => import("./pages/ForgotPassword"), "ForgotPassword");
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"), "ResetPassword");
+
+// MVP core
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"), "Dashboard");
 const ProductCopy = lazyWithRetry(() => import("./pages/ProductCopy"), "ProductCopy");
-const AdsCopy = lazyWithRetry(() => import("./pages/AdsCopy"), "AdsCopy");
-const VideoScripts = lazyWithRetry(() => import("./pages/VideoScripts"), "VideoScripts");
-const SEOAnalyzer = lazyWithRetry(() => import("./pages/SEOAnalyzer"), "SEOAnalyzer");
-const CompetitorAnalysis = lazyWithRetry(() => import("./pages/CompetitorAnalysis"), "CompetitorAnalysis");
+const CreateContent = lazyWithRetry(() => import("./pages/CreateContent"), "CreateContent");
 const History = lazyWithRetry(() => import("./pages/History"), "History");
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
-const Analytics = lazyWithRetry(() => import("./pages/Analytics"), "Analytics");
-const Leads = lazyWithRetry(() => import("./pages/Leads"), "Leads");
-const CustomerProfile = lazyWithRetry(() => import("./pages/CustomerProfile"), "CustomerProfile");
-const AdminDashboard = lazyWithRetry(() => import("./pages/AdminDashboard"), "AdminDashboard");
-const ImageGenerator = lazyWithRetry(() => import("./pages/ImageGenerator"), "ImageGenerator");
-const CreativeFactory = lazyWithRetry(() => import("./pages/CreativeFactory"), "CreativeFactory");
-const AdDesigner = lazyWithRetry(() => import("./pages/AdDesigner"), "AdDesigner");
-const ProductResearch = lazyWithRetry(() => import("./pages/ProductResearch"), "ProductResearch");
-const CreateContent = lazyWithRetry(() => import("./pages/CreateContent"), "CreateContent");
-const About = lazyWithRetry(() => import("./pages/About"), "About");
-const UseCases = lazyWithRetry(() => import("./pages/UseCases"), "UseCases");
-const Privacy = lazyWithRetry(() => import("./pages/Privacy"), "Privacy");
-const Terms = lazyWithRetry(() => import("./pages/Terms"), "Terms");
 const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
-const Contact = lazyWithRetry(() => import("./pages/Contact"), "Contact");
+
+// Shopify MVP support
+const SyncedProducts = lazyWithRetry(() => import("./pages/SyncedProducts"), "SyncedProducts");
+const ShopifyCallback = lazyWithRetry(() => import("./pages/ShopifyCallback"), "ShopifyCallback");
+
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
 // Loading fallback component
@@ -173,38 +163,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/dashboard/ads-copy"
-          element={
-            <ProtectedRoute>
-              <AdsCopy />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/video-scripts"
-          element={
-            <ProtectedRoute>
-              <VideoScripts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/seo-analyzer"
-          element={
-            <ProtectedRoute>
-              <SEOAnalyzer />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/competitor"
-          element={
-            <ProtectedRoute>
-              <CompetitorAnalysis />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/dashboard/history"
           element={
             <ProtectedRoute>
@@ -221,70 +179,6 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/dashboard/analytics"
-          element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/leads"
-          element={
-            <ProtectedRoute>
-              <Leads />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/leads/:id"
-          element={
-            <ProtectedRoute>
-              <CustomerProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/admin"
-          element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/image-generator"
-          element={
-            <ProtectedRoute>
-              <ImageGenerator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/creative-factory"
-          element={
-            <ProtectedRoute>
-              <CreativeFactory />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/ad-designer"
-          element={
-            <ProtectedRoute>
-              <AdDesigner />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/product-research"
-          element={
-            <ProtectedRoute>
-              <ProductResearch />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/create-content"
           element={
             <ProtectedRoute>
@@ -292,8 +186,18 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route path="/about" element={<About />} />
-        <Route path="/use-cases" element={<UseCases />} />
+
+        <Route
+          path="/dashboard/synced-products"
+          element={
+            <ProtectedRoute>
+              <SyncedProducts />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route path="/shopify/callback" element={<ShopifyCallback />} />
+
         <Route 
           path="/dashboard/billing"
           element={
@@ -302,9 +206,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
