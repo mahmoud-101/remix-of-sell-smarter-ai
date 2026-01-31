@@ -56,6 +56,7 @@ const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
 // Shopify MVP support
 const SyncedProducts = lazyWithRetry(() => import("./pages/SyncedProducts"), "SyncedProducts");
 const ShopifyCallback = lazyWithRetry(() => import("./pages/ShopifyCallback"), "ShopifyCallback");
+const ReelsGenerator = lazyWithRetry(() => import("./pages/ReelsGenerator"), "ReelsGenerator");
 
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
@@ -192,6 +193,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <SyncedProducts />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/reels"
+          element={
+            <ProtectedRoute>
+              <ReelsGenerator />
             </ProtectedRoute>
           }
         />

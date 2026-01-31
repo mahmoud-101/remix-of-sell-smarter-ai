@@ -11,6 +11,7 @@ import {
   Globe,
   CreditCard,
   ShoppingBag,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,9 +32,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Premium MVP navigation: keep it extremely focused.
   const navItems = [
     { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
+    { icon: Video, label: isRTL ? "مولد الريلز" : "Reels Generator", path: "/dashboard/reels" },
     { icon: ShoppingBag, label: isRTL ? "منتجات Shopify" : "Shopify Products", path: "/dashboard/synced-products" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
-    // Keep Product Copy accessible but not a primary workflow.
     { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
   ];
 
