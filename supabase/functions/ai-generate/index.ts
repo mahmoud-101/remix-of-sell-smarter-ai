@@ -13,9 +13,6 @@ serve(async (req) => {
 
   try {
     const payload = await req.json();
-    // Backward compatible parsing:
-    // - New callers send: { toolType, input, language }
-    // - Some older callers send: { type, ...inputFields }
     const toolType: string | undefined = payload?.toolType ?? payload?.type;
     const input = payload?.input ?? payload;
     const language = payload?.language;
@@ -31,14 +28,12 @@ serve(async (req) => {
       ? "Output in Arabic (Professional marketing Arabic)." 
       : "Output in English (Professional marketing English).";
 
-    // Default positioning for the whole product (can be made configurable later)
     const segmentContext = language === 'ar'
-      ? `Segment Context (always apply):\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads (Facebook/Instagram)\n- Goal: higher CTR + CVR + AOV with premium-yet-direct fashion tone\n- Constraints: Arabic-first (with occasional English fashion terms), COD-friendly objections, size/fit concerns, shipping/returns trust signals\n\nAlways tailor angles, examples, and CTAs to fashion e-commerce in MENA. Never sound generic.`
-      : `Segment Context (always apply):\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads (Facebook/Instagram)\n- Goal: higher CTR + CVR + AOV with a premium-yet-direct fashion tone\n- Constraints: Arabic-first market (allow light EN fashion terms), COD objections, size/fit concerns, shipping/returns trust signals\n\nAlways tailor angles, examples, and CTAs to fashion e-commerce in MENA. Never sound generic.`;
+      ? `Segment Context:\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads\n- Goal: higher CTR + CVR + AOV with premium fashion tone\n- Constraints: Arabic-first, COD-friendly, size/fit concerns, trust signals`
+      : `Segment Context:\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads\n- Goal: higher CTR + CVR + AOV with premium fashion tone\n- Constraints: Arabic-first market, COD objections, size/fit concerns`;
 
     let systemRole = "";
     let userPrompt = "";
-    // Use flash models for speed - they're 3x faster than pro
     let model = "google/gemini-2.5-flash";
     let temperature = 0.7;
     let maxTokens = 1800;
@@ -52,9 +47,9 @@ serve(async (req) => {
 ${segmentContext}
 
 You MUST produce PREMIUM bilingual output: Arabic (simplified Fusha) + English.
-Always include COD default + prepaid option + clear returns policy cues (without legalese).
+Always include COD default + prepaid option + clear returns policy cues.
 
-Return ONLY valid JSON (no markdown) with EXACT structure:
+Return ONLY valid JSON with EXACT structure:
 {
   "shopifyTitle": {"ar": "...", "en": "..."},
   "meta": {"title": "...", "description": "..."},
@@ -72,21 +67,20 @@ Return ONLY valid JSON (no markdown) with EXACT structure:
 Rules:
 - Shopify title: short, premium, product-type-first.
 - Meta title: 55–70 chars. Meta description: 140–170 chars.
-- Description: around ~2000 chars combined across both languages; use \n for line breaks.
+- Description: around ~2000 chars combined; use \\n for line breaks.
 - Variants: infer sizes + colors; include modest indicators if relevant.
-- Alt texts: 6–10 lines, descriptive, bilingual-friendly but write in English for SEO.
+- Alt texts: 6–10 lines, descriptive, in English for SEO.
 - jsonLd: Product schema as a SINGLE-LINE JSON string.`;
 
         userPrompt = `Create premium Shopify content.
 
 Tone: ${input.tone || "luxury"}
 Product URL: ${input.productUrl || ""}
-Extracted product data (may be partial): ${JSON.stringify(input.productData || {}, null, 0)}
+Extracted product data: ${JSON.stringify(input.productData || {}, null, 0)}
 
-Focus on: fabric, fit, sizing reassurance, modest styling notes (if applicable), MENA trust signals (COD, shipping, returns).
+Focus on: fabric, fit, sizing reassurance, modest styling notes, MENA trust signals.
 Return ONLY raw JSON.`;
 
-        model = "google/gemini-2.5-flash";
         temperature = 0.55;
         maxTokens = 2200;
         toolSchema = {
@@ -141,64 +135,123 @@ Return ONLY raw JSON.`;
           },
         };
         break;
+
+      case "reels-script":
+        systemRole = `You are a viral fashion Reels/TikTok scriptwriter for MENA fashion brands.
+
+${segmentContext}
+${langInstruction}
+
+Create 3 viral short-form video scripts optimized for fashion products.
+Each script MUST be ready for AI video generation tools like Kling AI.
+
+Return ONLY valid JSON with EXACT structure:
+{
+  "scripts": [
+    {
+      "hook": "First 1-3 seconds attention grabber (Arabic/English based on language)",
+      "scenes": [
+        {"duration": "2s", "visual": "Description of what to show", "text_overlay": "Text on screen", "voiceover": "What to say"},
+        {"duration": "3s", "visual": "...", "text_overlay": "...", "voiceover": "..."}
+      ],
+      "cta": "Clear call to action",
+      "music_style": "Trending/Arabic pop/Aesthetic/etc",
+      "total_duration": "15s"
+    }
+  ],
+  "viral_tips": ["tip1", "tip2", "tip3"],
+  "hashtags": ["#fashion", "#ootd", "..."]
+}
+
+Rules:
+- Hook must stop scrolling in 1-3 seconds
+- Each scene has: duration, visual description, text overlay, voiceover
+- Total duration: 15-30 seconds
+- Include trending hooks for fashion (transformation, reveal, GRWM)
+- Add Arabic hashtags for MENA reach`;
+
+        userPrompt = `Create 3 viral Reels scripts for this fashion product:
+
+Product Name: ${input.productName || "Fashion item"}
+Product Description: ${input.productDescription || ""}
+Style/Vibe: ${input.style || "trendy"}
+Target Duration: ${input.duration || "15-30"} seconds
+
+Make it perfect for Kling AI / Runway video generation.
+Return ONLY raw JSON.`;
+
+        temperature = 0.75;
+        maxTokens = 2000;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["scripts", "viral_tips", "hashtags"],
+          properties: {
+            scripts: {
+              type: "array",
+              minItems: 3,
+              maxItems: 3,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["hook", "scenes", "cta", "music_style", "total_duration"],
+                properties: {
+                  hook: { type: "string" },
+                  scenes: {
+                    type: "array",
+                    minItems: 3,
+                    maxItems: 8,
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      required: ["duration", "visual", "text_overlay", "voiceover"],
+                      properties: {
+                        duration: { type: "string" },
+                        visual: { type: "string" },
+                        text_overlay: { type: "string" },
+                        voiceover: { type: "string" }
+                      }
+                    }
+                  },
+                  cta: { type: "string" },
+                  music_style: { type: "string" },
+                  total_duration: { type: "string" }
+                }
+              }
+            },
+            viral_tips: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 },
+            hashtags: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 15 }
+          }
+        };
+        break;
+
       case "product-copy":
-        systemRole = `You are an expert e-commerce copywriter specialized in high-converting product content.
+        systemRole = `You are an expert e-commerce copywriter for high-converting product content.
 
 ${segmentContext}
 
-Generate 3 variations for EACH output type to enable A/B testing.
+Generate 3 variations for EACH output type.
 ${langInstruction}
 
-IMPORTANT: Return ONLY valid JSON with this exact structure (no markdown, no code blocks):
+Return ONLY valid JSON:
 {
-  "title": {
-    "variations": ["Title variation 1", "Title variation 2", "Title variation 3"]
-  },
-  "description": {
-    "variations": ["Description 1 (2-3 paragraphs)", "Description 2", "Description 3"]
-  },
-  "bullets": {
-    "variations": [
-      ["Feature 1", "Feature 2", "Feature 3", "Feature 4"],
-      ["Feature 1 alt", "Feature 2 alt", "Feature 3 alt", "Feature 4 alt"],
-      ["Feature 1 v3", "Feature 2 v3", "Feature 3 v3", "Feature 4 v3"]
-    ]
-  },
-  "benefits": {
-    "variations": [
-      ["Benefit 1", "Benefit 2", "Benefit 3", "Benefit 4"],
-      ["Benefit 1 alt", "Benefit 2 alt", "Benefit 3 alt", "Benefit 4 alt"],
-      ["Benefit 1 v3", "Benefit 2 v3", "Benefit 3 v3", "Benefit 4 v3"]
-    ]
-  },
-  "cta": {
-    "variations": ["CTA 1", "CTA 2", "CTA 3"]
-  }
-}
+  "title": {"variations": ["Title 1", "Title 2", "Title 3"]},
+  "description": {"variations": ["Desc 1", "Desc 2", "Desc 3"]},
+  "bullets": {"variations": [["F1","F2","F3","F4"], ["F1","F2","F3","F4"], ["F1","F2","F3","F4"]]},
+  "benefits": {"variations": [["B1","B2","B3","B4"], ["B1","B2","B3","B4"], ["B1","B2","B3","B4"]]},
+  "cta": {"variations": ["CTA1", "CTA2", "CTA3"]}
+}`;
 
-Focus on:
-- Strong emotional triggers
-- Pain points → Solutions
-- Social proof elements
-- Urgency and scarcity when appropriate
-- SEO-optimized naturally`;
-
-        userPrompt = `Generate product copy with the following details:
+        userPrompt = `Generate product copy:
 
 Product Name: ${input.productName}
 Product Description: ${input.productDescription}
 Target Audience: ${input.targetAudience || "General audience"}
-Tone of Voice: ${input.tone || "professional"}
-${input.usps?.filter(Boolean).length > 0 ? `Unique Selling Points:
-${input.usps.filter(Boolean).map((u: string, i: number) => `${i+1}. ${u}`).join('\n')}` : ''}
+Tone: ${input.tone || "professional"}
+${input.usps?.filter(Boolean).length > 0 ? `USPs: ${input.usps.filter(Boolean).join(', ')}` : ''}
 ${input.price ? `Price: ${input.price}` : ''}
-${input.offer ? `Special Offer: ${input.offer}` : ''}
-Platform: ${input.platform || "E-commerce website"}
-${input.keywords ? `SEO Keywords to include naturally: ${input.keywords}` : ''}
-${input.preferredCTA ? `Preferred CTA Style: ${input.preferredCTA}` : ''}
-Content Length: ${input.contentLength || "medium"}
 
-Generate 3 compelling variations for each output type. Return ONLY raw JSON, no markdown.`;
+Return ONLY raw JSON.`;
         temperature = 0.7;
         maxTokens = 2000;
         toolSchema = {
@@ -255,14 +308,14 @@ Generate 3 compelling variations for each output type. Return ONLY raw JSON, no 
         break;
 
       case "ads-copy":
-        systemRole = `You are a Meta & Google Ads expert specializing in high-CTR ad copy.
+        systemRole = `You are a Meta Ads expert for high-CTR fashion ad copy.
 ${segmentContext}
 ${langInstruction}
 
-Return ONLY valid JSON (no markdown) with 3 ad variations:
+Return ONLY valid JSON with 3 ad variations:
 {
   "variations": [
-    {"headline": "Hook 1 (max 40 chars)", "primaryText": "Ad copy 1 with emoji", "cta": "Buy Now"},
+    {"headline": "Hook (max 40 chars)", "primaryText": "Ad copy with emoji", "cta": "Buy Now"},
     {"headline": "Hook 2", "primaryText": "Ad copy 2", "cta": "Shop Now"},
     {"headline": "Hook 3", "primaryText": "Ad copy 3", "cta": "Get Offer"}
   ]
@@ -270,12 +323,11 @@ Return ONLY valid JSON (no markdown) with 3 ad variations:
         userPrompt = `Create 3 high-performing ad variations.
 
 Product: ${input.productName || ""}
-Product Description: ${input.productDescription || ""}
+Description: ${input.productDescription || ""}
 Platform: ${input.platform || "Facebook/Instagram"}
 Goal: ${input.goal || "Sales"}
-Target Audience: ${input.targetAudience || "General"}
 
-Return ONLY raw JSON, no markdown.`;
+Return ONLY raw JSON.`;
         temperature = 0.75;
         maxTokens = 1200;
         toolSchema = {
@@ -303,40 +355,29 @@ Return ONLY raw JSON, no markdown.`;
         break;
 
       case "video-script":
-        // IMPORTANT: The frontend expects { scripts, viral_elements, best_posting_times }
         systemRole = `You are a viral short-form video scriptwriter for TikTok/Reels.
 ${segmentContext}
 ${langInstruction}
 
 Write 3 distinct scripts. Each script MUST have:
 - hook (first 1–3 seconds)
-- body (beats / scenes / what to say + what to show)
+- body (beats/scenes)
 - cta (single clear action)
 
-Return ONLY valid JSON (no markdown) with EXACT structure:
+Return ONLY valid JSON:
 {
-  "scripts": [
-    {"hook": "...", "body": "...", "cta": "..."}
-  ],
+  "scripts": [{"hook": "...", "body": "...", "cta": "..."}],
   "viral_elements": ["..."],
   "best_posting_times": ["..."]
 }`;
         userPrompt = `Create 3 viral scripts.
 
 Product Name: ${input.productName || ""}
-Product Description: ${input.productDescription || ""}
+Description: ${input.productDescription || ""}
 Platform: ${input.platform || "tiktok"}
-Duration (seconds): ${input.duration || "30"}
-Style: ${input.style || "viral"}
+Duration: ${input.duration || "30"}s
 
-Rules:
-- Write in ${language === 'ar' ? 'Arabic' : 'English'}.
-- Make it punchy, specific, and sales-driven.
-- Include concrete filming directions inside the body (e.g., [Show close-up], [Text on screen]).
-
-Return ONLY raw JSON, no markdown.`;
-        // Use flash for speed - still high quality for scripts
-        model = "google/gemini-2.5-flash";
+Return ONLY raw JSON.`;
         temperature = 0.65;
         maxTokens = 1800;
         toolSchema = {
@@ -366,32 +407,23 @@ Return ONLY raw JSON, no markdown.`;
         break;
 
       case "seo-optimizer":
-        // Matches src/pages/SEOAnalyzer.tsx expectations: { title, description, keywords }
         systemRole = `You are an e-commerce SEO specialist.
 ${segmentContext}
 ${langInstruction}
 
-Return ONLY valid JSON (no markdown) with EXACT structure:
+Return ONLY valid JSON:
 {
-  "title": "SEO product title (55–70 chars)",
-  "description": "SEO meta-like product description (140–170 chars)",
-  "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"]
-}
+  "title": "SEO title (55–70 chars)",
+  "description": "Meta description (140–170 chars)",
+  "keywords": ["keyword1", "keyword2", "..."]
+}`;
+        userPrompt = `Optimize SEO for:
 
-Rules:
-- Title must include primary keyword early.
-- Description must include benefit + trust cue + CTA.
-- Keywords should be buyer-intent phrases (Arabic if language=ar).`;
-        userPrompt = `Optimize SEO for this product:
-
-Current Title: ${input.productTitle || ""}
-Current Description: ${input.productDescription || ""}
+Title: ${input.productTitle || ""}
+Description: ${input.productDescription || ""}
 Category: ${input.category || ""}
-Target Keywords (optional): ${input.targetKeywords || ""}
 
-Return ONLY raw JSON, no markdown.`;
-        // Use flash for speed
-        model = "google/gemini-2.5-flash";
+Return ONLY raw JSON.`;
         temperature = 0.5;
         maxTokens = 700;
         toolSchema = {
@@ -406,72 +438,24 @@ Return ONLY raw JSON, no markdown.`;
         };
         break;
 
-      case "competitor":
-        // Matches src/pages/CompetitorAnalysis.tsx expectations
-        systemRole = `You are a competitive intelligence analyst for e-commerce.
-${segmentContext}
-${langInstruction}
-
-Return ONLY valid JSON (no markdown) with EXACT structure:
-{
-  "strengths": ["..."],
-  "weaknesses": ["..."],
-  "opportunities": ["..."],
-  "pricingStrategy": "...",
-  "messagingStyle": "..."
-}
-
-Rules:
-- Be practical and actionable.
-- Keep strengths/weaknesses/opportunities as 4–6 bullets each.
-- If info is missing, infer cautiously and say so indirectly (no apologies).`;
-        userPrompt = `Analyze this competitor:
-
-Competitor Name: ${input.competitorName || ""}
-Website: ${input.website || ""}
-Description: ${input.description || ""}
-
-My Business (optional): ${input.yourBusiness || ""}
-
-Return ONLY raw JSON, no markdown.`;
-        // Use flash for speed
-        model = "google/gemini-2.5-flash";
-        temperature = 0.4;
-        maxTokens = 1400;
-        toolSchema = {
-          type: "object",
-          additionalProperties: false,
-          required: ["strengths", "weaknesses", "opportunities", "pricingStrategy", "messagingStyle"],
-          properties: {
-            strengths: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 },
-            weaknesses: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 },
-            opportunities: { type: "array", items: { type: "string" }, minItems: 4, maxItems: 6 },
-            pricingStrategy: { type: "string" },
-            messagingStyle: { type: "string" }
-          }
-        };
-        break;
-
-      // Backward compatibility for SyncedProducts.tsx
       case "product":
         systemRole = `You are an expert e-commerce copywriter.
 ${segmentContext}
 ${langInstruction}
 
-Return ONLY valid JSON (no markdown) with this structure:
+Return ONLY valid JSON:
 {
   "variations": [
     {"title": "...", "description": "...", "bullets": ["...", "...", "...", "..."]}
   ]
 }`;
-        userPrompt = `Generate 3 improved product title + description variations for:
+        userPrompt = `Generate 3 improved product variations for:
 
 Product Name: ${input.productName || ""}
-Product Description: ${input.productDescription || ""}
-Target Audience: ${input.targetAudience || "General"}
+Description: ${input.productDescription || ""}
 Tone: ${input.tone || "professional"}
 
-Return ONLY raw JSON, no markdown.`;
+Return ONLY raw JSON.`;
         temperature = 0.65;
         maxTokens = 1400;
         toolSchema = {
@@ -498,71 +482,17 @@ Return ONLY raw JSON, no markdown.`;
         };
         break;
 
-      case "seo-content":
-        systemRole = `You are an SEO expert specializing in e-commerce optimization.
-${langInstruction}
-
-Return ONLY valid JSON (no markdown) with SEO-optimized content:
-{
-  "metaTitle": "SEO optimized title (50-60 chars)",
-  "metaDescription": "SEO meta description (150-160 chars)",
-  "keywords": ["keyword1", "keyword2", "keyword3"],
-  "headings": {
-    "h1": "Main heading",
-    "h2": ["Subheading 1", "Subheading 2"]
-  },
-  "altTexts": ["Image alt text 1", "Image alt text 2"],
-  "urlSlug": "seo-friendly-url"
-}`;
-        userPrompt = `Generate SEO content for:
-
-Product/Page: ${input.productName || input.pageName}
-Description: ${input.productDescription || input.description}
-Target Keywords: ${input.keywords || "auto-generate"}
-Industry: ${input.industry || "E-commerce"}
-
-Return ONLY raw JSON, no markdown.`;
-        maxTokens = 1500;
-        toolSchema = {
-          type: "object",
-          additionalProperties: false,
-          required: ["metaTitle", "metaDescription", "keywords", "headings", "altTexts", "urlSlug"],
-          properties: {
-            metaTitle: { type: "string" },
-            metaDescription: { type: "string" },
-            keywords: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 10 },
-            headings: {
-              type: "object",
-              additionalProperties: false,
-              required: ["h1", "h2"],
-              properties: {
-                h1: { type: "string" },
-                h2: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 6 }
-              }
-            },
-            altTexts: { type: "array", items: { type: "string" }, minItems: 1, maxItems: 10 },
-            urlSlug: { type: "string" }
-          }
-        };
-        break;
-
       default:
+        console.error(`❌ Error: Tool type "${toolType}" not supported`);
         throw new Error(`Tool type "${toolType}" not supported`);
     }
 
     const parseJsonLike = (raw: string) => {
       let jsonStr = raw.trim();
-
-      // Strip markdown code fences if present (```json...``` or ```...```)
       const fenceMatch = jsonStr.match(/^```(?:json)?\s*([\s\S]*?)```$/);
       if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
-      // Some models wrap in leading/trailing backticks only
       jsonStr = jsonStr.replace(/^`+|`+$/g, '').trim();
 
-      // Repair common "almost JSON" issues:
-      // 1) Unescaped newlines inside strings (invalid JSON) -> convert to \n
-      // 2) Trailing commas before } or ]
       const escapeNewlinesInsideStrings = (text: string) => {
         let out = '';
         let inString = false;
@@ -570,40 +500,33 @@ Return ONLY raw JSON, no markdown.`;
 
         for (let i = 0; i < text.length; i++) {
           const ch = text[i];
-
           if (!inString) {
             if (ch === '"') inString = true;
             out += ch;
             continue;
           }
-
           if (escaped) {
             out += ch;
             escaped = false;
             continue;
           }
-
           if (ch === '\\') {
             out += ch;
             escaped = true;
             continue;
           }
-
           if (ch === '"') {
             out += ch;
             inString = false;
             continue;
           }
-
           if (ch === '\n') {
             out += '\\n';
             continue;
           }
-
           if (ch === '\r') {
             continue;
           }
-
           out += ch;
         }
         return out;
@@ -611,17 +534,15 @@ Return ONLY raw JSON, no markdown.`;
 
       jsonStr = escapeNewlinesInsideStrings(jsonStr);
       jsonStr = jsonStr.replace(/,\s*([}\]])/g, '$1');
-
       return JSON.parse(jsonStr);
     };
 
-    // Use Lovable AI Gateway instead of OpenAI
     const callGateway = async (opts?: { retry?: boolean }) => {
       const retry = !!opts?.retry;
 
       const strictSystemAddon = retry
-        ? "\n\nCRITICAL: Return COMPLETE JSON only. Keep each string single-line; if you need line breaks use \\n. Keep bullets short."
-        : "\n\nCRITICAL: Return JSON only. Keep each string single-line; if you need line breaks use \\n. Do not add any extra keys.";
+        ? "\n\nCRITICAL: Return COMPLETE JSON only. Keep each string single-line; use \\n for line breaks."
+        : "\n\nCRITICAL: Return JSON only. Keep each string single-line; use \\n for line breaks.";
 
       const body: any = {
         model,
@@ -646,7 +567,6 @@ Return ONLY raw JSON, no markdown.`;
         ];
         body.tool_choice = { type: "function", function: { name: toolName } };
       } else {
-        // Fallback for any tool types without schemas
         body.response_format = { type: "json_object" };
       }
 
@@ -683,7 +603,6 @@ Return ONLY raw JSON, no markdown.`;
       return resp;
     };
 
-    // Attempt 1 + retry once if JSON is malformed / truncated
     let response: Response | null = null;
     let data: any = null;
     let result: any = null;
@@ -692,7 +611,6 @@ Return ONLY raw JSON, no markdown.`;
 
     for (let attempt = 0; attempt < 2; attempt++) {
       response = await callGateway({ retry: attempt === 1 });
-      // If callGateway returned an early Response (429/402), return it directly.
       if (response instanceof Response && (response.status === 429 || response.status === 402)) {
         return response;
       }
