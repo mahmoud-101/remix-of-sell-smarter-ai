@@ -6,7 +6,6 @@ import {
   RotateCcw,
   Facebook,
   Instagram,
-  Youtube,
   Check,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -21,320 +20,319 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAI } from "@/hooks/useAI";
-import { useHistory } from "@/hooks/useHistory";
-import { ExportButtons } from "@/components/export/ExportButtons";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
-import { ProductData } from "@/lib/api/firecrawl";
+import type { ProductData } from "@/lib/api/firecrawl";
 
 const platforms = [
   { id: "facebook", label: "Facebook", icon: Facebook, color: "from-blue-600 to-blue-700" },
   { id: "instagram", label: "Instagram", icon: Instagram, color: "from-pink-500 to-purple-600" },
-  { id: "google", label: "Google Ads", icon: Youtube, color: "from-red-500 to-red-600" },
-  { id: "tiktok", label: "TikTok", icon: Megaphone, color: "from-gray-900 to-gray-800" },
 ];
+
+type AdVariation = {
+  headline: string;
+  primaryText: string;
+  cta: string;
+};
 
 export default function AdsCopy() {
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
-  const [targetAudience, setTargetAudience] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["facebook"]);
+  const [selectedPlatform, setSelectedPlatform] = useState("facebook");
   const [campaignGoal, setCampaignGoal] = useState("conversions");
-  const [generatedAds, setGeneratedAds] = useState<any[]>([]);
+  const [generatedAds, setGeneratedAds] = useState<AdVariation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
   const { toast } = useToast();
-  const { t, isRTL } = useLanguage();
-  const { generate, isLoading } = useAI("ads-copy");
-  const { saveToHistory } = useHistory();
+  const { isRTL } = useLanguage();
+  const { user } = useAuth();
 
   const campaignGoals = [
-    { value: "awareness", label: t("goalAwareness") },
-    { value: "traffic", label: t("goalTraffic") },
-    { value: "engagement", label: t("goalEngagement") },
-    { value: "conversions", label: t("goalConversions") },
-    { value: "leads", label: t("goalLeads") },
+    { value: "awareness", label: isRTL ? "الوعي بالعلامة" : "Brand Awareness" },
+    { value: "traffic", label: isRTL ? "زيادة الزيارات" : "Traffic" },
+    { value: "conversions", label: isRTL ? "المبيعات" : "Conversions" },
+    { value: "leads", label: isRTL ? "جمع العملاء" : "Lead Generation" },
   ];
 
-  const togglePlatform = (id: string) => {
-    setSelectedPlatforms((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+  const handleExtractProduct = (data: ProductData) => {
+    if (data.title) setProductName(data.title);
+    if (data.description) setProductDescription(data.description);
+    if (data.features && data.features.length > 0) {
+      setProductDescription(prev =>
+        prev + (prev ? '\n\n' : '') + data.features!.slice(0, 5).join('\n')
+      );
+    }
+    toast({
+      title: isRTL ? "تم الاستخراج" : "Extracted",
+      description: isRTL ? "تم سحب بيانات المنتج" : "Product data extracted",
+    });
   };
 
   const handleGenerate = async () => {
-    if (!productName || !productDescription || selectedPlatforms.length === 0) {
+    if (!user) {
       toast({
-        title: t("missingInfo"),
-        description: t("pleaseFilRequired"),
+        title: isRTL ? "يرجى تسجيل الدخول" : "Please login",
         variant: "destructive",
       });
       return;
     }
 
-    const input = {
-      productName,
-      productDescription,
-      targetAudience,
-      platform: selectedPlatforms[0],
-      goal: campaignGoal,
-    };
+    if (!productName.trim() || !productDescription.trim()) {
+      toast({
+        title: isRTL ? "بيانات ناقصة" : "Missing Info",
+        description: isRTL ? "أدخل اسم ووصف المنتج" : "Enter product name and description",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const result = await generate(input);
+    setIsLoading(true);
+    setGeneratedAds([]);
 
-    if (result?.variations) {
-      const ads = result.variations.map((variation: any, index: number) => ({
-        id: `ad-${index + 1}`,
-        platform: platforms.find(p => p.id === selectedPlatforms[0])?.label,
-        platformId: selectedPlatforms[0],
-        variation: `${isRTL ? "النسخة" : "Variation"} ${String.fromCharCode(65 + index)}`,
-        headline: variation.headline,
-        primaryText: variation.primaryText,
-        cta: variation.cta,
-      }));
-      
-      setGeneratedAds(ads);
-      await saveToHistory("ads", input, result);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-generate", {
+        body: {
+          toolType: "ads-copy",
+          language: isRTL ? "ar" : "en",
+          input: {
+            productName,
+            productDescription,
+            platform: selectedPlatform,
+            goal: campaignGoal,
+          },
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const result = data?.result;
+      if (result?.variations && Array.isArray(result.variations)) {
+        setGeneratedAds(result.variations);
+        toast({
+          title: isRTL ? "تم التوليد" : "Generated",
+          description: isRTL ? `تم إنشاء ${result.variations.length} إعلانات` : `Created ${result.variations.length} ads`,
+        });
+      } else {
+        throw new Error(isRTL ? "استجابة غير صالحة" : "Invalid response format");
+      }
+    } catch (err: any) {
+      console.error("Ads generation error:", err);
+      toast({
+        title: isRTL ? "خطأ" : "Error",
+        description: err?.message || (isRTL ? "فشل التوليد" : "Generation failed"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: t("copied"),
-      description: t("copiedToClipboard"),
+      title: isRTL ? "تم النسخ" : "Copied",
+      description: isRTL ? "تم نسخ النص" : "Text copied",
     });
   };
 
-  const getAllAdsContent = () => {
-    return generatedAds.map(ad => 
-      `${ad.platform} - ${ad.variation}\n${isRTL ? "العنوان" : "Headline"}: ${ad.headline}\n${isRTL ? "النص" : "Text"}: ${ad.primaryText}\nCTA: ${ad.cta}`
+  const copyAllAds = () => {
+    const allText = generatedAds.map((ad, i) =>
+      `${isRTL ? "إعلان" : "Ad"} ${i + 1}:\n${isRTL ? "العنوان" : "Headline"}: ${ad.headline}\n${isRTL ? "النص" : "Text"}: ${ad.primaryText}\nCTA: ${ad.cta}`
     ).join("\n\n---\n\n");
+    copyToClipboard(allText);
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
               <Megaphone className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">{t("adsCopyGenerator")}</h1>
+            <h1 className="text-2xl font-bold">
+              {isRTL ? "استوديو الإعلانات" : "Ads Studio"}
+            </h1>
           </div>
           <p className="text-muted-foreground">
-            {t("adsCopyDesc")}
+            {isRTL
+              ? "إنشاء إعلانات Meta عالية التحويل للأزياء—Facebook & Instagram"
+              : "Create high-converting Meta ads for Fashion—Facebook & Instagram"}
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Input Section */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="glass-card rounded-2xl p-6 space-y-5">
-              <h2 className="font-semibold">{t("adDetails")}</h2>
+        {/* Input Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{isRTL ? "بيانات المنتج" : "Product Info"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* URL Extractor */}
+            <ProductUrlExtractor onExtract={handleExtractProduct} />
 
-              {/* Product URL Extractor */}
-              <ProductUrlExtractor 
-                onExtract={(data: ProductData) => {
-                  if (data.title) setProductName(data.title);
-                  if (data.description) setProductDescription(data.description);
-                  if (data.features && data.features.length > 0) {
-                    setProductDescription(prev => 
-                      prev + (prev ? '\n\n' : '') + data.features!.slice(0, 5).join('\n')
-                    );
-                  }
-                }}
-              />
-
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="productName">{t("productName")} *</Label>
+                <Label>{isRTL ? "اسم المنتج *" : "Product Name *"}</Label>
                 <Input
-                  id="productName"
-                  placeholder={t("productNamePlaceholder")}
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  className="input-field"
+                  placeholder={isRTL ? "فستان سهرة أنيق" : "Elegant Evening Dress"}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="productDescription">{t("productDescription")} *</Label>
-                <Textarea
-                  id="productDescription"
-                  placeholder={t("productDescPlaceholder")}
-                  value={productDescription}
-                  onChange={(e) => setProductDescription(e.target.value)}
-                  className="input-field min-h-[100px]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="targetAudience">{t("targetAudience")}</Label>
-                <Input
-                  id="targetAudience"
-                  placeholder={t("targetAudiencePlaceholder")}
-                  value={targetAudience}
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                  className="input-field"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t("campaignGoal")}</Label>
-                <Select value={campaignGoal} onValueChange={setCampaignGoal}>
-                  <SelectTrigger className="input-field">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {campaignGoals.map((goal) => (
-                      <SelectItem key={goal.value} value={goal.value}>
-                        {goal.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>{isRTL ? "المنصة" : "Platform"}</Label>
+                <div className="flex gap-2">
+                  {platforms.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedPlatform(p.id)}
+                      className={`flex-1 p-3 rounded-lg border-2 transition-all ${
+                        selectedPlatform === p.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        <div className={`w-6 h-6 rounded bg-gradient-to-br ${p.color} flex items-center justify-center`}>
+                          <p.icon className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm font-medium">{p.label}</span>
+                        {selectedPlatform === p.id && <Check className="w-4 h-4 text-primary" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="glass-card rounded-2xl p-6 space-y-4">
-              <h2 className="font-semibold">{t("platform")} *</h2>
-              <div className="grid grid-cols-2 gap-3">
-                {platforms.map((platform) => (
-                  <button
-                    key={platform.id}
-                    onClick={() => togglePlatform(platform.id)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                      selectedPlatforms.includes(platform.id)
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-lg bg-gradient-to-br ${platform.color} flex items-center justify-center`}
-                      >
-                        <platform.icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-sm font-medium">{platform.label}</span>
-                      {selectedPlatforms.includes(platform.id) && (
-                        <Check className={`w-4 h-4 text-primary ${isRTL ? "mr-auto" : "ml-auto"}`} />
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
+            <div className="space-y-2">
+              <Label>{isRTL ? "وصف المنتج *" : "Product Description *"}</Label>
+              <Textarea
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                placeholder={isRTL ? "وصف تفصيلي للمنتج..." : "Detailed product description..."}
+                rows={4}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{isRTL ? "هدف الحملة" : "Campaign Goal"}</Label>
+              <Select value={campaignGoal} onValueChange={setCampaignGoal}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {campaignGoals.map((goal) => (
+                    <SelectItem key={goal.value} value={goal.value}>
+                      {goal.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button
-              variant="hero"
               size="lg"
-              className="w-full"
+              className="w-full h-14 text-lg"
               onClick={handleGenerate}
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <RotateCcw className="w-4 h-4 animate-spin" />
-                  {t("generating")}
+                  <RotateCcw className="w-5 h-5 animate-spin" />
+                  {isRTL ? "جارٍ التوليد..." : "Generating..."}
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" />
-                  {t("generateAds")}
+                  <Sparkles className="w-5 h-5" />
+                  {isRTL ? "توليد إعلانات Meta" : "Generate Meta Ads"}
                 </>
               )}
             </Button>
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Output Section */}
-          <div className="lg:col-span-3 space-y-4">
+        {/* Results */}
+        {generatedAds.length > 0 && (
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold">{t("generatedAds")}</h2>
-              {generatedAds.length > 0 && (
-                <ExportButtons content={getAllAdsContent()} filename="ads-copy" />
-              )}
+              <h2 className="text-lg font-semibold">
+                {isRTL ? "الإعلانات المُولّدة" : "Generated Ads"}
+              </h2>
+              <Button variant="outline" size="sm" onClick={copyAllAds}>
+                <Copy className="w-4 h-4" />
+                {isRTL ? "نسخ الكل" : "Copy All"}
+              </Button>
             </div>
 
-            {generatedAds.length === 0 ? (
-              <div className="glass-card rounded-2xl p-8 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
-                  <Megaphone className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="font-medium mb-2">{t("noContentYet")}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("noContentDesc")}
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {generatedAds.map((ad) => {
-                  const platformData = platforms.find((p) => p.id === ad.platformId);
-                  return (
-                    <div
-                      key={ad.id}
-                      className="glass-card rounded-xl p-5 space-y-4 animate-fade-in"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`w-8 h-8 rounded-lg bg-gradient-to-br ${platformData?.color} flex items-center justify-center`}
-                          >
-                            {platformData && (
-                              <platformData.icon className="w-4 h-4 text-white" />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{ad.platform}</h3>
-                            <p className="text-xs text-muted-foreground">
-                              {ad.variation}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            copyToClipboard(
-                              `${ad.headline}\n\n${ad.primaryText}\n\nCTA: ${ad.cta}`
-                            )
-                          }
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                      </div>
-
-                      <div className="space-y-3 text-sm">
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t("headline")}
-                          </p>
-                          <p className="font-medium">{ad.headline}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t("primaryText")}
-                          </p>
-                          <p className="text-muted-foreground whitespace-pre-line">
-                            {ad.primaryText}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">
-                            {t("callToAction")}
-                          </p>
-                          <span className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded-md">
-                            {ad.cta}
-                          </span>
-                        </div>
-                      </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {generatedAds.map((ad, index) => (
+                <Card key={index} className="relative">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-base">
+                        {isRTL ? `إعلان ${index + 1}` : `Ad ${index + 1}`}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => copyToClipboard(`${ad.headline}\n\n${ad.primaryText}\n\nCTA: ${ad.cta}`)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {isRTL ? "العنوان" : "Headline"}
+                      </p>
+                      <p className="font-semibold">{ad.headline}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">
+                        {isRTL ? "النص الأساسي" : "Primary Text"}
+                      </p>
+                      <p className="text-muted-foreground whitespace-pre-line">{ad.primaryText}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">CTA</p>
+                      <span className="inline-block px-3 py-1 bg-primary text-primary-foreground text-xs rounded-md">
+                        {ad.cta}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Empty State */}
+        {generatedAds.length === 0 && !isLoading && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                <Megaphone className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-2">
+                {isRTL ? "لا يوجد إعلانات بعد" : "No ads yet"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {isRTL
+                  ? "أدخل بيانات المنتج واضغط توليد"
+                  : "Enter product details and click generate"}
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

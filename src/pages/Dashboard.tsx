@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
 import type { ProductData } from "@/lib/api/firecrawl";
+import { Sparkles, Copy, Save, ExternalLink, RotateCcw } from "lucide-react";
 
 type StudioResult = {
   shopifyTitle: { ar: string; en: string };
@@ -87,11 +88,18 @@ export default function Dashboard() {
   };
 
   const handleGenerate = async () => {
-    if (!user) return;
-    if (!productUrl.trim()) {
+    if (!user) {
+      toast({
+        title: isRTL ? "يرجى تسجيل الدخول" : "Please login",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!productUrl.trim() && !extracted) {
       toast({
         title: isRTL ? "أدخل رابط المنتج" : "Enter product URL",
-        description: isRTL ? "أدخل رابط المنتج أولاً" : "Please paste the product URL first",
+        description: isRTL ? "أدخل رابط المنتج أو استخرج البيانات أولاً" : "Enter URL or extract data first",
         variant: "destructive",
       });
       return;
@@ -99,6 +107,7 @@ export default function Dashboard() {
 
     setLoading(true);
     setResult(null);
+    
     try {
       const { data, error } = await supabase.functions.invoke("ai-generate", {
         body: {
@@ -111,6 +120,7 @@ export default function Dashboard() {
           },
         },
       });
+      
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
@@ -119,7 +129,13 @@ export default function Dashboard() {
         throw new Error(isRTL ? "استجابة غير صالحة" : "Invalid response");
       }
       setResult(res);
+      
+      toast({
+        title: isRTL ? "تم التوليد" : "Generated",
+        description: isRTL ? "تم إنشاء محتوى Shopify بنجاح" : "Shopify content created successfully",
+      });
     } catch (e: any) {
+      console.error("Generation error:", e);
       toast({
         title: isRTL ? "خطأ" : "Error",
         description: e?.message || (isRTL ? "فشل التوليد" : "Generation failed"),
@@ -161,9 +177,7 @@ export default function Dashboard() {
     if (!result) return;
     try {
       const { data, error } = await supabase.functions.invoke("shopify-create-product", {
-        body: {
-          studioResult: result,
-        },
+        body: { studioResult: result },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -178,11 +192,7 @@ export default function Dashboard() {
     } catch (e: any) {
       toast({
         title: isRTL ? "تعذر الإنشاء" : "Create failed",
-        description:
-          e?.message ||
-          (isRTL
-            ? "تأكد من ربط Shopify من صفحة منتجات Shopify أولاً"
-            : "Please connect Shopify first in Synced Products"),
+        description: e?.message || (isRTL ? "تأكد من ربط Shopify أولاً" : "Please connect Shopify first"),
         variant: "destructive",
       });
     }
@@ -191,40 +201,44 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold">
             {isRTL ? "استوديو المنتجات" : "Product Studio"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {isRTL
-              ? "محتوى AI ثنائي اللغة لمنتجات Fashion & Beauty—جاهز لـ Shopify/WooCommerce/Salla" 
+              ? "محتوى AI ثنائي اللغة لمنتجات Fashion & Beauty—جاهز لـ Shopify/WooCommerce/Salla"
               : "Bilingual AI content for Fashion & Beauty products—ready for Shopify/WooCommerce/Salla"}
           </p>
         </div>
 
+        {/* Input Card */}
         <Card>
           <CardHeader>
             <CardTitle>{isRTL ? "1) رابط المنتج" : "1) Product URL"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>{isRTL ? "رابط المنتج الجديد (Shein/BrandsGateway/Peppela/Namshi)" : "Product URL"}</Label>
+              <Label>{isRTL ? "رابط المنتج (Shein/BrandsGateway/Peppela/Namshi)" : "Product URL"}</Label>
               <Input
                 value={productUrl}
                 onChange={(e) => setProductUrl(e.target.value)}
-                placeholder={isRTL ? "https://..." : "https://..."}
+                placeholder="https://..."
                 inputMode="url"
+                dir="ltr"
               />
             </div>
 
             <ProductUrlExtractor
               onExtract={(d) => {
                 setExtracted(d);
+                if (d.title && !productUrl) {
+                  setProductUrl(d.title);
+                }
                 toast({
                   title: isRTL ? "تم الاستخراج" : "Extracted",
-                  description: isRTL
-                    ? "تم سحب بيانات المنتج من الرابط"
-                    : "Product data extracted from URL",
+                  description: isRTL ? "تم سحب بيانات المنتج من الرابط" : "Product data extracted from URL",
                 });
               }}
             />
@@ -245,113 +259,141 @@ export default function Dashboard() {
               </Select>
             </div>
 
-            <Button size="lg" className="w-full h-14 text-lg" onClick={handleGenerate} disabled={loading}>
-              {loading ? (isRTL ? "جارٍ التوليد..." : "Generating...") : isRTL ? "Generate Shopify Content" : "Generate Shopify Content"}
+            <Button
+              size="lg"
+              className="w-full h-14 text-lg"
+              onClick={handleGenerate}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <RotateCcw className="w-5 h-5 animate-spin" />
+                  {isRTL ? "جارٍ التوليد..." : "Generating..."}
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  {isRTL ? "توليد محتوى Shopify" : "Generate Shopify Content"}
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>{isRTL ? "Shopify Title (عربي + إنجليزي)" : "Shopify Title (AR + EN)"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea readOnly value={result ? `${result.shopifyTitle.ar}\n\n${result.shopifyTitle.en}` : ""} rows={6} />
-              <Button variant="outline" onClick={() => copy(result ? `${result.shopifyTitle.ar}\n${result.shopifyTitle.en}` : "")} disabled={!result}>
-                {isRTL ? "نسخ" : "Copy"}
+        {/* Results Grid */}
+        {result && (
+          <>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{isRTL ? "Shopify Title (عربي + إنجليزي)" : "Shopify Title (AR + EN)"}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea readOnly value={`${result.shopifyTitle.ar}\n\n${result.shopifyTitle.en}`} rows={4} />
+                  <Button variant="outline" size="sm" onClick={() => copy(`${result.shopifyTitle.ar}\n${result.shopifyTitle.en}`)}>
+                    <Copy className="w-4 h-4" />
+                    {isRTL ? "نسخ" : "Copy"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Meta Title/Description (SEO)</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea readOnly value={`${result.meta.title}\n\n${result.meta.description}`} rows={4} />
+                  <Button variant="outline" size="sm" onClick={() => copy(`${result.meta.title}\n${result.meta.description}`)}>
+                    <Copy className="w-4 h-4" />
+                    {isRTL ? "نسخ" : "Copy"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle>{isRTL ? "Full Description (ثنائي اللغة)" : "Full Description (Bilingual)"}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea readOnly value={`${result.description.ar}\n\n---\n\n${result.description.en}`} rows={8} />
+                  <Button variant="outline" size="sm" onClick={() => copy(`${result.description.ar}\n\n${result.description.en}`)}>
+                    <Copy className="w-4 h-4" />
+                    {isRTL ? "نسخ" : "Copy"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Size/Color Variants</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea
+                    readOnly
+                    value={result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join("\n")}
+                    rows={4}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copy(result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join("\n"))}
+                  >
+                    <Copy className="w-4 h-4" />
+                    {isRTL ? "نسخ" : "Copy"}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Image Alt Text</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Textarea readOnly value={result.altTexts.join("\n")} rows={4} />
+                  <Button variant="outline" size="sm" onClick={() => copy(result.altTexts.join("\n"))}>
+                    <Copy className="w-4 h-4" />
+                    {isRTL ? "نسخ" : "Copy"}
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Button size="lg" onClick={handleCreateInShopify}>
+                <ExternalLink className="w-4 h-4" />
+                {isRTL ? "إنشاء في Shopify" : "Create in Shopify"}
               </Button>
+              <Button size="lg" variant="outline" onClick={handleSaveToLibrary}>
+                <Save className="w-4 h-4" />
+                {isRTL ? "حفظ في المكتبة" : "Save to Library"}
+              </Button>
+              <Button size="lg" variant="outline" onClick={copyAll}>
+                <Copy className="w-4 h-4" />
+                {isRTL ? "نسخ كل المحتوى" : "Copy All Content"}
+              </Button>
+            </div>
+          </>
+        )}
+
+        {/* Empty State */}
+        {!result && !loading && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
+                <Sparkles className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-medium mb-2">
+                {isRTL ? "أدخل رابط المنتج للبدء" : "Enter product URL to start"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {isRTL
+                  ? "سيتم توليد محتوى Shopify كامل ثنائي اللغة"
+                  : "Will generate complete bilingual Shopify content"}
+              </p>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{isRTL ? "Meta Title/Description (SEO)" : "Meta Title/Description (SEO)"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea readOnly value={result ? `${result.meta.title}\n\n${result.meta.description}` : ""} rows={6} />
-              <Button variant="outline" onClick={() => copy(result ? `${result.meta.title}\n${result.meta.description}` : "")} disabled={!result}>
-                {isRTL ? "نسخ" : "Copy"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{isRTL ? "Full Description (ثنائي اللغة ~2000 حرف)" : "Full Description (bilingual ~2000 chars)"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea readOnly value={result ? `${result.description.ar}\n\n${result.description.en}` : ""} rows={10} />
-              <Button variant="outline" onClick={() => copy(result ? `${result.description.ar}\n\n${result.description.en}` : "")} disabled={!result}>
-                {isRTL ? "نسخ" : "Copy"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{isRTL ? "Size/Color Variants" : "Size/Color Variants"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea
-                readOnly
-                value={
-                  result
-                    ? result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join("\n")
-                    : ""
-                }
-                rows={10}
-              />
-              <Button
-                variant="outline"
-                onClick={() =>
-                  copy(
-                    result ? result.variants.options.map((o) => `${o.name}: ${o.values.join(", ")}`).join("\n") : ""
-                  )
-                }
-                disabled={!result}
-              >
-                {isRTL ? "نسخ" : "Copy"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{isRTL ? "Image Alt Text" : "Image Alt Text"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea readOnly value={result ? result.altTexts.join("\n") : ""} rows={10} />
-              <Button variant="outline" onClick={() => copy(result ? result.altTexts.join("\n") : "")} disabled={!result}>
-                {isRTL ? "نسخ" : "Copy"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>{isRTL ? "Schema JSON-LD" : "Schema JSON-LD"}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Textarea readOnly value={result ? result.jsonLd : ""} rows={10} />
-              <Button variant="outline" onClick={() => copy(result ? result.jsonLd : "")} disabled={!result}>
-                {isRTL ? "نسخ" : "Copy"}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Button size="lg" onClick={handleCreateInShopify} disabled={!result}>
-            ➤ {isRTL ? "إنشاء في Shopify" : "Create in Shopify"}
-          </Button>
-          <Button size="lg" variant="outline" onClick={handleSaveToLibrary} disabled={!result}>
-            💾 {isRTL ? "حفظ في المكتبة" : "Save to Library"}
-          </Button>
-          <Button size="lg" variant="outline" onClick={copyAll} disabled={!result}>
-            📋 {isRTL ? "نسخ كل المحتوى" : "Copy All Content"}
-          </Button>
-        </div>
+        )}
       </div>
     </DashboardLayout>
   );
