@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
   FileText,
+  Megaphone,
+  Video,
   History,
   Settings,
   ChevronLeft,
@@ -11,7 +12,6 @@ import {
   Globe,
   CreditCard,
   ShoppingBag,
-  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,13 +29,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { signOut } = useAuth();
   const { t, isRTL, language, setLanguage } = useLanguage();
 
-  // Premium MVP navigation: keep it extremely focused.
+  // 3 Core Studios for Fashion & Beauty E-commerce
   const navItems = [
-    { icon: LayoutDashboard, label: t("navigation.dashboard"), path: "/dashboard" },
-    { icon: Video, label: isRTL ? "مولد الريلز" : "Reels Generator", path: "/dashboard/reels" },
-    { icon: ShoppingBag, label: isRTL ? "منتجات Shopify" : "Shopify Products", path: "/dashboard/synced-products" },
+    { icon: FileText, label: isRTL ? "استوديو المنتجات" : "Product Studio", path: "/dashboard" },
+    { icon: Megaphone, label: isRTL ? "استوديو الإعلانات" : "Ads Studio", path: "/dashboard/ads-copy" },
+    { icon: Video, label: isRTL ? "استوديو الريلز" : "Reels Studio", path: "/dashboard/reels" },
+    { icon: ShoppingBag, label: isRTL ? "منتجات المتجر" : "Store Products", path: "/dashboard/synced-products" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
-    { icon: FileText, label: t("navigation.productCopy"), path: "/dashboard/product-copy" },
   ];
 
   const bottomNavItems = [

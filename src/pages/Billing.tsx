@@ -21,7 +21,7 @@ const Billing = () => {
   const { generationsUsed, generationsLimit } = useUsageLimit();
   const isRTL = language === 'ar';
 
-  const handleUpgrade = (planKey: 'start' | 'pro' | 'business') => {
+  const handleUpgrade = (planKey: 'pro' | 'business') => {
     const url = getPaymentUrl(planKey, user?.email || undefined);
     window.open(url, '_blank');
     toast.success(
@@ -42,8 +42,8 @@ const Billing = () => {
     });
   };
 
-  const planConfigs: { key: keyof typeof PLANS; paymentKey?: 'start' | 'pro' | 'business'; icon: typeof Sparkles }[] = [
-    { key: 'start', paymentKey: 'start', icon: Zap },
+  const planConfigs: { key: keyof typeof PLANS; paymentKey?: 'pro' | 'business'; icon: typeof Sparkles }[] = [
+    { key: 'free', icon: Sparkles },
     { key: 'pro', paymentKey: 'pro', icon: Crown },
     { key: 'business', paymentKey: 'business', icon: Building2 },
   ];
@@ -133,7 +133,7 @@ const Billing = () => {
                 </div>
               )}
               
-              {(currentPlan === 'free' || currentPlan === 'start') && (
+              {currentPlan === 'free' && (
                 <Button 
                   className="w-full bg-primary"
                   onClick={() => handleUpgrade('pro')}
