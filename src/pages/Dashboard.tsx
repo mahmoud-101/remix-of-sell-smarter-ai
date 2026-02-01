@@ -193,12 +193,12 @@ export default function Dashboard() {
       <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
         <div>
           <h1 className="text-2xl font-bold">
-            {isRTL ? "استوديو منتجات Shopify" : "Shopify Product Studio"}
+            {isRTL ? "استوديو المنتجات" : "Product Studio"}
           </h1>
           <p className="text-sm text-muted-foreground">
             {isRTL
-              ? "سير عمل واحد سريع: استخرج المنتج ثم ولّد محتوى فاخر ثنائي اللغة." 
-              : "Single workflow: extract then generate premium bilingual content."}
+              ? "محتوى AI ثنائي اللغة لمنتجات Fashion & Beauty—جاهز لـ Shopify/WooCommerce/Salla" 
+              : "Bilingual AI content for Fashion & Beauty products—ready for Shopify/WooCommerce/Salla"}
           </p>
         </div>
 

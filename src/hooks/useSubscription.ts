@@ -3,36 +3,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { PLAN_FEATURES, PlanType } from "@/lib/paymentConfig";
 
-// Re-export PLANS for backward compatibility
+// Re-export PLANS for backward compatibility - aligned with new pricing
 export const PLANS = {
   free: {
-    name: "Free Trial",
-    nameAr: "تجربة مجانية",
+    name: "Free",
+    nameAr: "مجاني",
     price: 0,
     features: PLAN_FEATURES.free.features,
     featuresAr: PLAN_FEATURES.free.featuresAr,
     limit: 5
   },
-  start: {
-    name: "Start",
-    nameAr: "ستارت",
-    price: 5,
-    features: PLAN_FEATURES.start.features,
-    featuresAr: PLAN_FEATURES.start.featuresAr,
-    limit: 50
-  },
   pro: {
     name: "Pro",
-    nameAr: "المحترف",
-    price: 10,
+    nameAr: "برو",
+    price: 19,
     features: PLAN_FEATURES.pro.features,
     featuresAr: PLAN_FEATURES.pro.featuresAr,
-    limit: -1
+    limit: 100
   },
   business: {
     name: "Business",
     nameAr: "بيزنس",
-    price: 20,
+    price: 49,
     features: PLAN_FEATURES.business.features,
     featuresAr: PLAN_FEATURES.business.featuresAr,
     limit: -1
