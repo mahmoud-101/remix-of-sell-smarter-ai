@@ -45,10 +45,8 @@ const Signup = lazyWithRetry(() => import("./pages/Signup"), "Signup");
 const ForgotPassword = lazyWithRetry(() => import("./pages/ForgotPassword"), "ForgotPassword");
 const ResetPassword = lazyWithRetry(() => import("./pages/ResetPassword"), "ResetPassword");
 
-// MVP core
+// MVP core - 4 Studios
 const Dashboard = lazyWithRetry(() => import("./pages/Dashboard"), "Dashboard");
-const ProductCopy = lazyWithRetry(() => import("./pages/ProductCopy"), "ProductCopy");
-const CreateContent = lazyWithRetry(() => import("./pages/CreateContent"), "CreateContent");
 const History = lazyWithRetry(() => import("./pages/History"), "History");
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
 const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
@@ -158,34 +156,10 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/dashboard/product-copy"
-          element={
-            <ProtectedRoute>
-              <ProductCopy />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/dashboard/history"
           element={
             <ProtectedRoute>
               <History />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/settings"
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/create-content"
-          element={
-            <ProtectedRoute>
-              <CreateContent />
             </ProtectedRoute>
           }
         />
