@@ -235,7 +235,7 @@ export default function ImageStudio() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl">
+            <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
               <ImageIcon className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -244,15 +244,20 @@ export default function ImageStudio() {
               </h1>
               <p className="text-sm text-muted-foreground">
                 {isRTL
-                  ? "توليد صور إعلانية احترافية بالذكاء الاصطناعي"
-                  : "Generate professional ad images with AI"}
+                  ? "صور إعلانية احترافية بجودة 4K • Gemini 3 Pro Image"
+                  : "Professional 4K ad images • Gemini 3 Pro Image"}
               </p>
             </div>
           </div>
-          <Badge variant="secondary" className="gap-1">
-            <Wand2 className="w-3 h-3" />
-            AI Powered
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1 text-amber-600 border-amber-300 bg-amber-50">
+              📸 Pro Image
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Wand2 className="w-3 h-3" />
+              AI Powered
+            </Badge>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">

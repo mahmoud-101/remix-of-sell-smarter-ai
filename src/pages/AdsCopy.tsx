@@ -147,7 +147,7 @@ export default function AdsCopy() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl">
+            <div className="p-2.5 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl shadow-lg">
               <Megaphone className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -156,15 +156,20 @@ export default function AdsCopy() {
               </h1>
               <p className="text-sm text-muted-foreground">
                 {isRTL
-                  ? "إعلانات Meta عالية التحويل للأزياء والجمال"
-                  : "High-converting Meta ads for Fashion & Beauty"}
+                  ? "إعلانات Meta عالية التحويل للأزياء والجمال • GPT-5 Mini"
+                  : "High-converting Meta ads for Fashion & Beauty • GPT-5 Mini"}
               </p>
             </div>
           </div>
-          <Badge variant="secondary" className="gap-1">
-            <Sparkles className="w-3 h-3" />
-            {isRTL ? "3 نسخ" : "3 Variations"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1 text-pink-600 border-pink-300 bg-pink-50">
+              ✨ Creative AI
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="w-3 h-3" />
+              {isRTL ? "3 نسخ" : "3 Variations"}
+            </Badge>
+          </div>
         </div>
 
         {/* Input Card */}
