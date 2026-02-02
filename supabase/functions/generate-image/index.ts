@@ -86,8 +86,26 @@ serve(async (req) => {
 
     const selectedStyle = stylePrompts[style] || stylePrompts.lifestyle;
 
-    // Build the complete prompt
-    const fullPrompt = `${selectedStyle}
+    // Build the image editing prompt that preserves the original product
+    const editPrompt = productImage 
+      ? `CRITICAL INSTRUCTION: You MUST preserve the EXACT product shown in the image. Do NOT change the product itself.
+
+ANALYZE the product in detail:
+- Identify the exact shape, colors, textures, and materials
+- Note all branding, logos, text, and labels
+- Observe the product proportions and dimensions
+- Identify any unique features or details
+
+NOW create a professional advertising photo with these requirements:
+1. Keep the EXACT same product - do not modify, replace, or alter it
+2. Place the product in a professional ${style} advertising setting
+3. Add professional studio lighting that enhances the product
+4. ${selectedStyle}
+
+Product context: ${prompt}
+
+OUTPUT: A professional e-commerce advertisement featuring the IDENTICAL product from the input image, just in a better advertising context with Arabic text overlays.`
+      : `${selectedStyle}
 
 Product: ${prompt}
 
@@ -99,7 +117,31 @@ CRITICAL REQUIREMENTS:
 - 4K resolution, vibrant colors, eye-catching design
 - Arabic text integrated naturally into the design`;
 
-    console.log(`User ${authData?.userId} generating with Lovable AI Gateway, style: ${style}`);
+    console.log(`User ${authData?.userId} generating with Lovable AI Gateway, style: ${style}, hasProductImage: ${!!productImage}`);
+
+    // Build the message content based on whether we have a product image
+    let messageContent: any;
+    
+    if (productImage) {
+      // Image-to-image editing mode: pass the product image for preservation
+      messageContent = [
+        {
+          type: "text",
+          text: editPrompt
+        },
+        {
+          type: "image_url",
+          image_url: {
+            url: productImage // Can be data:image/png;base64,... or https://...
+          }
+        }
+      ];
+      console.log("Using image-to-image mode to preserve product details");
+    } else {
+      // Text-to-image generation mode
+      messageContent = editPrompt;
+      console.log("Using text-to-image mode");
+    }
 
     // Use Lovable AI Gateway with Gemini Pro Image
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -113,7 +155,7 @@ CRITICAL REQUIREMENTS:
         messages: [
           {
             role: "user",
-            content: fullPrompt
+            content: messageContent
           }
         ],
         modalities: ["image", "text"]
