@@ -33,41 +33,47 @@ const imageStyles: Array<{
   description: { ar: string; en: string };
   icon: any;
   gradient: string;
+  example: string;
 }> = [
   { 
     value: "lifestyle", 
     label: { ar: "لايف ستايل", en: "Lifestyle" },
-    description: { ar: "منتج في بيئة واقعية", en: "Product in real environment" },
+    description: { ar: "إعلان مع خلفية واقعية ونص عربي", en: "Ad with lifestyle background & Arabic text" },
     icon: Sun,
-    gradient: "from-orange-500 to-amber-500"
+    gradient: "from-orange-500 to-amber-500",
+    example: "ريحتك بتسبقك ✨"
   },
   { 
     value: "flatlay", 
     label: { ar: "فلات لاي", en: "Flat Lay" },
-    description: { ar: "تصوير من الأعلى", en: "Top-down photography" },
+    description: { ar: "تصوير من الأعلى مع عناصر جذابة", en: "Top-down with attractive elements" },
     icon: Camera,
-    gradient: "from-blue-500 to-cyan-500"
+    gradient: "from-blue-500 to-cyan-500",
+    example: "أحلى هدية للأم 🎁"
   },
   { 
     value: "model", 
-    label: { ar: "موديل", en: "Model" },
-    description: { ar: "على موديل حقيقي", en: "On real model" },
+    label: { ar: "بيوتي", en: "Beauty" },
+    description: { ar: "إعلان جمال مع موديل ومقارنات", en: "Beauty ad with model & comparisons" },
     icon: Shirt,
-    gradient: "from-pink-500 to-rose-500"
+    gradient: "from-pink-500 to-rose-500",
+    example: "بلمسة واحدة بس! 💫"
   },
   { 
     value: "studio", 
-    label: { ar: "استوديو", en: "Studio" },
-    description: { ar: "خلفية بيضاء احترافية", en: "Professional white background" },
+    label: { ar: "كتالوج", en: "Catalog" },
+    description: { ar: "إعلان منتج احترافي مع مميزات", en: "Professional product ad with features" },
     icon: Layers,
-    gradient: "from-gray-500 to-slate-500"
+    gradient: "from-gray-500 to-slate-500",
+    example: "اطلبي الآن - توصيل مجاني 🚚"
   },
   { 
     value: "minimal", 
-    label: { ar: "مينيمال", en: "Minimal" },
-    description: { ar: "بسيط وأنيق", en: "Simple and elegant" },
+    label: { ar: "فاخر", en: "Luxury" },
+    description: { ar: "إعلان فاخر بتصميم راقي", en: "Luxury ad with elegant design" },
     icon: Minimize2,
-    gradient: "from-purple-500 to-violet-500"
+    gradient: "from-purple-500 to-violet-500",
+    example: "تركيبة شرقية فاخرة 💎"
   },
 ];
 
@@ -402,7 +408,7 @@ export default function ImageStudio() {
                         }`}
                       >
                         <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${s.gradient} flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="w-6 h-6 text-white" />
+                          <Icon className="w-6 h-6 text-primary-foreground" />
                         </div>
                         <div className="text-start flex-1">
                           <span className="font-medium block">
@@ -410,6 +416,9 @@ export default function ImageStudio() {
                           </span>
                           <span className="text-sm text-muted-foreground">
                             {isRTL ? s.description.ar : s.description.en}
+                          </span>
+                          <span className="text-xs text-primary mt-0.5 block">
+                            {s.example}
                           </span>
                         </div>
                         {style === s.value && (
