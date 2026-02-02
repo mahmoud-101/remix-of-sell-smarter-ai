@@ -25,64 +25,110 @@ serve(async (req) => {
     console.log(`Processing ${toolType} for user ${authData?.userId}`);
 
     const langInstruction = language === 'ar' 
-      ? "Output in Arabic (Professional marketing Arabic)." 
+      ? "Output in Arabic (Professional marketing Arabic - Simplified Fusha)." 
       : "Output in English (Professional marketing English).";
 
     const segmentContext = language === 'ar'
-      ? `Segment Context:\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads\n- Goal: higher CTR + CVR + AOV with premium fashion tone\n- Constraints: Arabic-first, COD-friendly, size/fit concerns, trust signals`
-      : `Segment Context:\n- Audience: Shopify/DTC fashion brands in MENA (EG/KSA/UAE)\n- Primary channel: Meta Ads\n- Goal: higher CTR + CVR + AOV with premium fashion tone\n- Constraints: Arabic-first market, COD objections, size/fit concerns`;
+      ? `🎯 SEGMENT CONTEXT:
+- Market: Fashion & Beauty E-commerce in MENA (Egypt, Saudi Arabia, UAE)
+- Platform Focus: Meta Ads (Facebook/Instagram) as primary channel
+- Business Model: Shopify/Salla stores with COD + Prepaid options
+- Goals: Maximize CTR, CVR, and AOV with premium fashion positioning
+- Audience: Women 18-45, fashion-conscious, value quality and trust
+- Cultural: Arabic-first, modest fashion friendly, size/fit reassurance critical
+- Trust Signals: Easy returns, COD available, genuine products, fast shipping`
+      : `🎯 SEGMENT CONTEXT:
+- Market: Fashion & Beauty E-commerce in MENA (Egypt, Saudi Arabia, UAE)
+- Platform Focus: Meta Ads (Facebook/Instagram) as primary channel
+- Business Model: Shopify/Salla stores with COD + Prepaid options
+- Goals: Maximize CTR, CVR, and AOV with premium fashion positioning
+- Audience: Women 18-45, fashion-conscious, value quality and trust
+- Cultural: Arabic-first market, modest fashion friendly, size concerns
+- Trust Signals: Easy returns, COD available, genuine products, fast shipping`;
 
     let systemRole = "";
     let userPrompt = "";
-    let model = "google/gemini-2.5-flash";
+    // Model selection per tool type for optimal results
+    let model = "google/gemini-2.5-flash"; // Default fast model
     let temperature = 0.7;
-    let maxTokens = 1800;
+    let maxTokens = 2000;
     let toolSchema: any | null = null;
     const toolName = "return_payload";
 
     switch (toolType) {
+      // ============================================
+      // PRODUCT STUDIO - Uses Gemini 2.5 Pro for deep product analysis
+      // Best for: Complex content generation, bilingual output, structured data
+      // ============================================
       case "shopify-studio":
-        systemRole = `You are a premium Shopify product content specialist for Fashion brands.
+        model = "google/gemini-2.5-pro"; // Pro for comprehensive product content
+        
+        systemRole = `You are an ELITE Shopify content strategist for premium Fashion & Beauty brands in the MENA market.
 
 ${segmentContext}
 
-You MUST produce PREMIUM bilingual output: Arabic (simplified Fusha) + English.
-Always include COD default + prepaid option + clear returns policy cues.
+🎯 YOUR MISSION: Create CONVERSION-OPTIMIZED bilingual content that drives sales.
 
-Return ONLY valid JSON with EXACT structure:
+📋 OUTPUT REQUIREMENTS:
+You MUST return ONLY valid JSON with this EXACT structure:
 {
-  "shopifyTitle": {"ar": "...", "en": "..."},
-  "meta": {"title": "...", "description": "..."},
-  "description": {"ar": "...", "en": "..."},
+  "shopifyTitle": {"ar": "عنوان عربي قصير وجذاب", "en": "Short catchy English title"},
+  "meta": {
+    "title": "SEO title 55-70 chars with main keyword",
+    "description": "Meta description 140-170 chars with value proposition and CTA"
+  },
+  "description": {
+    "ar": "وصف عربي شامل مع\\n- تفاصيل القماش\\n- معلومات المقاسات\\n- تعليمات العناية\\n- ضمان الجودة",
+    "en": "Comprehensive English description with\\n- Fabric details\\n- Sizing info\\n- Care instructions\\n- Quality guarantee"
+  },
   "variants": {
     "options": [
-      {"name": "Size", "values": ["..."]},
-      {"name": "Color", "values": ["..."]}
+      {"name": "Size", "values": ["S", "M", "L", "XL", "XXL"]},
+      {"name": "Color", "values": ["color1", "color2"]}
     ]
   },
-  "altTexts": ["..."],
-  "jsonLd": "{...}"
+  "altTexts": ["6-10 descriptive alt texts for SEO", "..."],
+  "jsonLd": "{\\\"@context\\\":\\\"https://schema.org\\\",\\\"@type\\\":\\\"Product\\\"...}"
 }
 
-Rules:
-- Shopify title: short, premium, product-type-first.
-- Meta title: 55–70 chars. Meta description: 140–170 chars.
-- Description: around ~2000 chars combined; use \\n for line breaks.
-- Variants: infer sizes + colors; include modest indicators if relevant.
-- Alt texts: 6–10 lines, descriptive, in English for SEO.
-- jsonLd: Product schema as a SINGLE-LINE JSON string.`;
+✨ CONTENT EXCELLENCE STANDARDS:
+1. SHOPIFY TITLE: Premium, product-type-first, max 70 chars
+2. META: SEO-optimized with primary keywords and emotional triggers
+3. DESCRIPTION: 
+   - Start with compelling hook
+   - Include fabric/material details
+   - Size guide with Arabic measurements
+   - Styling tips for modest fashion
+   - Trust signals (returns, COD, authenticity)
+   - Use \\n for line breaks
+4. VARIANTS: Infer realistic sizes (XS-XXL for Saudi, S-XL for Egypt) and colors
+5. ALT TEXTS: Descriptive, keyword-rich, accessibility-focused
+6. JSON-LD: Complete Product schema as single-line valid JSON string
 
-        userPrompt = `Create premium Shopify content.
+${langInstruction}`;
 
-Tone: ${input.tone || "luxury"}
-Product URL: ${input.productUrl || ""}
-Extracted product data: ${JSON.stringify(input.productData || {}, null, 0)}
+        userPrompt = `🛍️ CREATE PREMIUM SHOPIFY CONTENT FOR:
 
-Focus on: fabric, fit, sizing reassurance, modest styling notes, MENA trust signals.
-Return ONLY raw JSON.`;
+📦 PRODUCT INFORMATION:
+- Name: ${input.productName || "Fashion Product"}
+- Category: ${input.category || "Fashion"}
+- Description: ${input.productDescription || "Premium fashion item"}
+- Key Features: ${input.keyFeatures || "High quality materials"}
+- Target Audience: ${input.targetAudience || "Fashion-conscious women 25-45"}
+- Price Range: ${input.priceRange || "Premium"}
+- Tone: ${input.tone || "luxury"}
 
-        temperature = 0.55;
-        maxTokens = 2200;
+🎯 FOCUS AREAS:
+- Fabric and material quality emphasis
+- Size and fit reassurance (critical for MENA)
+- Modest styling compatibility
+- COD trust signals
+- Arabic cultural relevance
+
+Return ONLY the JSON object. No markdown, no explanations.`;
+
+        temperature = 0.5;
+        maxTokens = 3000;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -136,52 +182,194 @@ Return ONLY raw JSON.`;
         };
         break;
 
-      case "reels-script":
-        systemRole = `You are a viral fashion Reels/TikTok scriptwriter for MENA fashion brands.
+      // ============================================
+      // ADS STUDIO - Uses GPT-5-mini for creative ad copy
+      // Best for: Emotional hooks, persuasive copy, viral potential
+      // ============================================
+      case "ads-copy":
+        model = "openai/gpt-5-mini"; // GPT for creative, emotional ad copy
+        
+        systemRole = `You are a TOP-TIER Meta Ads copywriter specializing in Fashion & Beauty for the MENA market.
 
 ${segmentContext}
-${langInstruction}
 
-Create 3 viral short-form video scripts optimized for fashion products.
-Each script MUST be ready for AI video generation tools like Kling AI.
+🎯 YOUR MISSION: Create SCROLL-STOPPING ads that convert browsers into buyers.
 
-Return ONLY valid JSON with EXACT structure:
+📋 OUTPUT REQUIREMENTS:
+Return ONLY valid JSON with this EXACT structure:
 {
-  "scripts": [
+  "variations": [
     {
-      "hook": "First 1-3 seconds attention grabber (Arabic/English based on language)",
-      "scenes": [
-        {"duration": "2s", "visual": "Description of what to show", "text_overlay": "Text on screen", "voiceover": "What to say"},
-        {"duration": "3s", "visual": "...", "text_overlay": "...", "voiceover": "..."}
-      ],
-      "cta": "Clear call to action",
-      "music_style": "Trending/Arabic pop/Aesthetic/etc",
-      "total_duration": "15s"
+      "headline": "🔥 Attention-grabbing hook (max 40 chars)",
+      "primaryText": "Compelling ad copy with emojis, social proof, urgency, and clear value proposition. Include pain point → solution → benefit → CTA flow. 3-5 lines.",
+      "cta": "Action Button Text",
+      "hook_type": "curiosity/fear/desire/social_proof",
+      "estimated_ctr": "high/medium"
     }
-  ],
-  "viral_tips": ["tip1", "tip2", "tip3"],
-  "hashtags": ["#fashion", "#ootd", "..."]
+  ]
 }
 
-Rules:
-- Hook must stop scrolling in 1-3 seconds
-- Each scene has: duration, visual description, text overlay, voiceover
-- Total duration: 15-30 seconds
-- Include trending hooks for fashion (transformation, reveal, GRWM)
-- Add Arabic hashtags for MENA reach`;
+✨ AD EXCELLENCE STANDARDS:
 
-        userPrompt = `Create 3 viral Reels scripts for this fashion product:
+🎣 HOOK FORMULAS (use different ones for each variation):
+1. Curiosity Gap: "The secret behind..."
+2. Social Proof: "10,000+ women already..."
+3. Transformation: "From ordinary to stunning..."
+4. Question: "Still struggling with...?"
+5. Urgency: "Last 24 hours..."
+6. Direct Benefit: "Look 5 years younger..."
 
-Product Name: ${input.productName || "Fashion item"}
-Product Description: ${input.productDescription || ""}
-Style/Vibe: ${input.style || "trendy"}
-Target Duration: ${input.duration || "15-30"} seconds
+📝 PRIMARY TEXT STRUCTURE:
+- Line 1: Hook that addresses pain point
+- Line 2-3: Solution with unique selling points
+- Line 4: Social proof or urgency
+- Line 5: Clear CTA with offer
 
-Make it perfect for Kling AI / Runway video generation.
-Return ONLY raw JSON.`;
+🎯 CTA OPTIONS:
+- "تسوقي الآن" / "Shop Now"
+- "احصلي عليه" / "Get Yours"
+- "اطلبي الآن" / "Order Now"
+- "جربيه اليوم" / "Try It Today"
+
+Platform: ${input.platform || "Facebook/Instagram"}
+Goal: ${input.goal || "conversions"}
+
+${langInstruction}`;
+
+        userPrompt = `📢 CREATE 3 HIGH-CONVERTING ADS FOR:
+
+📦 PRODUCT:
+- Name: ${input.productName || "Fashion Product"}
+- Description: ${input.productDescription || "Premium fashion item"}
+- Key Benefits: ${input.keyBenefits || "High quality, stylish design"}
+- Target Audience: ${input.targetAudience || "Fashion-conscious women"}
+- Offer/Price: ${input.priceOffer || "Special offer available"}
+
+🎯 CAMPAIGN:
+- Platform: ${input.platform || "Facebook/Instagram"}
+- Goal: ${input.goal || "conversions"}
+
+⚡ REQUIREMENTS:
+1. Each ad MUST use a DIFFERENT hook type
+2. Variation 1: Urgency/Scarcity focus
+3. Variation 2: Social Proof/Transformation focus
+4. Variation 3: Direct Benefit/Solution focus
+5. Include relevant emojis (but not excessive)
+6. Make CTAs action-oriented and platform-appropriate
+
+Return ONLY the JSON object.`;
 
         temperature = 0.75;
         maxTokens = 2000;
+        toolSchema = {
+          type: "object",
+          additionalProperties: false,
+          required: ["variations"],
+          properties: {
+            variations: {
+              type: "array",
+              minItems: 3,
+              maxItems: 3,
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["headline", "primaryText", "cta"],
+                properties: {
+                  headline: { type: "string" },
+                  primaryText: { type: "string" },
+                  cta: { type: "string" },
+                  hook_type: { type: "string" },
+                  estimated_ctr: { type: "string" }
+                }
+              }
+            }
+          }
+        };
+        break;
+
+      // ============================================
+      // REELS STUDIO - Uses GPT-5 for viral creative scripts
+      // Best for: Trend awareness, storytelling, visual descriptions
+      // ============================================
+      case "reels-script":
+        model = "openai/gpt-5"; // Full GPT-5 for complex creative scripts
+        
+        systemRole = `You are a VIRAL content strategist specializing in Fashion/Beauty Reels for the MENA market.
+
+${segmentContext}
+
+🎯 YOUR MISSION: Create VIRAL-WORTHY scripts optimized for Kling AI / Runway / CapCut video generation.
+
+📋 OUTPUT REQUIREMENTS:
+Return ONLY valid JSON with this EXACT structure:
+{
+  "scripts": [
+    {
+      "title": "Script concept name",
+      "hook": "EXACT words/action for first 1-3 seconds that STOPS scrolling",
+      "scenes": [
+        {
+          "scene_number": 1,
+          "duration": "2s",
+          "visual": "DETAILED visual description for AI video generation",
+          "camera": "Camera movement (zoom in, pan left, static, etc.)",
+          "text_overlay": "Text shown on screen",
+          "voiceover": "Narration/VO script",
+          "sound_effect": "Specific sound or music cue"
+        }
+      ],
+      "cta": "Call to action at the end",
+      "music_style": "Specific music recommendation",
+      "total_duration": "15s",
+      "viral_potential": "Why this will go viral",
+      "trend_reference": "Current trend this taps into"
+    }
+  ],
+  "viral_tips": ["Tip 1", "Tip 2", "Tip 3"],
+  "hashtags": ["#trending", "#fashion", "..."],
+  "best_posting_times": ["Time 1 for MENA", "Time 2"]
+}
+
+✨ VIRAL SCRIPT FORMULAS:
+
+🔥 BEFORE/AFTER: "Expectation vs Reality" or transformation reveal
+📦 UNBOXING: ASMR sounds + reveal + reaction
+⭐ TESTIMONIAL: Real talk format with relatable moments
+🎧 ASMR: Satisfying sounds + close-ups + text overlays
+🔥 TRENDY: Use current audio trends + transitions
+
+📹 VISUAL REQUIREMENTS FOR AI VIDEO GENERATION:
+- Each scene description must be SPECIFIC enough for Kling AI
+- Include lighting, angles, movement, and mood
+- Describe the model/hands/product positioning exactly
+- Note transitions between scenes
+
+${langInstruction}`;
+
+        userPrompt = `🎬 CREATE 3 VIRAL REELS SCRIPTS FOR:
+
+📦 PRODUCT:
+- Name: ${input.productName || "Fashion Product"}
+- Description: ${input.productDescription || "Premium fashion item"}
+- Script Type: ${input.scriptType || "trendy"}
+- Target Duration: ${input.duration || "15-30"} seconds
+
+🎯 SCRIPT REQUIREMENTS:
+1. Script 1: ${input.scriptType === "before_after" ? "Before/After transformation" : input.scriptType === "unboxing" ? "ASMR Unboxing experience" : input.scriptType === "testimonial" ? "Real customer testimonial style" : input.scriptType === "asmr" ? "Satisfying ASMR moments" : "Trending format with viral potential"}
+2. Script 2: Different angle/format from Script 1
+3. Script 3: Most creative/experimental approach
+
+⚡ EACH SCRIPT MUST:
+- Have 4-6 scenes with precise timing
+- Include camera movements for dynamic visuals
+- Specify text overlays in ${language === 'ar' ? 'Arabic' : 'English'}
+- Be ready for Kling AI / Runway generation
+- Include sound/music cues
+
+Return ONLY the JSON object.`;
+
+        temperature = 0.8;
+        maxTokens = 4000;
         toolSchema = {
           type: "object",
           additionalProperties: false,
@@ -196,6 +384,7 @@ Return ONLY raw JSON.`;
                 additionalProperties: false,
                 required: ["hook", "scenes", "cta", "music_style", "total_duration"],
                 properties: {
+                  title: { type: "string" },
                   hook: { type: "string" },
                   scenes: {
                     type: "array",
@@ -206,26 +395,36 @@ Return ONLY raw JSON.`;
                       additionalProperties: false,
                       required: ["duration", "visual", "text_overlay", "voiceover"],
                       properties: {
+                        scene_number: { type: "number" },
                         duration: { type: "string" },
                         visual: { type: "string" },
+                        camera: { type: "string" },
                         text_overlay: { type: "string" },
-                        voiceover: { type: "string" }
+                        voiceover: { type: "string" },
+                        sound_effect: { type: "string" }
                       }
                     }
                   },
                   cta: { type: "string" },
                   music_style: { type: "string" },
-                  total_duration: { type: "string" }
+                  total_duration: { type: "string" },
+                  viral_potential: { type: "string" },
+                  trend_reference: { type: "string" }
                 }
               }
             },
             viral_tips: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 },
-            hashtags: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 15 }
+            hashtags: { type: "array", items: { type: "string" }, minItems: 5, maxItems: 15 },
+            best_posting_times: { type: "array", items: { type: "string" }, minItems: 2, maxItems: 4 }
           }
         };
         break;
 
+      // ============================================
+      // LEGACY TOOL TYPES - Keep for backward compatibility
+      // ============================================
       case "product-copy":
+        model = "google/gemini-2.5-flash";
         systemRole = `You are an expert e-commerce copywriter for high-converting product content.
 
 ${segmentContext}
@@ -307,54 +506,8 @@ Return ONLY raw JSON.`;
         };
         break;
 
-      case "ads-copy":
-        systemRole = `You are a Meta Ads expert for high-CTR fashion ad copy.
-${segmentContext}
-${langInstruction}
-
-Return ONLY valid JSON with 3 ad variations:
-{
-  "variations": [
-    {"headline": "Hook (max 40 chars)", "primaryText": "Ad copy with emoji", "cta": "Buy Now"},
-    {"headline": "Hook 2", "primaryText": "Ad copy 2", "cta": "Shop Now"},
-    {"headline": "Hook 3", "primaryText": "Ad copy 3", "cta": "Get Offer"}
-  ]
-}`;
-        userPrompt = `Create 3 high-performing ad variations.
-
-Product: ${input.productName || ""}
-Description: ${input.productDescription || ""}
-Platform: ${input.platform || "Facebook/Instagram"}
-Goal: ${input.goal || "Sales"}
-
-Return ONLY raw JSON.`;
-        temperature = 0.75;
-        maxTokens = 1200;
-        toolSchema = {
-          type: "object",
-          additionalProperties: false,
-          required: ["variations"],
-          properties: {
-            variations: {
-              type: "array",
-              minItems: 3,
-              maxItems: 3,
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["headline", "primaryText", "cta"],
-                properties: {
-                  headline: { type: "string" },
-                  primaryText: { type: "string" },
-                  cta: { type: "string" }
-                }
-              }
-            }
-          }
-        };
-        break;
-
       case "video-script":
+        model = "google/gemini-2.5-flash";
         systemRole = `You are a viral short-form video scriptwriter for TikTok/Reels.
 ${segmentContext}
 ${langInstruction}
@@ -407,6 +560,7 @@ Return ONLY raw JSON.`;
         break;
 
       case "seo-optimizer":
+        model = "google/gemini-2.5-flash";
         systemRole = `You are an e-commerce SEO specialist.
 ${segmentContext}
 ${langInstruction}
@@ -439,6 +593,7 @@ Return ONLY raw JSON.`;
         break;
 
       case "product":
+        model = "google/gemini-2.5-flash";
         systemRole = `You are an expert e-commerce copywriter.
 ${segmentContext}
 ${langInstruction}
@@ -551,7 +706,7 @@ Return ONLY raw JSON.`;
           { role: "user", content: userPrompt }
         ],
         temperature: retry ? Math.min(0.25, temperature) : temperature,
-        max_tokens: retry ? Math.max(3500, maxTokens) : maxTokens,
+        max_tokens: retry ? Math.max(4000, maxTokens) : maxTokens,
       };
 
       if (toolSchema) {
@@ -569,6 +724,8 @@ Return ONLY raw JSON.`;
       } else {
         body.response_format = { type: "json_object" };
       }
+
+      console.log(`Calling AI Gateway with model: ${model}`);
 
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -644,7 +801,7 @@ Return ONLY raw JSON.`;
       throw new Error("Failed to parse AI response as JSON");
     }
 
-    console.log(`✅ Generated ${toolType} for user ${authData?.userId}`);
+    console.log(`✅ Generated ${toolType} using ${model} for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ result }),

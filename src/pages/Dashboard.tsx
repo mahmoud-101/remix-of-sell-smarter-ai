@@ -291,8 +291,8 @@ export default function Dashboard() {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 bg-gradient-to-br from-primary to-primary/70 rounded-xl">
-                <Package className="w-6 h-6 text-primary-foreground" />
+              <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl shadow-lg">
+                <Package className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold">
@@ -300,16 +300,21 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   {isRTL
-                    ? "محتوى AI ثنائي اللغة للأزياء والجمال"
-                    : "Bilingual AI content for Fashion & Beauty"}
+                    ? "محتوى AI متقدم ثنائي اللغة للأزياء والجمال • Gemini 2.5 Pro"
+                    : "Advanced bilingual AI content for Fashion & Beauty • Gemini 2.5 Pro"}
                 </p>
               </div>
             </div>
           </div>
-          <Badge variant="secondary" className="gap-1">
-            <Sparkles className="w-3 h-3" />
-            {isRTL ? "6 مخرجات" : "6 Outputs"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1 text-emerald-600 border-emerald-300 bg-emerald-50">
+              🧠 Pro Model
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="w-3 h-3" />
+              {isRTL ? "6 مخرجات" : "6 Outputs"}
+            </Badge>
+          </div>
         </div>
 
         {/* Input Form */}

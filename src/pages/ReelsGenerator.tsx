@@ -143,19 +143,30 @@ export default function ReelsGenerator() {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Video className="h-6 w-6 text-primary" />
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg">
+              <Video className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">
+                {isRTL ? "استوديو الريلز" : "Reels Studio"}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {isRTL
+                  ? "سكريبتات فيرال جاهزة لـ Kling AI / Runway • GPT-5"
+                  : "Viral scripts ready for Kling AI / Runway • GPT-5"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {isRTL ? "مولد سكريبت الريلز" : "Reels Script Generator"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {isRTL
-                ? "سكريبتات جاهزة لـ Kling AI / Runway / CapCut"
-                : "Scripts ready for Kling AI / Runway / CapCut"}
-            </p>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="gap-1 text-violet-600 border-violet-300 bg-violet-50">
+              🎬 Viral AI
+            </Badge>
+            <Badge variant="secondary" className="gap-1">
+              <Sparkles className="w-3 h-3" />
+              {isRTL ? "3 سكريبتات" : "3 Scripts"}
+            </Badge>
           </div>
         </div>
 
