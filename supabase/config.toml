@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.generate-image]
 verify_jwt = false
 
+[functions.generate-reel]
+verify_jwt = false
+
 [functions.product-photo-prompt]
 verify_jwt = false
 
