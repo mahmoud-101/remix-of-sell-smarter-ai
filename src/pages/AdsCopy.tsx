@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Megaphone,
   Sparkles,
@@ -7,30 +7,27 @@ import {
   Facebook,
   Instagram,
   Check,
+  Target,
+  Users,
+  TrendingUp,
+  Zap,
+  Heart,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
-import type { ProductData } from "@/lib/api/firecrawl";
 
 const platforms = [
-  { id: "facebook", label: "Facebook", icon: Facebook, color: "from-blue-600 to-blue-700" },
-  { id: "instagram", label: "Instagram", icon: Instagram, color: "from-pink-500 to-purple-600" },
+  { id: "facebook", label: "Facebook", icon: Facebook, color: "bg-blue-600" },
+  { id: "instagram", label: "Instagram", icon: Instagram, color: "bg-gradient-to-br from-pink-500 to-purple-600" },
 ];
 
 type AdVariation = {
@@ -40,37 +37,29 @@ type AdVariation = {
 };
 
 export default function AdsCopy() {
-  const [productName, setProductName] = useState("");
-  const [productDescription, setProductDescription] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState("facebook");
-  const [campaignGoal, setCampaignGoal] = useState("conversions");
-  const [generatedAds, setGeneratedAds] = useState<AdVariation[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { toast } = useToast();
   const { isRTL } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
 
-  const campaignGoals = [
-    { value: "awareness", label: isRTL ? "الوعي بالعلامة" : "Brand Awareness" },
-    { value: "traffic", label: isRTL ? "زيادة الزيارات" : "Traffic" },
-    { value: "conversions", label: isRTL ? "المبيعات" : "Conversions" },
-    { value: "leads", label: isRTL ? "جمع العملاء" : "Lead Generation" },
-  ];
+  // Form State
+  const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
+  const [keyBenefits, setKeyBenefits] = useState("");
+  const [targetAudience, setTargetAudience] = useState("");
+  const [priceOffer, setPriceOffer] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState("facebook");
+  const [campaignGoal, setCampaignGoal] = useState("conversions");
+  
+  const [generatedAds, setGeneratedAds] = useState<AdVariation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
-  const handleExtractProduct = (data: ProductData) => {
-    if (data.title) setProductName(data.title);
-    if (data.description) setProductDescription(data.description);
-    if (data.features && data.features.length > 0) {
-      setProductDescription(prev =>
-        prev + (prev ? '\n\n' : '') + data.features!.slice(0, 5).join('\n')
-      );
-    }
-    toast({
-      title: isRTL ? "تم الاستخراج" : "Extracted",
-      description: isRTL ? "تم سحب بيانات المنتج" : "Product data extracted",
-    });
-  };
+  const campaignGoals = useMemo(() => [
+    { value: "conversions", label: isRTL ? "المبيعات" : "Conversions", icon: TrendingUp, description: isRTL ? "زيادة المشتريات" : "Increase purchases" },
+    { value: "traffic", label: isRTL ? "الزيارات" : "Traffic", icon: Zap, description: isRTL ? "جلب زوار للمتجر" : "Drive store traffic" },
+    { value: "awareness", label: isRTL ? "الوعي" : "Awareness", icon: Heart, description: isRTL ? "تعريف بالعلامة" : "Brand recognition" },
+    { value: "leads", label: isRTL ? "العملاء" : "Leads", icon: Users, description: isRTL ? "جمع بيانات العملاء" : "Collect customer data" },
+  ], [isRTL]);
 
   const handleGenerate = async () => {
     if (!user) {
@@ -81,10 +70,9 @@ export default function AdsCopy() {
       return;
     }
 
-    if (!productName.trim() || !productDescription.trim()) {
+    if (!productName.trim()) {
       toast({
-        title: isRTL ? "بيانات ناقصة" : "Missing Info",
-        description: isRTL ? "أدخل اسم ووصف المنتج" : "Enter product name and description",
+        title: isRTL ? "أدخل اسم المنتج" : "Enter product name",
         variant: "destructive",
       });
       return;
@@ -101,6 +89,9 @@ export default function AdsCopy() {
           input: {
             productName,
             productDescription,
+            keyBenefits,
+            targetAudience,
+            priceOffer,
             platform: selectedPlatform,
             goal: campaignGoal,
           },
@@ -114,8 +105,8 @@ export default function AdsCopy() {
       if (result?.variations && Array.isArray(result.variations)) {
         setGeneratedAds(result.variations);
         toast({
-          title: isRTL ? "تم التوليد" : "Generated",
-          description: isRTL ? `تم إنشاء ${result.variations.length} إعلانات` : `Created ${result.variations.length} ads`,
+          title: isRTL ? "✓ تم التوليد" : "✓ Generated",
+          description: isRTL ? `${result.variations.length} إعلانات جاهزة` : `${result.variations.length} ads ready`,
         });
       } else {
         throw new Error(isRTL ? "استجابة غير صالحة" : "Invalid response format");
@@ -132,117 +123,190 @@ export default function AdsCopy() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
+  const copyToClipboard = (text: string, index?: number) => {
     navigator.clipboard.writeText(text);
+    if (index !== undefined) {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    }
     toast({
-      title: isRTL ? "تم النسخ" : "Copied",
-      description: isRTL ? "تم نسخ النص" : "Text copied",
+      title: isRTL ? "✓ تم النسخ" : "✓ Copied",
     });
   };
 
   const copyAllAds = () => {
     const allText = generatedAds.map((ad, i) =>
-      `${isRTL ? "إعلان" : "Ad"} ${i + 1}:\n${isRTL ? "العنوان" : "Headline"}: ${ad.headline}\n${isRTL ? "النص" : "Text"}: ${ad.primaryText}\nCTA: ${ad.cta}`
-    ).join("\n\n---\n\n");
+      `━━━ ${isRTL ? "إعلان" : "Ad"} ${i + 1} ━━━\n\n📢 ${isRTL ? "العنوان" : "Headline"}:\n${ad.headline}\n\n📝 ${isRTL ? "النص" : "Text"}:\n${ad.primaryText}\n\n🔘 CTA: ${ad.cta}`
+    ).join("\n\n");
     copyToClipboard(allText);
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="max-w-6xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center">
-              <Megaphone className="w-5 h-5 text-white" />
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-pink-500 to-rose-500 rounded-xl">
+              <Megaphone className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">
-              {isRTL ? "استوديو الإعلانات" : "Ads Studio"}
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold">
+                {isRTL ? "استوديو الإعلانات" : "Ads Studio"}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {isRTL
+                  ? "إعلانات Meta عالية التحويل للأزياء والجمال"
+                  : "High-converting Meta ads for Fashion & Beauty"}
+              </p>
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            {isRTL
-              ? "إنشاء إعلانات Meta عالية التحويل للأزياء—Facebook & Instagram"
-              : "Create high-converting Meta ads for Fashion—Facebook & Instagram"}
-          </p>
+          <Badge variant="secondary" className="gap-1">
+            <Sparkles className="w-3 h-3" />
+            {isRTL ? "3 نسخ" : "3 Variations"}
+          </Badge>
         </div>
 
         {/* Input Card */}
         <Card>
           <CardHeader>
-            <CardTitle>{isRTL ? "بيانات المنتج" : "Product Info"}</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              {isRTL ? "بيانات الإعلان" : "Ad Details"}
+            </CardTitle>
+            <CardDescription>
+              {isRTL 
+                ? "أدخل معلومات منتجك لتوليد 3 نسخ إعلانية احترافية"
+                : "Enter your product info to generate 3 professional ad copies"}
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* URL Extractor */}
-            <ProductUrlExtractor onExtract={handleExtractProduct} />
+          <CardContent className="space-y-6">
+            {/* Platform Selection */}
+            <div className="space-y-2">
+              <Label>{isRTL ? "المنصة" : "Platform"}</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {platforms.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setSelectedPlatform(p.id)}
+                    className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                      selectedPlatform === p.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg ${p.color} flex items-center justify-center`}>
+                      <p.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="text-start">
+                      <span className="font-medium">{p.label}</span>
+                      <p className="text-xs text-muted-foreground">
+                        {p.id === "facebook" 
+                          ? (isRTL ? "إعلانات Feed & Stories" : "Feed & Stories Ads")
+                          : (isRTL ? "Reels & Stories" : "Reels & Stories")}
+                      </p>
+                    </div>
+                    {selectedPlatform === p.id && (
+                      <Check className="w-5 h-5 text-primary ms-auto" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* Campaign Goal */}
+            <div className="space-y-2">
+              <Label>{isRTL ? "هدف الحملة" : "Campaign Goal"}</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {campaignGoals.map((goal) => (
+                  <button
+                    key={goal.value}
+                    onClick={() => setCampaignGoal(goal.value)}
+                    className={`p-3 rounded-lg border-2 transition-all text-center ${
+                      campaignGoal === goal.value
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <goal.icon className={`w-5 h-5 mx-auto mb-1 ${campaignGoal === goal.value ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className="text-sm font-medium block">{goal.label}</span>
+                    <span className="text-xs text-muted-foreground">{goal.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Product Info */}
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>{isRTL ? "اسم المنتج *" : "Product Name *"}</Label>
+                <Label className="flex items-center gap-1">
+                  {isRTL ? "اسم المنتج" : "Product Name"}
+                  <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
-                  placeholder={isRTL ? "فستان سهرة أنيق" : "Elegant Evening Dress"}
+                  placeholder={isRTL ? "فستان سهرة ساتان أسود" : "Black Satin Evening Dress"}
+                  className="h-11"
                 />
               </div>
-
               <div className="space-y-2">
-                <Label>{isRTL ? "المنصة" : "Platform"}</Label>
-                <div className="flex gap-2">
-                  {platforms.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedPlatform(p.id)}
-                      className={`flex-1 p-3 rounded-lg border-2 transition-all ${
-                        selectedPlatform === p.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-center gap-2">
-                        <div className={`w-6 h-6 rounded bg-gradient-to-br ${p.color} flex items-center justify-center`}>
-                          <p.icon className="w-3 h-3 text-white" />
-                        </div>
-                        <span className="text-sm font-medium">{p.label}</span>
-                        {selectedPlatform === p.id && <Check className="w-4 h-4 text-primary" />}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <Label>{isRTL ? "العرض/السعر" : "Offer/Price"}</Label>
+                <Input
+                  value={priceOffer}
+                  onChange={(e) => setPriceOffer(e.target.value)}
+                  placeholder={isRTL ? "خصم 30% + شحن مجاني" : "30% Off + Free Shipping"}
+                  className="h-11"
+                />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>{isRTL ? "وصف المنتج *" : "Product Description *"}</Label>
+              <Label>{isRTL ? "وصف المنتج" : "Product Description"}</Label>
               <Textarea
                 value={productDescription}
                 onChange={(e) => setProductDescription(e.target.value)}
-                placeholder={isRTL ? "وصف تفصيلي للمنتج..." : "Detailed product description..."}
-                rows={4}
+                placeholder={isRTL 
+                  ? "فستان سهرة فاخر من الساتان الناعم، تصميم أنيق بقصة A-line..."
+                  : "Luxurious satin evening dress with elegant A-line cut..."}
+                rows={3}
+                className="resize-none"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label>{isRTL ? "هدف الحملة" : "Campaign Goal"}</Label>
-              <Select value={campaignGoal} onValueChange={setCampaignGoal}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {campaignGoals.map((goal) => (
-                    <SelectItem key={goal.value} value={goal.value}>
-                      {goal.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{isRTL ? "المميزات الرئيسية" : "Key Benefits"}</Label>
+                <Textarea
+                  value={keyBenefits}
+                  onChange={(e) => setKeyBenefits(e.target.value)}
+                  placeholder={isRTL 
+                    ? "جودة عالية، تصميم حصري، مريح للارتداء"
+                    : "Premium quality, exclusive design, comfortable fit"}
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{isRTL ? "الجمهور المستهدف" : "Target Audience"}</Label>
+                <Textarea
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  placeholder={isRTL 
+                    ? "نساء 25-45، محبات الموضة، السعودية والإمارات"
+                    : "Women 25-45, fashion lovers, Saudi & UAE"}
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
             </div>
 
+            {/* Generate Button */}
             <Button
               size="lg"
-              className="w-full h-14 text-lg"
+              className="w-full h-14 text-lg gap-2"
               onClick={handleGenerate}
-              disabled={isLoading}
+              disabled={isLoading || !productName.trim()}
             >
               {isLoading ? (
                 <>
@@ -252,7 +316,7 @@ export default function AdsCopy() {
               ) : (
                 <>
                   <Sparkles className="w-5 h-5" />
-                  {isRTL ? "توليد إعلانات Meta" : "Generate Meta Ads"}
+                  {isRTL ? "توليد 3 إعلانات" : "Generate 3 Ads"}
                 </>
               )}
             </Button>
@@ -263,10 +327,11 @@ export default function AdsCopy() {
         {generatedAds.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
                 {isRTL ? "الإعلانات المُولّدة" : "Generated Ads"}
               </h2>
-              <Button variant="outline" size="sm" onClick={copyAllAds}>
+              <Button variant="outline" size="sm" onClick={copyAllAds} className="gap-1">
                 <Copy className="w-4 h-4" />
                 {isRTL ? "نسخ الكل" : "Copy All"}
               </Button>
@@ -274,37 +339,46 @@ export default function AdsCopy() {
 
             <div className="grid gap-4 md:grid-cols-3">
               {generatedAds.map((ad, index) => (
-                <Card key={index} className="relative">
-                  <CardHeader className="pb-2">
+                <Card key={index} className="group hover:shadow-lg transition-shadow overflow-hidden">
+                  <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-transparent">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-base">
-                        {isRTL ? `إعلان ${index + 1}` : `Ad ${index + 1}`}
-                      </CardTitle>
+                      <Badge variant="secondary">
+                        {isRTL ? `نسخة ${index + 1}` : `Version ${index + 1}`}
+                      </Badge>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => copyToClipboard(`${ad.headline}\n\n${ad.primaryText}\n\nCTA: ${ad.cta}`)}
+                        onClick={() => copyToClipboard(`${ad.headline}\n\n${ad.primaryText}\n\nCTA: ${ad.cta}`, index)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <Copy className="w-4 h-4" />
+                        {copiedIndex === index ? (
+                          <Check className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="space-y-4 pt-4">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {isRTL ? "العنوان" : "Headline"}
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                        📢 {isRTL ? "العنوان" : "Headline"}
                       </p>
-                      <p className="font-semibold">{ad.headline}</p>
+                      <p className="font-semibold text-lg leading-tight">{ad.headline}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {isRTL ? "النص الأساسي" : "Primary Text"}
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                        📝 {isRTL ? "النص الأساسي" : "Primary Text"}
                       </p>
-                      <p className="text-muted-foreground whitespace-pre-line">{ad.primaryText}</p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">
+                        {ad.primaryText}
+                      </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">CTA</p>
-                      <span className="inline-block px-3 py-1 bg-primary text-primary-foreground text-xs rounded-md">
+                    <div className="pt-2 border-t">
+                      <p className="text-xs font-medium text-muted-foreground mb-1.5">
+                        🔘 CTA Button
+                      </p>
+                      <span className="inline-block px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg">
                         {ad.cta}
                       </span>
                     </div>
@@ -317,18 +391,18 @@ export default function AdsCopy() {
 
         {/* Empty State */}
         {generatedAds.length === 0 && !isLoading && (
-          <Card className="text-center py-12">
+          <Card className="text-center py-16 border-dashed">
             <CardContent>
-              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
-                <Megaphone className="w-8 h-8 text-muted-foreground" />
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/10 flex items-center justify-center mx-auto mb-6">
+                <Megaphone className="w-10 h-10 text-pink-500" />
               </div>
-              <h3 className="font-medium mb-2">
-                {isRTL ? "لا يوجد إعلانات بعد" : "No ads yet"}
+              <h3 className="text-xl font-semibold mb-2">
+                {isRTL ? "ابدأ بإدخال بيانات منتجك" : "Start by entering your product details"}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground max-w-md mx-auto">
                 {isRTL
-                  ? "أدخل بيانات المنتج واضغط توليد"
-                  : "Enter product details and click generate"}
+                  ? "سيتم توليد 3 نسخ إعلانية احترافية مع عناوين جذابة و CTAs فعالة"
+                  : "Will generate 3 professional ad copies with catchy headlines and effective CTAs"}
               </p>
             </CardContent>
           </Card>

@@ -11,8 +11,6 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAI } from "@/hooks/useAI";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProductUrlExtractor } from "@/components/common/ProductUrlExtractor";
-import { ProductData } from "@/lib/api/firecrawl";
 
 const SEOAnalyzer = () => {
   const { language } = useLanguage();
@@ -98,14 +96,6 @@ const SEOAnalyzer = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Product URL Extractor */}
-              <ProductUrlExtractor 
-                onExtract={(data: ProductData) => {
-                  if (data.title) setProductTitle(data.title);
-                  if (data.description) setProductDescription(data.description);
-                }}
-              />
-
               <div className="space-y-2">
                 <Label>{isRTL ? "عنوان المنتج الحالي *" : "Current Product Title *"}</Label>
                 <Input

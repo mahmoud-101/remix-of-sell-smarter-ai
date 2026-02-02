@@ -1,43 +1,131 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { ImageIcon, Sparkles, Download, RotateCcw, Wand2 } from "lucide-react";
+import { 
+  ImageIcon, 
+  Sparkles, 
+  Download, 
+  RotateCcw, 
+  Upload,
+  X,
+  Wand2,
+  Camera,
+  Shirt,
+  Sun,
+  Layers,
+  Minimize2
+} from "lucide-react";
 
 type ImageStyle = "lifestyle" | "flatlay" | "model" | "studio" | "minimal";
+
+const imageStyles: Array<{
+  value: ImageStyle;
+  label: { ar: string; en: string };
+  description: { ar: string; en: string };
+  icon: any;
+  gradient: string;
+}> = [
+  { 
+    value: "lifestyle", 
+    label: { ar: "لايف ستايل", en: "Lifestyle" },
+    description: { ar: "منتج في بيئة واقعية", en: "Product in real environment" },
+    icon: Sun,
+    gradient: "from-orange-500 to-amber-500"
+  },
+  { 
+    value: "flatlay", 
+    label: { ar: "فلات لاي", en: "Flat Lay" },
+    description: { ar: "تصوير من الأعلى", en: "Top-down photography" },
+    icon: Camera,
+    gradient: "from-blue-500 to-cyan-500"
+  },
+  { 
+    value: "model", 
+    label: { ar: "موديل", en: "Model" },
+    description: { ar: "على موديل حقيقي", en: "On real model" },
+    icon: Shirt,
+    gradient: "from-pink-500 to-rose-500"
+  },
+  { 
+    value: "studio", 
+    label: { ar: "استوديو", en: "Studio" },
+    description: { ar: "خلفية بيضاء احترافية", en: "Professional white background" },
+    icon: Layers,
+    gradient: "from-gray-500 to-slate-500"
+  },
+  { 
+    value: "minimal", 
+    label: { ar: "مينيمال", en: "Minimal" },
+    description: { ar: "بسيط وأنيق", en: "Simple and elegant" },
+    icon: Minimize2,
+    gradient: "from-purple-500 to-violet-500"
+  },
+];
 
 export default function ImageStudio() {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Form State
+  const [productImage, setProductImage] = useState<string | null>(null);
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [productName, setProductName] = useState("");
-  const [productDescription, setProductDescription] = useState("");
+  const [customPrompt, setCustomPrompt] = useState("");
   const [style, setStyle] = useState<ImageStyle>("lifestyle");
+  
   const [loading, setLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
 
-  const styles = [
-    { value: "lifestyle", label: isRTL ? "لايف ستايل" : "Lifestyle", description: isRTL ? "منتج في بيئة واقعية" : "Product in real environment" },
-    { value: "flatlay", label: isRTL ? "فلات لاي" : "Flat Lay", description: isRTL ? "تصوير من الأعلى" : "Top-down photography" },
-    { value: "model", label: isRTL ? "موديل" : "Model", description: isRTL ? "على موديل حقيقي" : "On real model" },
-    { value: "studio", label: isRTL ? "استوديو" : "Studio", description: isRTL ? "خلفية بيضاء احترافية" : "Professional white background" },
-    { value: "minimal", label: isRTL ? "مينيمال" : "Minimal", description: isRTL ? "بسيط وأنيق" : "Simple and elegant" },
-  ];
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: isRTL ? "ملف غير صالح" : "Invalid file",
+        description: isRTL ? "يرجى رفع صورة" : "Please upload an image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: isRTL ? "الملف كبير جداً" : "File too large",
+        description: isRTL ? "الحد الأقصى 10MB" : "Maximum size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setProductImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setProductImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setProductImage(null);
+    setProductImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleGenerate = async () => {
     if (!user) {
@@ -48,9 +136,9 @@ export default function ImageStudio() {
       return;
     }
 
-    if (!productName.trim()) {
+    if (!productName.trim() && !customPrompt.trim()) {
       toast({
-        title: isRTL ? "أدخل اسم المنتج" : "Enter product name",
+        title: isRTL ? "أدخل اسم المنتج أو برومبت" : "Enter product name or prompt",
         variant: "destructive",
       });
       return;
@@ -60,11 +148,36 @@ export default function ImageStudio() {
     setGeneratedImages([]);
 
     try {
+      // Build the prompt
+      const styleInfo = imageStyles.find(s => s.value === style);
+      const styleLabel = isRTL ? styleInfo?.label.ar : styleInfo?.label.en;
+      
+      let prompt = customPrompt.trim() || `${productName}, ${styleLabel} style, professional product photography`;
+      
+      // Add style-specific enhancements
+      switch (style) {
+        case "lifestyle":
+          prompt += ", natural lighting, warm atmosphere, lifestyle setting";
+          break;
+        case "flatlay":
+          prompt += ", top-down view, organized layout, clean background";
+          break;
+        case "model":
+          prompt += ", fashion model wearing the product, editorial style";
+          break;
+        case "studio":
+          prompt += ", white background, professional studio lighting, clean";
+          break;
+        case "minimal":
+          prompt += ", minimalist composition, soft shadows, elegant";
+          break;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
-          prompt: `${productName}${productDescription ? `. ${productDescription}` : ""}`,
+          prompt,
           style,
-          background: "white",
+          productImage: productImage, // Base64 image if uploaded
         },
       });
 
@@ -75,7 +188,7 @@ export default function ImageStudio() {
       if (imageUrl) {
         setGeneratedImages([imageUrl]);
         toast({
-          title: isRTL ? "تم التوليد" : "Generated",
+          title: isRTL ? "✓ تم التوليد" : "✓ Generated",
           description: isRTL ? "تم إنشاء الصورة بنجاح" : "Image created successfully",
         });
       } else {
@@ -100,11 +213,14 @@ export default function ImageStudio() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${productName.replace(/\s+/g, "-")}-${index + 1}.png`;
+      a.download = `${productName.replace(/\s+/g, "-") || "product"}-${style}-${index + 1}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      toast({
+        title: isRTL ? "✓ تم التحميل" : "✓ Downloaded",
+      });
     } catch {
       toast({
         title: isRTL ? "فشل التحميل" : "Download failed",
@@ -115,172 +231,248 @@ export default function ImageStudio() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="max-w-6xl mx-auto space-y-6" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <ImageIcon className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">
-              {isRTL ? "استوديو الصور" : "Image Studio"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              {isRTL
-                ? "توليد صور إعلانية احترافية بالذكاء الاصطناعي"
-                : "Generate professional ad images with AI"}
-            </p>
-          </div>
-        </div>
-
-        {/* Input Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Wand2 className="h-5 w-5" />
-              {isRTL ? "بيانات المنتج" : "Product Details"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>{isRTL ? "اسم المنتج *" : "Product Name *"}</Label>
-                <Input
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  placeholder={isRTL ? "فستان سهرة أنيق" : "Elegant Evening Dress"}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>{isRTL ? "أسلوب الصورة" : "Image Style"}</Label>
-                <Select value={style} onValueChange={(v) => setStyle(v as ImageStyle)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {styles.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        <div className="flex flex-col">
-                          <span>{s.label}</span>
-                          <span className="text-xs text-muted-foreground">{s.description}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl">
+              <ImageIcon className="w-6 h-6 text-white" />
             </div>
-
-            <div className="space-y-2">
-              <Label>{isRTL ? "وصف المنتج (اختياري)" : "Product Description (optional)"}</Label>
-              <Textarea
-                value={productDescription}
-                onChange={(e) => setProductDescription(e.target.value)}
-                placeholder={isRTL ? "فستان من الساتان الفاخر بلون أسود..." : "Luxurious black satin dress..."}
-                rows={3}
-              />
-            </div>
-
-            {/* Style Preview */}
-            <div className="grid grid-cols-5 gap-2">
-              {styles.map((s) => (
-                <button
-                  key={s.value}
-                  onClick={() => setStyle(s.value as ImageStyle)}
-                  className={`p-3 rounded-lg border-2 transition-all text-center ${
-                    style === s.value
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
-                  <div className="text-2xl mb-1">
-                    {s.value === "lifestyle" && "🏠"}
-                    {s.value === "flatlay" && "📸"}
-                    {s.value === "model" && "👗"}
-                    {s.value === "studio" && "⬜"}
-                    {s.value === "minimal" && "✨"}
-                  </div>
-                  <span className="text-xs font-medium">{s.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <Button
-              size="lg"
-              className="w-full h-14 text-lg gap-2"
-              onClick={handleGenerate}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <RotateCcw className="h-5 w-5 animate-spin" />
-                  {isRTL ? "جارٍ التوليد..." : "Generating..."}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-5 w-5" />
-                  {isRTL ? "توليد صورة إعلانية" : "Generate Ad Image"}
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Generated Images */}
-        {generatedImages.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">
-              {isRTL ? "الصور المُولّدة" : "Generated Images"}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              {generatedImages.map((img, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <div className="aspect-square relative group">
-                    <img
-                      src={img}
-                      alt={`${productName} - ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => downloadImage(img, index)}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        {isRTL ? "تحميل" : "Download"}
-                      </Button>
-                    </div>
-                  </div>
-                  <CardContent className="p-3">
-                    <p className="text-sm text-center text-muted-foreground">
-                      {isRTL ? `صورة ${index + 1}` : `Image ${index + 1}`}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {generatedImages.length === 0 && !loading && (
-          <Card className="text-center py-12">
-            <CardContent>
-              <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="font-medium mb-2">
-                {isRTL ? "لا يوجد صور بعد" : "No images yet"}
-              </h3>
+            <div>
+              <h1 className="text-2xl font-bold">
+                {isRTL ? "استوديو الصور" : "Image Studio"}
+              </h1>
               <p className="text-sm text-muted-foreground">
                 {isRTL
-                  ? "أدخل بيانات المنتج واختر الأسلوب لتوليد صور إعلانية"
-                  : "Enter product details and choose a style to generate ad images"}
+                  ? "توليد صور إعلانية احترافية بالذكاء الاصطناعي"
+                  : "Generate professional ad images with AI"}
               </p>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </div>
+          <Badge variant="secondary" className="gap-1">
+            <Wand2 className="w-3 h-3" />
+            AI Powered
+          </Badge>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left Column: Input */}
+          <div className="space-y-6">
+            {/* Product Image Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="w-5 h-5" />
+                  {isRTL ? "صورة المنتج" : "Product Image"}
+                </CardTitle>
+                <CardDescription>
+                  {isRTL 
+                    ? "ارفع صورة منتجك لتحسين النتائج (اختياري)"
+                    : "Upload your product image for better results (optional)"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {productImage ? (
+                  <div className="relative group">
+                    <img 
+                      src={productImage} 
+                      alt="Product" 
+                      className="w-full h-48 object-contain rounded-lg border bg-muted/50"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={removeImage}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                  >
+                    <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="font-medium mb-1">
+                      {isRTL ? "اضغط لرفع صورة" : "Click to upload image"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isRTL ? "PNG, JPG حتى 10MB" : "PNG, JPG up to 10MB"}
+                    </p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Product Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5" />
+                  {isRTL ? "تفاصيل التوليد" : "Generation Details"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>{isRTL ? "اسم المنتج" : "Product Name"}</Label>
+                  <Input
+                    value={productName}
+                    onChange={(e) => setProductName(e.target.value)}
+                    placeholder={isRTL ? "فستان سهرة أسود" : "Black Evening Dress"}
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{isRTL ? "برومبت مخصص (اختياري)" : "Custom Prompt (optional)"}</Label>
+                  <Textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    placeholder={isRTL 
+                      ? "اكتب وصفاً تفصيلياً للصورة التي تريدها..."
+                      : "Write a detailed description of the image you want..."}
+                    rows={3}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {isRTL 
+                      ? "💡 اترك فارغاً لاستخدام الاسم والستايل تلقائياً"
+                      : "💡 Leave empty to auto-generate from name and style"}
+                  </p>
+                </div>
+
+                {/* Generate Button */}
+                <Button
+                  size="lg"
+                  className="w-full h-14 text-lg gap-2"
+                  onClick={handleGenerate}
+                  disabled={loading || (!productName.trim() && !customPrompt.trim())}
+                >
+                  {loading ? (
+                    <>
+                      <RotateCcw className="w-5 h-5 animate-spin" />
+                      {isRTL ? "جارٍ التوليد..." : "Generating..."}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      {isRTL ? "توليد صورة إعلانية" : "Generate Ad Image"}
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Style Selection & Results */}
+          <div className="space-y-6">
+            {/* Style Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Camera className="w-5 h-5" />
+                  {isRTL ? "اختر الستايل" : "Choose Style"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-3">
+                  {imageStyles.map((s) => {
+                    const Icon = s.icon;
+                    return (
+                      <button
+                        key={s.value}
+                        onClick={() => setStyle(s.value)}
+                        className={`p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
+                          style === s.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${s.gradient} flex items-center justify-center flex-shrink-0`}>
+                          <Icon className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="text-start flex-1">
+                          <span className="font-medium block">
+                            {isRTL ? s.label.ar : s.label.en}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            {isRTL ? s.description.ar : s.description.en}
+                          </span>
+                        </div>
+                        {style === s.value && (
+                          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                            <Sparkles className="w-3 h-3 text-primary-foreground" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Generated Images */}
+            {generatedImages.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    {isRTL ? "الصورة المُولّدة" : "Generated Image"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {generatedImages.map((img, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={img}
+                        alt={`${productName} - ${index + 1}`}
+                        className="w-full rounded-lg border"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <Button
+                          variant="secondary"
+                          size="lg"
+                          onClick={() => downloadImage(img, index)}
+                          className="gap-2"
+                        >
+                          <Download className="w-5 h-5" />
+                          {isRTL ? "تحميل" : "Download"}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Empty State */}
+            {generatedImages.length === 0 && !loading && (
+              <Card className="border-dashed">
+                <CardContent className="py-16 text-center">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/10 flex items-center justify-center mx-auto mb-6">
+                    <ImageIcon className="w-10 h-10 text-violet-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    {isRTL ? "الصورة ستظهر هنا" : "Image will appear here"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                    {isRTL
+                      ? "اختر ستايل وأدخل بيانات المنتج لتوليد صورة إعلانية"
+                      : "Choose a style and enter product details to generate an ad image"}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
