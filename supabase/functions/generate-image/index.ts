@@ -16,15 +16,15 @@ serve(async (req) => {
 
   try {
     const { prompt, style, productImage, language = 'ar' } = await req.json();
-    const REPLICATE_API_TOKEN = Deno.env.get("REPLICATE_API_TOKEN");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!REPLICATE_API_TOKEN) {
-      throw new Error("REPLICATE_API_TOKEN is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     // ============================================
     // IMAGE STUDIO - Professional MENA E-commerce Ad Creatives
-    // Using Replicate FLUX for high-quality image generation
+    // Using Lovable AI Gateway with Gemini Pro Image
     // ============================================
 
     // Professional MENA e-commerce ad creative styles
@@ -99,83 +99,51 @@ CRITICAL REQUIREMENTS:
 - 4K resolution, vibrant colors, eye-catching design
 - Arabic text integrated naturally into the design`;
 
-    console.log(`User ${authData?.userId} generating with Replicate FLUX, style: ${style}`);
+    console.log(`User ${authData?.userId} generating with Lovable AI Gateway, style: ${style}`);
 
-    // Use FLUX Schnell for fast high-quality generation
-    const replicateResponse = await fetch("https://api.replicate.com/v1/predictions", {
+    // Use Lovable AI Gateway with Gemini Pro Image
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${REPLICATE_API_TOKEN}`,
+        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
-        "Prefer": "wait"
       },
       body: JSON.stringify({
-        version: "5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637",
-        input: {
-          prompt: fullPrompt,
-          go_fast: true,
-          megapixels: "1",
-          num_outputs: 1,
-          aspect_ratio: "1:1",
-          output_format: "webp",
-          output_quality: 90,
-          num_inference_steps: 4
-        }
+        model: "google/gemini-3-pro-image-preview",
+        messages: [
+          {
+            role: "user",
+            content: fullPrompt
+          }
+        ],
+        modalities: ["image", "text"]
       })
     });
 
-    if (!replicateResponse.ok) {
-      const errorText = await replicateResponse.text();
-      console.error("Replicate API error:", replicateResponse.status, errorText);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Lovable AI Gateway error:", response.status, errorText);
       
-      if (replicateResponse.status === 401) {
-        throw new Error("Invalid Replicate API token");
+      if (response.status === 401) {
+        throw new Error("Invalid Lovable API key");
       }
-      if (replicateResponse.status === 402) {
-        throw new Error("Replicate payment required - add credits to your account");
+      if (response.status === 402) {
+        throw new Error("Lovable AI quota exceeded");
       }
-      throw new Error(`Replicate API error: ${replicateResponse.status}`);
-    }
-
-    let prediction = await replicateResponse.json();
-    console.log("Initial prediction:", prediction.status);
-
-    // If prediction is not completed, poll for result
-    if (prediction.status !== "succeeded" && prediction.status !== "failed") {
-      const maxAttempts = 60;
-      let attempts = 0;
-      
-      while (prediction.status !== "succeeded" && prediction.status !== "failed" && attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const pollResponse = await fetch(prediction.urls.get, {
-          headers: {
-            "Authorization": `Bearer ${REPLICATE_API_TOKEN}`,
-          }
-        });
-        
-        if (!pollResponse.ok) {
-          throw new Error(`Failed to poll prediction: ${pollResponse.status}`);
-        }
-        
-        prediction = await pollResponse.json();
-        attempts++;
-        console.log(`Poll attempt ${attempts}: ${prediction.status}`);
+      if (response.status === 429) {
+        throw new Error("Rate limit exceeded - please try again in a moment");
       }
+      throw new Error(`Lovable AI Gateway error: ${response.status}`);
     }
 
-    if (prediction.status === "failed") {
-      console.error("Prediction failed:", prediction.error);
-      throw new Error(prediction.error || "Image generation failed");
-    }
+    const data = await response.json();
+    console.log("Lovable AI response received");
 
-    if (prediction.status !== "succeeded") {
-      throw new Error("Image generation timed out");
-    }
-
-    const imageUrl = prediction.output?.[0];
+    // Extract the generated image from the response
+    const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
-    if (!imageUrl) {
+    if (!imageData) {
+      console.error("No image in response:", JSON.stringify(data));
       throw new Error("No image was generated");
     }
 
@@ -183,8 +151,8 @@ CRITICAL REQUIREMENTS:
 
     return new Response(
       JSON.stringify({ 
-        imageUrl,
-        description: `Professional ${style} advertisement generated with FLUX`,
+        imageUrl: imageData,
+        description: `Professional ${style} advertisement generated with Lovable AI`,
         mode: productImage ? "edit" : "generate",
         style: style
       }),
