@@ -57,6 +57,8 @@ const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
 const SyncedProducts = lazyWithRetry(() => import("./pages/SyncedProducts"), "SyncedProducts");
 const ShopifyCallback = lazyWithRetry(() => import("./pages/ShopifyCallback"), "ShopifyCallback");
 const ReelsGenerator = lazyWithRetry(() => import("./pages/ReelsGenerator"), "ReelsGenerator");
+const ImageStudio = lazyWithRetry(() => import("./pages/ImageStudio"), "ImageStudio");
+const AdsCopy = lazyWithRetry(() => import("./pages/AdsCopy"), "AdsCopy");
 
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
@@ -202,6 +204,24 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <ReelsGenerator />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/images"
+          element={
+            <ProtectedRoute>
+              <ImageStudio />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/ads-copy"
+          element={
+            <ProtectedRoute>
+              <AdsCopy />
             </ProtectedRoute>
           }
         />

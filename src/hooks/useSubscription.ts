@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { PLAN_FEATURES, PlanType } from "@/lib/paymentConfig";
 
-// Re-export PLANS for backward compatibility - aligned with new pricing
+// Re-export PLANS for backward compatibility
 export const PLANS = {
   free: {
     name: "Free",

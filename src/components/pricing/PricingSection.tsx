@@ -7,16 +7,15 @@ import { PAYMENT_LINKS, PLAN_FEATURES, getPaymentUrl, PlanType } from "@/lib/pay
 
 interface Plan {
   id: PlanType;
-  paymentKey: 'start' | 'pro' | 'business';
+  paymentKey?: 'pro' | 'business';
   icon: React.ElementType;
   popular?: boolean;
 }
 
 const plans: Plan[] = [
   {
-    id: "start",
-    paymentKey: "start",
-    icon: Zap,
+    id: "free",
+    icon: Sparkles,
   },
   {
     id: "pro",
@@ -52,6 +51,11 @@ export default function PricingSection() {
   };
 
   const handleUpgrade = (plan: Plan) => {
+    if (!plan.paymentKey) {
+      // Free plan - redirect to signup
+      window.location.href = '/signup';
+      return;
+    }
     const url = getPaymentUrl(plan.paymentKey);
     window.open(url, '_blank');
   };
@@ -194,7 +198,9 @@ export default function PricingSection() {
                   size="lg"
                   onClick={() => handleUpgrade(plan)}
                 >
-                  {isRTL ? 'اشترك الآن' : 'Subscribe Now'}
+                  {plan.id === 'free' 
+                    ? (isRTL ? 'ابدأ مجاناً' : 'Start Free')
+                    : (isRTL ? 'اشترك الآن' : 'Subscribe Now')}
                 </Button>
               </div>
             );

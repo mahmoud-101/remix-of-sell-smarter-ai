@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Video, Copy, Sparkles, Clock, Music, Film } from "lucide-react";
+import { Video, Copy, Sparkles, Clock, Music, Film, Wand2, ExternalLink } from "lucide-react";
 
 type ReelsScene = {
   duration: string;
@@ -40,6 +40,8 @@ type ReelsResult = {
   hashtags: string[];
 };
 
+type ScriptType = "before_after" | "unboxing" | "testimonial" | "asmr" | "trendy";
+
 export default function ReelsGenerator() {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
@@ -47,23 +49,24 @@ export default function ReelsGenerator() {
 
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
-  const [style, setStyle] = useState<"trendy" | "elegant" | "viral" | "minimal">("trendy");
+  const [scriptType, setScriptType] = useState<ScriptType>("before_after");
   const [duration, setDuration] = useState<"15" | "30" | "60">("15");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ReelsResult | null>(null);
   const [selectedScript, setSelectedScript] = useState(0);
 
-  const styles = [
-    { value: "trendy", label: isRTL ? "ترند" : "Trendy" },
-    { value: "elegant", label: isRTL ? "أنيق" : "Elegant" },
-    { value: "viral", label: isRTL ? "فيرال" : "Viral" },
-    { value: "minimal", label: isRTL ? "بسيط" : "Minimal" },
+  const scriptTypes = [
+    { value: "before_after", label: isRTL ? "قبل وبعد" : "Before/After", emoji: "🔄", description: isRTL ? "إظهار التحول" : "Show transformation" },
+    { value: "unboxing", label: isRTL ? "فتح الصندوق" : "Unboxing", emoji: "📦", description: isRTL ? "فتح المنتج لأول مرة" : "First-time unboxing" },
+    { value: "testimonial", label: isRTL ? "تجربة حقيقية" : "Testimonial", emoji: "⭐", description: isRTL ? "مراجعة صادقة" : "Honest review" },
+    { value: "asmr", label: "ASMR", emoji: "🎧", description: isRTL ? "أصوات مريحة" : "Satisfying sounds" },
+    { value: "trendy", label: isRTL ? "ترند" : "Trendy", emoji: "🔥", description: isRTL ? "أسلوب فيرال" : "Viral style" },
   ];
 
   const durations = [
-    { value: "15", label: "15s" },
-    { value: "30", label: "30s" },
-    { value: "60", label: "60s" },
+    { value: "15", label: "15s", description: isRTL ? "ريل سريع" : "Quick reel" },
+    { value: "30", label: "30s", description: isRTL ? "ريل متوسط" : "Medium reel" },
+    { value: "60", label: "60s", description: isRTL ? "ريل طويل" : "Long reel" },
   ];
 
   const copy = async (text: string) => {
@@ -110,7 +113,7 @@ export default function ReelsGenerator() {
           input: {
             productName,
             productDescription,
-            style,
+            scriptType,
             duration,
           },
         },
@@ -160,14 +163,14 @@ export default function ReelsGenerator() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
+              <Wand2 className="h-5 w-5" />
               {isRTL ? "بيانات المنتج" : "Product Details"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>{isRTL ? "اسم المنتج" : "Product Name"}</Label>
+                <Label>{isRTL ? "اسم المنتج *" : "Product Name *"}</Label>
                 <Input
                   value={productName}
                   onChange={(e) => setProductName(e.target.value)}
@@ -175,19 +178,23 @@ export default function ReelsGenerator() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>{isRTL ? "الأسلوب" : "Style"}</Label>
-                <Select value={style} onValueChange={(v) => setStyle(v as any)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {styles.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>{isRTL ? "مدة الفيديو" : "Video Duration"}</Label>
+                <div className="flex gap-2">
+                  {durations.map((d) => (
+                    <Button
+                      key={d.value}
+                      variant={duration === d.value ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setDuration(d.value as any)}
+                      className="flex-1"
+                    >
+                      <div className="text-center">
+                        <div className="font-bold">{d.label}</div>
+                        <div className="text-xs opacity-70">{d.description}</div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -201,18 +208,23 @@ export default function ReelsGenerator() {
               />
             </div>
 
+            {/* Script Type Selection */}
             <div className="space-y-2">
-              <Label>{isRTL ? "مدة الفيديو" : "Video Duration"}</Label>
-              <div className="flex gap-2">
-                {durations.map((d) => (
-                  <Button
-                    key={d.value}
-                    variant={duration === d.value ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setDuration(d.value as any)}
+              <Label>{isRTL ? "نوع السكريبت" : "Script Type"}</Label>
+              <div className="grid grid-cols-5 gap-2">
+                {scriptTypes.map((type) => (
+                  <button
+                    key={type.value}
+                    onClick={() => setScriptType(type.value as ScriptType)}
+                    className={`p-3 rounded-lg border-2 transition-all text-center ${
+                      scriptType === type.value
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    }`}
                   >
-                    {d.label}
-                  </Button>
+                    <div className="text-2xl mb-1">{type.emoji}</div>
+                    <span className="text-xs font-medium block">{type.label}</span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -232,6 +244,14 @@ export default function ReelsGenerator() {
                 ? "توليد 3 سكريبتات ريلز"
                 : "Generate 3 Reels Scripts"}
             </Button>
+
+            {/* Kling AI Export Info */}
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              <ExternalLink className="h-4 w-4" />
+              {isRTL 
+                ? "السكريبتات جاهزة للتصدير إلى Kling AI / Runway / CapCut"
+                : "Scripts ready for export to Kling AI / Runway / CapCut"}
+            </div>
           </CardContent>
         </Card>
 
