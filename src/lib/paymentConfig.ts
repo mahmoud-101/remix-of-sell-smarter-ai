@@ -1,29 +1,22 @@
-// Nzmly Payment Links Configuration
+// Payment Links Configuration
 export const PAYMENT_LINKS = {
-  start: {
-    url: 'https://Sell-mate.nzmly.com/l/vrYhypJJeg',
-    planType: 'start' as const,
-    price: 5,
-    name: 'Start',
-    nameAr: 'ستارت'
-  },
   pro: {
     url: 'https://Sell-mate.nzmly.com/l/NgRgejCVJg',
     planType: 'pro' as const,
-    price: 10,
+    price: 19,
     name: 'Pro',
-    nameAr: 'المحترف'
+    nameAr: 'برو'
   },
   business: {
     url: 'https://Sell-mate.nzmly.com/l/KLCfkEnzTn',
     planType: 'business' as const,
-    price: 20,
+    price: 49,
     name: 'Business',
     nameAr: 'بيزنس'
   }
 } as const;
 
-export type PlanType = 'free' | 'start' | 'pro' | 'business';
+export type PlanType = 'free' | 'pro' | 'business';
 
 export interface PlanFeatures {
   name: string;
@@ -31,9 +24,10 @@ export interface PlanFeatures {
   price: number;
   yearlyPrice?: number;
   limits: {
-    productDescriptions: number;
+    products: number;
+    ads: number;
+    reels: number;
     images: number;
-    videoScripts: number;
   };
   features: string[];
   featuresAr: string[];
@@ -41,165 +35,116 @@ export interface PlanFeatures {
   limitationsAr?: string[];
   badge?: string;
   badgeAr?: string;
+  platforms?: string[];
 }
 
 export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   free: {
-    name: 'Free Trial',
-    nameAr: 'تجربة مجانية',
+    name: 'Free',
+    nameAr: 'مجاني',
     price: 0,
     limits: {
-      productDescriptions: 5,
-      images: 3,
-      videoScripts: 2
+      products: 5,
+      ads: 5,
+      reels: 3,
+      images: 2
     },
     features: [
-      '5 product descriptions',
-      '3 AI images',
-      '2 video scripts',
-      'Ad Copywriter',
-      'Standard templates'
+      '5 product descriptions/month',
+      '5 ad copies/month',
+      '3 reels scripts/month',
+      '2 AI images/month',
+      'Product Studio only',
+      'Basic templates'
     ],
     featuresAr: [
-      '5 وصف منتج',
-      '3 صور بالذكاء الاصطناعي',
-      '2 سكريبت فيديو',
-      'كاتب الإعلانات',
+      '5 وصف منتج/شهر',
+      '5 نسخ إعلانية/شهر',
+      '3 سكريبت ريلز/شهر',
+      '2 صورة AI/شهر',
+      'استوديو المنتجات فقط',
       'قوالب أساسية'
     ],
     limitations: [
-      'No SEO Tool',
-      'No Competitor Analysis',
-      'No Product Research',
-      'No Analytics'
+      'No store integrations',
+      'No priority support'
     ],
     limitationsAr: [
-      'بدون أداة SEO',
-      'بدون تحليل المنافسين',
-      'بدون البحث عن المنتجات',
-      'بدون الإحصائيات'
-    ]
-  },
-  start: {
-    name: 'Start',
-    nameAr: 'ستارت',
-    price: 5,
-    yearlyPrice: 50,
-    limits: {
-      productDescriptions: 50,
-      images: 20,
-      videoScripts: 10
-    },
-    features: [
-      '50 product descriptions/month',
-      '20 AI images/month',
-      '10 video scripts/month',
-      'Creative Factory',
-      'Ad Copywriter',
-      'Video Script Maker',
-      'SEO Analyzer',
-      'All templates',
-      'Email support'
-    ],
-    featuresAr: [
-      '50 وصف منتج شهرياً',
-      '20 صورة AI شهرياً',
-      '10 سكريبت فيديو شهرياً',
-      'مصنع الكريتيفات',
-      'كاتب الإعلانات',
-      'صانع سكريبتات الفيديو',
-      'خبير SEO',
-      'جميع القوالب',
-      'دعم بريد إلكتروني'
-    ],
-    limitations: [
-      'No Competitor Analysis',
-      'No Product Research',
-      'No Analytics Dashboard'
-    ],
-    limitationsAr: [
-      'بدون تحليل المنافسين',
-      'بدون البحث عن المنتجات',
-      'بدون لوحة الإحصائيات'
+      'بدون تكامل المتاجر',
+      'بدون دعم أولوية'
     ]
   },
   pro: {
     name: 'Pro',
-    nameAr: 'المحترف',
-    price: 10,
-    yearlyPrice: 100,
+    nameAr: 'برو',
+    price: 19,
+    yearlyPrice: 190,
     limits: {
-      productDescriptions: -1,
-      images: -1,
-      videoScripts: -1
+      products: 100,
+      ads: 100,
+      reels: 50,
+      images: 30
     },
     features: [
-      '✅ Unlimited product descriptions',
-      '✅ Unlimited AI images',
-      '✅ Unlimited video scripts',
-      '✅ Creative Factory',
-      '✅ Ad Copywriter',
-      '✅ Video Script Maker',
-      '✅ SEO Analyzer',
-      '✅ Analytics Dashboard',
-      '✅ Ad Designer',
-      '✅ Priority email support'
+      '100 products/month',
+      '100 ad copies/month',
+      '50 reels scripts/month',
+      '30 AI images/month',
+      'All 4 Studios',
+      'Shopify integration',
+      'Email support',
+      'All templates'
     ],
     featuresAr: [
-      '✅ وصف منتجات غير محدود',
-      '✅ صور AI غير محدودة',
-      '✅ سكريبتات فيديو غير محدودة',
-      '✅ مصنع الكريتيفات',
-      '✅ كاتب الإعلانات',
-      '✅ صانع سكريبتات الفيديو',
-      '✅ خبير SEO',
-      '✅ لوحة الإحصائيات',
-      '✅ مصمم الإعلانات',
-      '✅ دعم بريد إلكتروني أولوية'
+      '100 منتج/شهر',
+      '100 نسخة إعلانية/شهر',
+      '50 سكريبت ريلز/شهر',
+      '30 صورة AI/شهر',
+      'جميع الاستوديوهات الـ 4',
+      'تكامل Shopify',
+      'دعم بريد إلكتروني',
+      'جميع القوالب'
     ],
-    limitations: [
-      'No Competitor Analysis',
-      'No Product Research'
-    ],
-    limitationsAr: [
-      'بدون تحليل المنافسين',
-      'بدون البحث عن المنتجات'
-    ],
-    badge: 'MOST POPULAR',
-    badgeAr: 'الأكثر طلباً'
+    badge: 'POPULAR',
+    badgeAr: 'الأكثر طلباً',
+    platforms: ['Shopify']
   },
   business: {
     name: 'Business',
     nameAr: 'بيزنس',
-    price: 20,
-    yearlyPrice: 200,
+    price: 49,
+    yearlyPrice: 490,
     limits: {
-      productDescriptions: -1,
-      images: -1,
-      videoScripts: -1
+      products: -1,
+      ads: -1,
+      reels: -1,
+      images: -1
     },
     features: [
-      '✅ Everything in Pro, plus:',
-      '✅ Competitor Analysis Tool',
-      '✅ Product Research Tool',
-      '✅ Advanced Analytics',
-      '✅ Leads Management',
-      '✅ Priority WhatsApp support',
-      '✅ API Access (coming soon)',
-      '✅ White-label option'
+      'Unlimited products',
+      'Unlimited ad copies',
+      'Unlimited reels scripts',
+      'Unlimited AI images',
+      'All 4 Studios',
+      'Shopify + Salla integrations',
+      'Priority WhatsApp support',
+      'API Access (coming soon)',
+      'Team collaboration'
     ],
     featuresAr: [
-      '✅ كل مميزات Pro، بالإضافة إلى:',
-      '✅ أداة تحليل المنافسين',
-      '✅ أداة البحث عن المنتجات',
-      '✅ تحليلات متقدمة',
-      '✅ إدارة العملاء',
-      '✅ دعم واتساب أولوية',
-      '✅ وصول API (قريباً)',
-      '✅ خيار العلامة البيضاء'
+      'منتجات غير محدودة',
+      'نسخ إعلانية غير محدودة',
+      'سكريبتات ريلز غير محدودة',
+      'صور AI غير محدودة',
+      'جميع الاستوديوهات الـ 4',
+      'تكامل Shopify + سلة',
+      'دعم واتساب أولوية',
+      'وصول API (قريباً)',
+      'تعاون الفريق'
     ],
     badge: 'BEST VALUE',
-    badgeAr: 'أفضل قيمة'
+    badgeAr: 'أفضل قيمة',
+    platforms: ['Shopify', 'Salla']
   }
 };
 

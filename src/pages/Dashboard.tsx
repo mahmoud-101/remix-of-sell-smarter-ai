@@ -208,8 +208,8 @@ export default function Dashboard() {
           </h1>
           <p className="text-sm text-muted-foreground">
             {isRTL
-              ? "محتوى AI ثنائي اللغة لمنتجات Fashion & Beauty—جاهز لـ Shopify/WooCommerce/Salla"
-              : "Bilingual AI content for Fashion & Beauty products—ready for Shopify/WooCommerce/Salla"}
+              ? "محتوى AI ثنائي اللغة لمنتجات Fashion & Beauty—جاهز لـ Shopify/Salla"
+              : "Bilingual AI content for Fashion & Beauty products—ready for Shopify/Salla"}
           </p>
         </div>
 

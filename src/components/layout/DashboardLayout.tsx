@@ -4,6 +4,7 @@ import {
   FileText,
   Megaphone,
   Video,
+  ImageIcon,
   History,
   Settings,
   ChevronLeft,
@@ -29,11 +30,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { signOut } = useAuth();
   const { t, isRTL, language, setLanguage } = useLanguage();
 
-  // 3 Core Studios for Fashion & Beauty E-commerce
+  // 4 Core Studios for Fashion & Beauty E-commerce
   const navItems = [
     { icon: FileText, label: isRTL ? "استوديو المنتجات" : "Product Studio", path: "/dashboard" },
     { icon: Megaphone, label: isRTL ? "استوديو الإعلانات" : "Ads Studio", path: "/dashboard/ads-copy" },
     { icon: Video, label: isRTL ? "استوديو الريلز" : "Reels Studio", path: "/dashboard/reels" },
+    { icon: ImageIcon, label: isRTL ? "استوديو الصور" : "Image Studio", path: "/dashboard/images" },
     { icon: ShoppingBag, label: isRTL ? "منتجات المتجر" : "Store Products", path: "/dashboard/synced-products" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
   ];
