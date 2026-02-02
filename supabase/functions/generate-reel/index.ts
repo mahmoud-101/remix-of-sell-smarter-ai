@@ -27,34 +27,55 @@ serve(async (req) => {
     }
 
     // ============================================
-    // REELS STUDIO - Image to Video Generator
-    // Using Lovable AI Video with starting frame
+    // REELS STUDIO - Image to Reel Storyboard
+    // Generates multiple scene images for a Reel
+    // Using Lovable AI with Gemini Pro Image
     // ============================================
 
     // Define video styles with motion prompts
-    const stylePrompts: Record<string, { motion: string; captionAr: string; captionEn: string }> = {
+    const stylePrompts: Record<string, { scenes: string[]; captionAr: string; captionEn: string }> = {
       unboxing: {
-        motion: "Slow zoom out revealing the full product, gentle floating motion, sparkle effects appearing around the product, soft camera shake as if just opened, dramatic reveal lighting",
+        scenes: [
+          "Closed package box with the product inside, dramatic lighting, anticipation moment",
+          "Hands opening the box revealing the product, excitement moment, sparkle effects",
+          "Product revealed in full glory, hero shot with professional lighting, Arabic text overlay saying 'تعالوا شوفوا'"
+        ],
         captionAr: "📦 أنبوكسينق حصري! شوفوا الجمال ده 😍✨",
         captionEn: "📦 Exclusive unboxing! Check out this beauty 😍✨"
       },
       before_after: {
-        motion: "Split screen effect transitioning from left to right, dramatic before/after reveal, smooth wipe transition, product glowing and transforming",
+        scenes: [
+          "Before state - plain, dull, problem situation, muted colors",
+          "Transition moment - transformation happening, dynamic energy, sparkles",
+          "After state - product solving the problem, vibrant colors, success moment, Arabic text 'الفرق واضح!'"
+        ],
         captionAr: "🔄 قبل وبعد - الفرق واضح! 💫",
         captionEn: "🔄 Before & After - See the difference! 💫"
       },
       testimonial: {
-        motion: "Product rotating slowly 360 degrees, zoom into details, gentle bounce animation, trust badges appearing, 5-star rating animation",
+        scenes: [
+          "Product displayed with 5-star rating overlay, trust badges, Arabic text 'تجربة حقيقية'",
+          "Close-up detail shot showing quality and craftsmanship, premium feel",
+          "Product with satisfied customer vibe, order now CTA, Arabic text 'اطلبيه الآن'"
+        ],
         captionAr: "⭐ تجربة حقيقية - 5 نجوم! اطلبيه الآن 🛒",
         captionEn: "⭐ Real review - 5 stars! Order now 🛒"
       },
       showcase: {
-        motion: "Dynamic product showcase with slow rotation, camera orbiting around product, professional studio lighting shifts, elegant shadow play",
+        scenes: [
+          "Product front view, professional studio lighting, elegant presentation",
+          "Product 45-degree angle view, showing depth and dimension, premium quality",
+          "Product with lifestyle context, Arabic promotional text, call-to-action design"
+        ],
         captionAr: "✨ منتج فاخر بجودة عالية - متوفر الآن! 🔥",
         captionEn: "✨ Premium quality product - Available now! 🔥"
       },
       trending: {
-        motion: "Fast zoom in and out pulses, trendy shake effects, text popping animations, viral TikTok style transitions, energetic movement",
+        scenes: [
+          "Product with viral TikTok aesthetic, bold colors, trendy vibes, Arabic text 'ترند'",
+          "Dynamic zoom effect on product details, energetic style",
+          "Product with fire emoji effects, 'الكل بيسأل عنه' Arabic text, viral energy"
+        ],
         captionAr: "🔥 ترند الموسم! الكل بيسأل عنه 💜",
         captionEn: "🔥 Trending now! Everyone's asking about it 💜"
       }
@@ -62,76 +83,93 @@ serve(async (req) => {
 
     const selectedStyle = stylePrompts[style] || stylePrompts.showcase;
     
-    // Build video generation prompt
-    const videoPrompt = `Professional e-commerce product video advertisement:
-${selectedStyle.motion}
+    console.log(`User ${authData?.userId} generating Reel storyboard, style: ${style}, scenes: ${selectedStyle.scenes.length}`);
 
-Product: ${productName || "Featured product"}
-Style: ${style} video for TikTok/Instagram Reels
-Duration: ${duration} seconds
-
-Key animations:
-- Product as hero element with smooth motion
-- Professional lighting transitions
-- Eye-catching movement that stops the scroll
-- Arabic text overlay appearing with animation
-- Price tag or discount badge animating in
-- Call-to-action button pulsing at the end
-
-Mood: Viral, engaging, professional, luxury feel
-Camera: Smooth movements, professional quality`;
-
-    console.log(`User ${authData?.userId} generating Reel video, style: ${style}, duration: ${duration}s`);
-
-    // Generate video using Lovable AI Video with starting frame
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/videos/generations", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "veo-2.0-generate-001",
-        prompt: videoPrompt,
-        image: imageUrl, // Starting frame from the ad image
-        length: duration <= 5 ? "short" : "long",
-        aspect_ratio: "9:16", // TikTok/Reels format
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Lovable AI Video error:", response.status, errorText);
-      
-      if (response.status === 401) {
-        throw new Error("Invalid Lovable API key");
-      }
-      if (response.status === 402) {
-        throw new Error("Lovable AI quota exceeded - please add credits");
-      }
-      if (response.status === 429) {
-        throw new Error("Rate limit exceeded - please try again in a moment");
-      }
-      throw new Error(`Video generation error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log("Lovable AI Video response received");
-
-    // Extract the generated video URL
-    const videoUrl = data.data?.[0]?.url;
+    // Generate multiple scene images
+    const sceneImages: Array<{ imageUrl: string; scene: number; description: string }> = [];
     
-    if (!videoUrl) {
-      console.error("No video in response:", JSON.stringify(data));
-      throw new Error("No video was generated");
+    for (let i = 0; i < selectedStyle.scenes.length; i++) {
+      const scenePrompt = `CRITICAL: Keep the EXACT same product from the reference image. Do NOT change the product.
+
+Create scene ${i + 1} for a TikTok/Instagram Reel advertisement:
+
+Scene description: ${selectedStyle.scenes[i]}
+Product: ${productName || "Featured product"}
+
+Requirements:
+- Preserve the IDENTICAL product from the input image
+- Professional advertising photography quality
+- Arabic text overlays where specified
+- 9:16 vertical format suitable for Reels/TikTok
+- Eye-catching, scroll-stopping visual
+- High-end e-commerce aesthetic`;
+
+      try {
+        console.log(`Generating scene ${i + 1}/${selectedStyle.scenes.length}...`);
+        
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: scenePrompt },
+                  { type: "image_url", image_url: { url: imageUrl } }
+                ]
+              }
+            ],
+            modalities: ["image", "text"]
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Scene ${i + 1} generation error:`, response.status, errorText);
+          
+          if (response.status === 402) {
+            throw new Error("Lovable AI quota exceeded - please add credits");
+          }
+          if (response.status === 429) {
+            throw new Error("Rate limit exceeded - please try again in a moment");
+          }
+          continue; // Try next scene
+        }
+
+        const data = await response.json();
+        const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        
+        if (generatedImage) {
+          sceneImages.push({
+            imageUrl: generatedImage,
+            scene: i + 1,
+            description: selectedStyle.scenes[i]
+          });
+          console.log(`Scene ${i + 1} generated successfully`);
+        }
+      } catch (sceneError) {
+        console.error(`Error generating scene ${i + 1}:`, sceneError);
+        if (sceneError instanceof Error && 
+            (sceneError.message.includes("quota") || sceneError.message.includes("Rate limit"))) {
+          throw sceneError;
+        }
+      }
     }
 
-    console.log(`Successfully generated Reel video for user ${authData?.userId}`);
+    if (sceneImages.length === 0) {
+      throw new Error("No scenes were generated");
+    }
 
-    // Generate TikTok caption
+    console.log(`Successfully generated ${sceneImages.length} scenes for user ${authData?.userId}`);
+
+    // Generate caption and hashtags
     const caption = language === 'ar' ? selectedStyle.captionAr : selectedStyle.captionEn;
     
-    // Generate hashtags based on style
     const hashtagsAr = [
       "#تسوق_اونلاين",
       "#موضة",
@@ -162,13 +200,16 @@ Camera: Smooth movements, professional quality`;
 
     return new Response(
       JSON.stringify({ 
-        videoUrl,
+        scenes: sceneImages,
         caption,
         hashtags: language === 'ar' ? hashtagsAr : hashtagsEn,
         duration: `${duration}s`,
         style,
-        format: "MP4",
-        aspectRatio: "9:16"
+        format: "Storyboard",
+        totalScenes: sceneImages.length,
+        instructions: language === 'ar' 
+          ? "استخدم الصور دي في CapCut أو أي تطبيق مونتاج لعمل الريل"
+          : "Use these images in CapCut or any editing app to create your Reel"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
