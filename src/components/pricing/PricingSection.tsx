@@ -3,7 +3,7 @@ import { Check, X, Sparkles, Zap, Crown, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
-import { PAYMENT_LINKS, PLAN_FEATURES, getPaymentUrl, PlanType } from "@/lib/paymentConfig";
+import { PAYMENT_LINKS, PLAN_FEATURES, getPaymentUrl, PlanType, CURRENCY, formatPrice } from "@/lib/paymentConfig";
 
 interface Plan {
   id: PlanType;
@@ -67,8 +67,8 @@ export default function PricingSection() {
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
             {isRTL ? (
               <>
-                اختر خطتك
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> المثالية</span>
+                اختار
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> الباقة المناسبة</span>
               </>
             ) : (
               <>
@@ -79,7 +79,7 @@ export default function PricingSection() {
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             {isRTL
-              ? "ابدأ الآن وقم بتنمية مبيعاتك مع أدوات الذكاء الاصطناعي"
+              ? "ابدأ دلوقتي وكبّر مبيعاتك مع أدوات الذكاء الاصطناعي"
               : "Start now and grow your sales with AI-powered tools"}
           </p>
           
@@ -159,20 +159,27 @@ export default function PricingSection() {
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     <span className={cn(
-                      "text-5xl font-bold",
+                      "text-4xl font-bold",
                       plan.popular && "text-primary"
                     )}>
-                      ${price}
+                      {price === 0 ? (isRTL ? 'مجاني' : 'Free') : price}
                     </span>
-                    <span className="text-muted-foreground text-sm">
-                      /{isRTL ? 'شهر' : 'month'}
-                    </span>
+                    {price > 0 && (
+                      <>
+                        <span className="text-xl font-semibold text-muted-foreground">
+                          {isRTL ? CURRENCY.symbol : CURRENCY.symbolEn}
+                        </span>
+                        <span className="text-muted-foreground text-sm">
+                          /{isRTL ? 'شهر' : 'month'}
+                        </span>
+                      </>
+                    )}
                   </div>
                   {billingPeriod === "yearly" && savings > 0 && (
                     <p className="text-green-600 text-sm font-semibold mt-2">
                       {isRTL 
-                        ? `أو $${planData.yearlyPrice}/سنة (وفر $${savings})`
-                        : `or $${planData.yearlyPrice}/year (save $${savings})`}
+                        ? `أو ${planData.yearlyPrice} ${CURRENCY.symbol}/سنة (وفر ${savings} ${CURRENCY.symbol})`
+                        : `or ${CURRENCY.symbolEn} ${planData.yearlyPrice}/year (save ${CURRENCY.symbolEn} ${savings})`}
                     </p>
                   )}
                 </div>
