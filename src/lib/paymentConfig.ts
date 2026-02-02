@@ -1,22 +1,30 @@
-// Payment Links Configuration
+// Payment Links Configuration - Egyptian Market (EGP)
 export const PAYMENT_LINKS = {
   pro: {
     url: 'https://Sell-mate.nzmly.com/l/NgRgejCVJg',
     planType: 'pro' as const,
-    price: 19,
+    price: 299,
     name: 'Pro',
     nameAr: 'برو'
   },
   business: {
     url: 'https://Sell-mate.nzmly.com/l/KLCfkEnzTn',
     planType: 'business' as const,
-    price: 49,
+    price: 799,
     name: 'Business',
     nameAr: 'بيزنس'
   }
 } as const;
 
 export type PlanType = 'free' | 'pro' | 'business';
+
+// Currency configuration
+export const CURRENCY = {
+  code: 'EGP',
+  symbol: 'ج.م',
+  symbolEn: 'EGP',
+  position: 'after' as const // Symbol comes after the number in Arabic
+};
 
 export interface PlanFeatures {
   name: string;
@@ -62,7 +70,7 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       '5 نسخ إعلانية/شهر',
       '3 سكريبت ريلز/شهر',
       '2 صورة AI/شهر',
-      'استوديو المنتجات فقط',
+      'استوديو المنتجات بس',
       'قوالب أساسية'
     ],
     limitations: [
@@ -70,15 +78,15 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       'No priority support'
     ],
     limitationsAr: [
-      'بدون تكامل المتاجر',
-      'بدون دعم أولوية'
+      'من غير ربط المتاجر',
+      'من غير دعم أولوية'
     ]
   },
   pro: {
     name: 'Pro',
     nameAr: 'برو',
-    price: 19,
-    yearlyPrice: 190,
+    price: 299,
+    yearlyPrice: 2990,
     limits: {
       products: 100,
       ads: 100,
@@ -100,20 +108,20 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       '100 نسخة إعلانية/شهر',
       '50 سكريبت ريلز/شهر',
       '30 صورة AI/شهر',
-      'جميع الاستوديوهات الـ 4',
-      'تكامل Shopify',
-      'دعم بريد إلكتروني',
-      'جميع القوالب'
+      'كل الاستوديوهات الـ 4',
+      'ربط Shopify',
+      'دعم إيميل',
+      'كل القوالب'
     ],
     badge: 'POPULAR',
-    badgeAr: 'الأكثر طلباً',
+    badgeAr: 'الأكتر طلباً',
     platforms: ['Shopify']
   },
   business: {
     name: 'Business',
     nameAr: 'بيزنس',
-    price: 49,
-    yearlyPrice: 490,
+    price: 799,
+    yearlyPrice: 7990,
     limits: {
       products: -1,
       ads: -1,
@@ -132,20 +140,26 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
       'Team collaboration'
     ],
     featuresAr: [
-      'منتجات غير محدودة',
-      'نسخ إعلانية غير محدودة',
-      'سكريبتات ريلز غير محدودة',
-      'صور AI غير محدودة',
-      'جميع الاستوديوهات الـ 4',
-      'تكامل Shopify + سلة',
+      'منتجات مفيش ليها حدود',
+      'نسخ إعلانية مفيش ليها حدود',
+      'سكريبتات ريلز مفيش ليها حدود',
+      'صور AI مفيش ليها حدود',
+      'كل الاستوديوهات الـ 4',
+      'ربط Shopify + سلة',
       'دعم واتساب أولوية',
       'وصول API (قريباً)',
-      'تعاون الفريق'
+      'شغل مع الفريق'
     ],
     badge: 'BEST VALUE',
-    badgeAr: 'أفضل قيمة',
+    badgeAr: 'أحسن قيمة',
     platforms: ['Shopify', 'Salla']
   }
+};
+
+// Helper to format price with currency
+export const formatPrice = (price: number, isRTL: boolean = true): string => {
+  if (price === 0) return isRTL ? 'مجاني' : 'Free';
+  return isRTL ? `${price} ${CURRENCY.symbol}` : `${CURRENCY.symbolEn} ${price}`;
 };
 
 // Helper to get payment URL with email
