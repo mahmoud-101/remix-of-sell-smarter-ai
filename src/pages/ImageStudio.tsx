@@ -91,7 +91,7 @@ export default function ImageStudio() {
   const [style, setStyle] = useState<ImageStyle>("lifestyle");
   
   const [loading, setLoading] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<Array<{ imageUrl: string; angle: string; angleAr: string }>>([]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -190,9 +190,21 @@ export default function ImageStudio() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      const imageUrl = data?.imageUrl as string | undefined;
-      if (imageUrl) {
-        setGeneratedImages([imageUrl]);
+      // Handle multiple images response
+      const images = data?.images as Array<{ imageUrl: string; angle: string; angleAr: string }> | undefined;
+      const imageCount = data?.count || 1;
+      
+      if (images && images.length > 0) {
+        setGeneratedImages(images);
+        toast({
+          title: isRTL ? "✓ تم التوليد" : "✓ Generated",
+          description: isRTL 
+            ? `تم إنشاء ${images.length} صور بزوايا مختلفة` 
+            : `${images.length} images created with different angles`,
+        });
+      } else if (data?.imageUrl) {
+        // Backward compatibility
+        setGeneratedImages([{ imageUrl: data.imageUrl, angle: "front", angleAr: "أمامي" }]);
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
           description: isRTL ? "تم إنشاء الصورة بنجاح" : "Image created successfully",
@@ -212,14 +224,14 @@ export default function ImageStudio() {
     }
   };
 
-  const downloadImage = async (imageUrl: string, index: number) => {
+  const downloadImage = async (imageUrl: string, angleName: string, index: number) => {
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${productName.replace(/\s+/g, "-") || "product"}-${style}-${index + 1}.png`;
+      a.download = `${productName.replace(/\s+/g, "-") || "product"}-${style}-${angleName}-${index + 1}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -233,6 +245,17 @@ export default function ImageStudio() {
         variant: "destructive",
       });
     }
+  };
+
+  const downloadAllImages = async () => {
+    for (let i = 0; i < generatedImages.length; i++) {
+      await downloadImage(generatedImages[i].imageUrl, generatedImages[i].angle, i);
+      // Small delay between downloads
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    toast({
+      title: isRTL ? "✓ تم تحميل جميع الصور" : "✓ All images downloaded",
+    });
   };
 
   return (
@@ -437,29 +460,48 @@ export default function ImageStudio() {
             {generatedImages.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    {isRTL ? "الصورة المُولّدة" : "Generated Image"}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      {isRTL ? `الصور المُولّدة (${generatedImages.length})` : `Generated Images (${generatedImages.length})`}
+                    </CardTitle>
+                    {generatedImages.length > 1 && (
+                      <Button variant="outline" size="sm" onClick={downloadAllImages} className="gap-2">
+                        <Download className="w-4 h-4" />
+                        {isRTL ? "تحميل الكل" : "Download All"}
+                      </Button>
+                    )}
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                   {generatedImages.map((img, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={img}
-                        alt={`${productName} - ${index + 1}`}
-                        className="w-full rounded-lg border"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          onClick={() => downloadImage(img, index)}
-                          className="gap-2"
-                        >
-                          <Download className="w-5 h-5" />
-                          {isRTL ? "تحميل" : "Download"}
-                        </Button>
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="secondary" className="gap-1">
+                          <Camera className="w-3 h-3" />
+                          {isRTL ? img.angleAr : img.angle}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {index + 1}/{generatedImages.length}
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <img
+                          src={img.imageUrl}
+                          alt={`${productName} - ${isRTL ? img.angleAr : img.angle}`}
+                          className="w-full rounded-lg border"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                          <Button
+                            variant="secondary"
+                            size="lg"
+                            onClick={() => downloadImage(img.imageUrl, img.angle, index)}
+                            className="gap-2"
+                          >
+                            <Download className="w-5 h-5" />
+                            {isRTL ? "تحميل" : "Download"}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -86,9 +86,34 @@ serve(async (req) => {
 
     const selectedStyle = stylePrompts[style] || stylePrompts.lifestyle;
 
-    // Build the image editing prompt that preserves the original product
-    const editPrompt = productImage 
-      ? `CRITICAL INSTRUCTION: You MUST preserve the EXACT product shown in the image. Do NOT change the product itself.
+    // Define multiple angles/perspectives for generation
+    const angleVariations = [
+      {
+        name: "front",
+        nameAr: "أمامي",
+        prompt: "Front view, straight-on angle, product facing camera directly"
+      },
+      {
+        name: "angle",
+        nameAr: "زاوية جانبية",
+        prompt: "45-degree angle view, showing depth and dimension, dynamic perspective"
+      },
+      {
+        name: "close-up",
+        nameAr: "مقرّب",
+        prompt: "Close-up detail shot, highlighting texture and quality, macro focus on key features"
+      }
+    ];
+
+    console.log(`User ${authData?.userId} generating ${angleVariations.length} images with Lovable AI Gateway, style: ${style}, hasProductImage: ${!!productImage}`);
+
+    // Generate multiple images with different angles
+    const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string }> = [];
+    
+    for (const angle of angleVariations) {
+      // Build the image editing prompt that preserves the original product
+      const editPrompt = productImage 
+        ? `CRITICAL INSTRUCTION: You MUST preserve the EXACT product shown in the image. Do NOT change the product itself.
 
 ANALYZE the product in detail:
 - Identify the exact shape, colors, textures, and materials
@@ -98,105 +123,127 @@ ANALYZE the product in detail:
 
 NOW create a professional advertising photo with these requirements:
 1. Keep the EXACT same product - do not modify, replace, or alter it
-2. Place the product in a professional ${style} advertising setting
-3. Add professional studio lighting that enhances the product
-4. ${selectedStyle}
+2. CAMERA ANGLE: ${angle.prompt}
+3. Place the product in a professional ${style} advertising setting
+4. Add professional studio lighting that enhances the product
+5. ${selectedStyle}
 
 Product context: ${prompt}
 
-OUTPUT: A professional e-commerce advertisement featuring the IDENTICAL product from the input image, just in a better advertising context with Arabic text overlays.`
-      : `${selectedStyle}
+OUTPUT: A professional e-commerce advertisement featuring the IDENTICAL product from the input image, just in a ${angle.name} view with Arabic text overlays.`
+        : `${selectedStyle}
 
 Product: ${prompt}
+CAMERA ANGLE: ${angle.prompt}
 
 CRITICAL REQUIREMENTS:
 - Professional MARKETING ADVERTISEMENT, not just product photo
+- ${angle.prompt}
 - Include beautiful Arabic text overlays (right-to-left)
 - Use elegant Arabic fonts
 - Complete social media ad ready for Meta Ads
 - 4K resolution, vibrant colors, eye-catching design
 - Arabic text integrated naturally into the design`;
 
-    console.log(`User ${authData?.userId} generating with Lovable AI Gateway, style: ${style}, hasProductImage: ${!!productImage}`);
-
-    // Build the message content based on whether we have a product image
-    let messageContent: any;
-    
-    if (productImage) {
-      // Image-to-image editing mode: pass the product image for preservation
-      messageContent = [
-        {
-          type: "text",
-          text: editPrompt
-        },
-        {
-          type: "image_url",
-          image_url: {
-            url: productImage // Can be data:image/png;base64,... or https://...
-          }
-        }
-      ];
-      console.log("Using image-to-image mode to preserve product details");
-    } else {
-      // Text-to-image generation mode
-      messageContent = editPrompt;
-      console.log("Using text-to-image mode");
-    }
-
-    // Use Lovable AI Gateway with Gemini Pro Image
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-pro-image-preview",
-        messages: [
-          {
-            role: "user",
-            content: messageContent
-          }
-        ],
-        modalities: ["image", "text"]
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Lovable AI Gateway error:", response.status, errorText);
+      // Build the message content based on whether we have a product image
+      let messageContent: any;
       
-      if (response.status === 401) {
-        throw new Error("Invalid Lovable API key");
+      if (productImage) {
+        // Image-to-image editing mode: pass the product image for preservation
+        messageContent = [
+          {
+            type: "text",
+            text: editPrompt
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: productImage
+            }
+          }
+        ];
+      } else {
+        // Text-to-image generation mode
+        messageContent = editPrompt;
       }
-      if (response.status === 402) {
-        throw new Error("Lovable AI quota exceeded");
+
+      try {
+        console.log(`Generating ${angle.name} view...`);
+        
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: messageContent
+              }
+            ],
+            modalities: ["image", "text"]
+          })
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Lovable AI Gateway error for ${angle.name}:`, response.status, errorText);
+          
+          if (response.status === 401) {
+            throw new Error("Invalid Lovable API key");
+          }
+          if (response.status === 402) {
+            throw new Error("Lovable AI quota exceeded");
+          }
+          if (response.status === 429) {
+            throw new Error("Rate limit exceeded - please try again in a moment");
+          }
+          // Continue to next angle on other errors
+          continue;
+        }
+
+        const data = await response.json();
+        const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        
+        if (imageData) {
+          generatedImages.push({
+            imageUrl: imageData,
+            angle: angle.name,
+            angleAr: angle.nameAr
+          });
+          console.log(`Successfully generated ${angle.name} view`);
+        }
+      } catch (angleError) {
+        console.error(`Error generating ${angle.name} view:`, angleError);
+        // If it's a critical error, throw it
+        if (angleError instanceof Error && 
+            (angleError.message.includes("quota") || 
+             angleError.message.includes("API key") ||
+             angleError.message.includes("Rate limit"))) {
+          throw angleError;
+        }
+        // Otherwise continue to next angle
       }
-      if (response.status === 429) {
-        throw new Error("Rate limit exceeded - please try again in a moment");
-      }
-      throw new Error(`Lovable AI Gateway error: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log("Lovable AI response received");
-
-    // Extract the generated image from the response
-    const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    
-    if (!imageData) {
-      console.error("No image in response:", JSON.stringify(data));
-      throw new Error("No image was generated");
+    if (generatedImages.length === 0) {
+      throw new Error("No images were generated");
     }
 
-    console.log(`Successfully generated image for user ${authData?.userId}`);
+    console.log(`Successfully generated ${generatedImages.length} images for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ 
-        imageUrl: imageData,
-        description: `Professional ${style} advertisement generated with Lovable AI`,
+        images: generatedImages,
+        // Keep backward compatibility
+        imageUrl: generatedImages[0]?.imageUrl,
+        description: `Professional ${style} advertisement with ${generatedImages.length} angles`,
         mode: productImage ? "edit" : "generate",
-        style: style
+        style: style,
+        count: generatedImages.length
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
