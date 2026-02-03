@@ -16,20 +16,36 @@ serve(async (req) => {
     const toolType: string | undefined = payload?.toolType ?? payload?.type;
     const input = payload?.input ?? payload;
     const language = payload?.language;
+    const userSelectedModel = payload?.model; // User can now select model from frontend
     const preferredProvider = payload?.provider || "lovable"; // "lovable" or "openrouter"
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 
+    // Determine provider from model ID if user selected one
+    const getProviderFromModel = (modelId: string): "lovable" | "openrouter" => {
+      const openRouterModels = [
+        "anthropic/claude-3.5-sonnet", "anthropic/claude-3-haiku",
+        "meta-llama/llama-3.1-70b-instruct", "meta-llama/llama-3.1-8b-instruct",
+        "mistralai/mistral-large", "mistralai/mistral-small",
+        "google/gemini-pro-1.5", "openai/gpt-4o", "openai/gpt-4o-mini"
+      ];
+      return openRouterModels.includes(modelId) ? "openrouter" : "lovable";
+    };
+
+    const actualProvider = userSelectedModel 
+      ? getProviderFromModel(userSelectedModel) 
+      : preferredProvider;
+
     // Check API key availability based on provider
-    if (preferredProvider === "openrouter" && !OPENROUTER_API_KEY) {
+    if (actualProvider === "openrouter" && !OPENROUTER_API_KEY) {
       throw new Error("OPENROUTER_API_KEY is not configured");
     }
-    if (preferredProvider === "lovable" && !LOVABLE_API_KEY) {
+    if (actualProvider === "lovable" && !LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log(`Processing ${toolType} for user ${authData?.userId} via ${preferredProvider}`);
+    console.log(`Processing ${toolType} for user ${authData?.userId} via ${actualProvider}${userSelectedModel ? ` with model ${userSelectedModel}` : ''}`);
 
     const langInstruction = language === 'ar' 
       ? `استخدم اللهجة المصرية العامية فقط - مش فصحى ولا خليجي!
@@ -715,9 +731,12 @@ Return ONLY raw JSON.`;
         ? "\n\nCRITICAL: Return COMPLETE JSON only. Keep each string single-line; use \\n for line breaks."
         : "\n\nCRITICAL: Return JSON only. Keep each string single-line; use \\n for line breaks.";
 
-      // Select model and endpoint based on provider
-      const useOpenRouter = preferredProvider === "openrouter";
-      const selectedModel = useOpenRouter ? openRouterModel : model;
+      // Select model and endpoint based on provider and user selection
+      const useOpenRouter = actualProvider === "openrouter";
+      // If user selected a model, use it; otherwise use the default for the tool
+      const selectedModel = userSelectedModel 
+        ? userSelectedModel 
+        : (useOpenRouter ? openRouterModel : model);
       const apiUrl = useOpenRouter 
         ? "https://openrouter.ai/api/v1/chat/completions"
         : "https://ai.gateway.lovable.dev/v1/chat/completions";

@@ -17,6 +17,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useHistory } from "@/hooks/useHistory";
+import { AIModelSelector, getRecommendedModel, AI_MODELS } from "@/components/ai/AIModelSelector";
 import { 
   Sparkles, 
   Copy, 
@@ -58,6 +59,7 @@ export default function Dashboard() {
   const [keyFeatures, setKeyFeatures] = useState("");
   const [priceRange, setPriceRange] = useState("");
   const [tone, setTone] = useState<"luxury" | "professional" | "modest" | "elegant">("luxury");
+  const [selectedModel, setSelectedModel] = useState(getRecommendedModel("product"));
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<StudioResult | null>(null);
@@ -146,10 +148,15 @@ export default function Dashboard() {
     setResult(null);
     
     try {
+      const modelData = AI_MODELS.find(m => m.id === selectedModel);
+      const provider = modelData?.provider || "lovable";
+      
       const { data, error } = await supabase.functions.invoke("ai-generate", {
         body: {
           toolType: "shopify-studio",
           language: "ar",
+          model: selectedModel,
+          provider,
           input: {
             productName,
             productDescription,
@@ -441,6 +448,13 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* AI Model Selector */}
+            <AIModelSelector
+              toolType="product"
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+            />
 
             {/* Generate Button */}
             <Button

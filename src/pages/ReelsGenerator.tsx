@@ -10,6 +10,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useHistory } from "@/hooks/useHistory";
+import { AIModelSelector, getRecommendedModel, AI_MODELS } from "@/components/ai/AIModelSelector";
 import { 
   Video, 
   Copy, 
@@ -76,6 +77,7 @@ export default function ReelsGenerator() {
   const [adImage, setAdImage] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [style, setStyle] = useState<VideoStyle>("showcase");
+  const [selectedModel, setSelectedModel] = useState(getRecommendedModel("reels"));
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -142,6 +144,9 @@ export default function ReelsGenerator() {
     setResult(null);
 
     try {
+      const modelData = AI_MODELS.find(m => m.id === selectedModel);
+      const provider = modelData?.provider || "lovable";
+      
       const { data, error } = await supabase.functions.invoke("generate-reel", {
         body: {
           imageUrl: adImage,
@@ -149,6 +154,8 @@ export default function ReelsGenerator() {
           style,
           duration: 5,
           language: isRTL ? 'ar' : 'en',
+          model: selectedModel,
+          provider,
         },
       });
 
@@ -382,6 +389,13 @@ export default function ReelsGenerator() {
                     ))}
                   </div>
                 </div>
+
+                {/* AI Model Selector */}
+                <AIModelSelector
+                  toolType="reels"
+                  selectedModel={selectedModel}
+                  onModelChange={setSelectedModel}
+                />
 
                 {/* Generate Button */}
                 <Button
