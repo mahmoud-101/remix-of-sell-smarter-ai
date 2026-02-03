@@ -27,123 +27,159 @@ serve(async (req) => {
     // Using Lovable AI Gateway with Gemini Pro Image
     // ============================================
 
-    // Professional MENA e-commerce ad creative styles
+    // Professional Egyptian Fashion & Beauty e-commerce ad creative styles
+    // More variety for fashion niche with Egyptian Arabic text styling
     const stylePrompts: Record<string, string> = {
-      lifestyle: `Professional Arabic e-commerce lifestyle advertisement photo:
-- Product as hero element with sharp focus
-- Warm lifestyle setting with elegant props
-- Soft bokeh background with ambient golden lighting
-- Arabic text overlay: bold marketing headline in Arabic calligraphy
-- Gradient overlay with purple to pink tones
-- Arabic geometric pattern accents
-- Price tag or discount badge
-- Professional advertising quality, 4K, Instagram-ready
-- Colors: warm golds, deep purples, rose pinks, cream whites`,
+      lifestyle: `Egyptian Fashion E-commerce Lifestyle Ad - STYLE 1:
+- Product as hero with sharp focus, lifestyle context
+- Warm golden hour lighting with soft bokeh background
+- Modern Egyptian woman lifestyle setting
+- ARABIC TEXT: Bold modern Arabic sans-serif font (NO tashkeel/diacritics)
+- Text design: Neon glow effect or gradient fill
+- Price badge: "٢٩٩ ج.م" in decorative circle/ribbon
+- Discount splash: "خصم ٥٠٪" in dynamic starburst shape
+- Instagram-ready 4K, vibrant colors
+- Egyptian market appeal, trendy fashion mood`,
 
-      flatlay: `Professional Arabic flat lay e-commerce advertisement:
-- Top-down bird's eye view product arrangement
-- Marble or textured fabric background
-- Product centered with complementary accessories
-- Bold Arabic promotional text overlay
-- Clean Instagram-worthy aesthetic
-- Soft even lighting from above
-- Feature callouts with Arabic text
-- Brand watermark placement
-- Colors: soft pastels, white, cream, gold accents`,
+      flatlay: `Egyptian Fashion Flatlay Ad - STYLE 2:
+- Bird's eye view product arrangement on marble/velvet
+- Fashion accessories around main product
+- Scattered rose petals or gold confetti accents
+- ARABIC TEXT: Chunky bold Arabic display font (NO tashkeel)
+- Text design: 3D effect with drop shadow
+- Price: "السعر ١٩٩ ج.م فقط" in elegant banner
+- Promo text in speech bubble or tag shape
+- Soft diffused lighting, Instagram aesthetic
+- Pastel pinks, golds, cream, rose gold accents`,
 
-      model: `Professional Arabic beauty advertisement photo:
-- Beautiful model showcasing the product
-- Product clearly visible and prominent
-- Professional studio lighting setup
-- Arabic headline in elegant typography
-- High-end beauty brand aesthetic
-- Soft flattering lighting
-- Product glow effect
-- Trust badges in Arabic
-- Colors: soft pinks, neutral tones, white, rose gold`,
+      model: `Egyptian Fashion Model Ad - STYLE 3:
+- Egyptian model showcasing fashion product
+- Product clearly visible and styled
+- Professional studio lighting, beauty dish
+- ARABIC TEXT: Elegant Arabic calligraphy-inspired modern font (NO tashkeel)
+- Text design: Brush stroke background behind text
+- "اطلبي دلوقتي" CTA in bold decorative button
+- Price "٣٩٩ ج.م" with strikethrough old price
+- High-fashion editorial quality
+- Soft pinks, neutrals, champagne, bronze tones`,
 
-      studio: `Professional Arabic product catalog advertisement:
-- Product as sole hero on studio background
-- Clean white or gradient backdrop
-- Perfect product lighting with soft shadows
-- Large Arabic product name headline
-- Key features as Arabic bullet points
-- "اطلب الآن" Order Now button design
-- Delivery badges in Arabic
-- Commercial catalog quality
-- Colors: white, light gray, brand accents`,
+      studio: `Egyptian Fashion Catalog Ad - STYLE 4:
+- Product hero shot on clean gradient backdrop
+- Professional product photography lighting
+- Floating elements or geometric shapes accent
+- ARABIC TEXT: Bold condensed Arabic font (NO tashkeel)
+- Text design: Text inside geometric shapes (circles, hexagons)
+- Price "٤٩٩ ج.م" in modern price tag design
+- Feature icons with Arabic labels
+- "توصيل لحد البيت" delivery badge
+- White, soft gray, accent color pops`,
 
-      minimal: `Minimalist Arabic luxury product advertisement:
-- Product centered with generous negative space
-- Elegant solid or subtle gradient backdrop
-- Refined artistic presentation
-- Minimal elegant Arabic headline
-- Luxury brand typography
-- Sophisticated understated elegance
-- Arabic calligraphy elements
-- Colors: cream, taupe, muted gold, soft black`,
+      minimal: `Egyptian Luxury Fashion Ad - STYLE 5:
+- Product with generous negative space
+- Ultra-clean luxury presentation
+- Subtle gradient or solid elegant backdrop
+- ARABIC TEXT: Thin elegant Arabic serif (NO tashkeel)
+- Text design: Minimalist with gold foil effect
+- Price "٧٩٩ ج.م" in understated elegant format
+- Single line Arabic tagline
+- Premium brand aesthetic
+- Cream, black, gold, champagne colors`,
+
+      streetwear: `Egyptian Streetwear Fashion Ad - STYLE 6:
+- Urban trendy product presentation
+- Graffiti or urban texture backgrounds
+- Bold dynamic angles and composition
+- ARABIC TEXT: Graffiti-style Arabic font (NO tashkeel)
+- Text design: Spray paint effect, dripping text
+- Price "١٤٩ ج.م" in street art style tag
+- "ستايل الشارع" urban vibe text
+- Neon accents, bold contrasts
+- Electric colors, black, white, neon pink/green`,
+
+      vintage: `Egyptian Vintage Fashion Ad - STYLE 7:
+- Retro-inspired product styling
+- Vintage film grain and warm tones
+- Classic elegant composition
+- ARABIC TEXT: Retro Arabic display font (NO tashkeel)
+- Text design: Vintage badge or stamp effect
+- Price "٢٤٩ ج.م" in classic oval frame
+- "كلاسيك" vintage charm elements
+- Sepia, warm browns, dusty rose, gold`,
+
+      glam: `Egyptian Glam Fashion Ad - STYLE 8:
+- High-end glamorous product shot
+- Sparkle and shimmer effects
+- Luxury velvet or silk backgrounds
+- ARABIC TEXT: Glamorous Arabic script (NO tashkeel)
+- Text design: Glitter fill or diamond encrusted effect
+- Price "٥٩٩ ج.م" in luxury gold frame
+- "لوك فخم" glamour messaging
+- Rose gold, champagne, deep purple, black`,
     };
 
-    const selectedStyle = stylePrompts[style] || stylePrompts.lifestyle;
+    // Randomly select 3 different styles for variety
+    const styleKeys = Object.keys(stylePrompts);
+    const shuffledStyles = styleKeys.sort(() => Math.random() - 0.5);
+    const selectedStyles = style ? [style, ...shuffledStyles.filter(s => s !== style).slice(0, 2)] : shuffledStyles.slice(0, 3);
 
-    // Define multiple angles/perspectives for generation
-    const angleVariations = [
-      {
-        name: "front",
-        nameAr: "أمامي",
-        prompt: "Front view, straight-on angle, product facing camera directly"
-      },
-      {
-        name: "angle",
-        nameAr: "زاوية جانبية",
-        prompt: "45-degree angle view, showing depth and dimension, dynamic perspective"
-      },
-      {
-        name: "close-up",
-        nameAr: "مقرّب",
-        prompt: "Close-up detail shot, highlighting texture and quality, macro focus on key features"
-      }
-    ];
+    // Arabic style names mapping
+    const styleNamesAr: Record<string, string> = {
+      lifestyle: "لايف ستايل",
+      flatlay: "فلات لاي",
+      model: "موديل",
+      studio: "استوديو",
+      minimal: "مينيمال",
+      streetwear: "ستريت وير",
+      vintage: "فينتاج",
+      glam: "جلام"
+    };
 
-    console.log(`User ${authData?.userId} generating ${angleVariations.length} images with Lovable AI Gateway, style: ${style}, hasProductImage: ${!!productImage}`);
+    // Define multiple style variations for fashion variety
+    const styleVariations = selectedStyles.map((styleKey) => ({
+      name: styleKey,
+      nameAr: styleNamesAr[styleKey] || styleKey,
+      prompt: stylePrompts[styleKey as keyof typeof stylePrompts] || stylePrompts.lifestyle
+    }));
 
-    // Generate multiple images with different angles
+    console.log(`User ${authData?.userId} generating ${styleVariations.length} varied fashion images with Lovable AI Gateway, styles: ${selectedStyles.join(', ')}, hasProductImage: ${!!productImage}`);
+
+    // Generate multiple images with different styles for fashion variety
     const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string }> = [];
     
-    for (const angle of angleVariations) {
+    for (const variation of styleVariations) {
       // Build the image editing prompt that preserves the original product
       const editPrompt = productImage 
-        ? `CRITICAL INSTRUCTION: You MUST preserve the EXACT product shown in the image. Do NOT change the product itself.
+        ? `CRITICAL: Keep the EXACT product from the image - do NOT change the product itself.
 
-ANALYZE the product in detail:
-- Identify the exact shape, colors, textures, and materials
-- Note all branding, logos, text, and labels
-- Observe the product proportions and dimensions
-- Identify any unique features or details
+PRODUCT PRESERVATION:
+- Keep exact shape, colors, materials, branding
+- Do not modify or replace the product
 
-NOW create a professional advertising photo with these requirements:
-1. Keep the EXACT same product - do not modify, replace, or alter it
-2. CAMERA ANGLE: ${angle.prompt}
-3. Place the product in a professional ${style} advertising setting
-4. Add professional studio lighting that enhances the product
-5. ${selectedStyle}
+CREATE Egyptian Fashion Advertisement:
+${variation.prompt}
+
+ARABIC TEXT RULES (CRITICAL):
+- NO tashkeel/diacritics (لا تشكيل) - clean modern Arabic only
+- Use decorative, eye-catching text designs
+- Price in Egyptian Pounds (ج.م)
+- Egyptian dialect phrases: "اطلبي دلوقتي", "توصيل لحد البيت", "خصم"
 
 Product context: ${prompt}
 
-OUTPUT: A professional e-commerce advertisement featuring the IDENTICAL product from the input image, just in a ${angle.name} view with Arabic text overlays.`
-        : `${selectedStyle}
+OUTPUT: Egyptian fashion e-commerce ad with ${variation.name} style, attractive Arabic text designs, Egyptian market appeal.`
+        : `${variation.prompt}
 
 Product: ${prompt}
-CAMERA ANGLE: ${angle.prompt}
 
-CRITICAL REQUIREMENTS:
-- Professional MARKETING ADVERTISEMENT, not just product photo
-- ${angle.prompt}
-- Include beautiful Arabic text overlays (right-to-left)
-- Use elegant Arabic fonts
-- Complete social media ad ready for Meta Ads
-- 4K resolution, vibrant colors, eye-catching design
-- Arabic text integrated naturally into the design`;
+ARABIC TEXT RULES (CRITICAL):
+- NO tashkeel/diacritics (لا تشكيل) - clean modern text
+- Eye-catching decorative text effects (glow, shadow, 3D, gradients)
+- Prices in Egyptian Pounds: "١٩٩ ج.م", "٢٩٩ ج.م", "٣٩٩ ج.م"
+- Egyptian phrases: "اطلبي دلوقتي", "توصيل مجاني", "خصم ٥٠٪"
+- Bold, modern Arabic fonts - NOT calligraphy
+- Text integrated as design elements (badges, banners, bubbles)
+
+OUTPUT: 4K Egyptian fashion advertisement, Instagram-ready, vibrant colors, professional quality`;
 
       // Build the message content based on whether we have a product image
       let messageContent: any;
@@ -168,7 +204,7 @@ CRITICAL REQUIREMENTS:
       }
 
       try {
-        console.log(`Generating ${angle.name} view...`);
+        console.log(`Generating ${variation.name} style...`);
         
         const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -190,7 +226,7 @@ CRITICAL REQUIREMENTS:
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`Lovable AI Gateway error for ${angle.name}:`, response.status, errorText);
+          console.error(`Lovable AI Gateway error for ${variation.name}:`, response.status, errorText);
           
           if (response.status === 401) {
             throw new Error("Invalid Lovable API key");
@@ -201,7 +237,7 @@ CRITICAL REQUIREMENTS:
           if (response.status === 429) {
             throw new Error("Rate limit exceeded - please try again in a moment");
           }
-          // Continue to next angle on other errors
+          // Continue to next style on other errors
           continue;
         }
 
@@ -211,21 +247,21 @@ CRITICAL REQUIREMENTS:
         if (imageData) {
           generatedImages.push({
             imageUrl: imageData,
-            angle: angle.name,
-            angleAr: angle.nameAr
+            angle: variation.name,
+            angleAr: variation.nameAr
           });
-          console.log(`Successfully generated ${angle.name} view`);
+          console.log(`Successfully generated ${variation.name} style`);
         }
-      } catch (angleError) {
-        console.error(`Error generating ${angle.name} view:`, angleError);
+      } catch (styleError) {
+        console.error(`Error generating ${variation.name} style:`, styleError);
         // If it's a critical error, throw it
-        if (angleError instanceof Error && 
-            (angleError.message.includes("quota") || 
-             angleError.message.includes("API key") ||
-             angleError.message.includes("Rate limit"))) {
-          throw angleError;
+        if (styleError instanceof Error && 
+            (styleError.message.includes("quota") || 
+             styleError.message.includes("API key") ||
+             styleError.message.includes("Rate limit"))) {
+          throw styleError;
         }
-        // Otherwise continue to next angle
+        // Otherwise continue to next style
       }
     }
 
@@ -233,16 +269,16 @@ CRITICAL REQUIREMENTS:
       throw new Error("No images were generated");
     }
 
-    console.log(`Successfully generated ${generatedImages.length} images for user ${authData?.userId}`);
+    console.log(`Successfully generated ${generatedImages.length} varied fashion images for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ 
         images: generatedImages,
         // Keep backward compatibility
         imageUrl: generatedImages[0]?.imageUrl,
-        description: `Professional ${style} advertisement with ${generatedImages.length} angles`,
+        description: `Egyptian fashion ads with ${generatedImages.length} different styles`,
         mode: productImage ? "edit" : "generate",
-        style: style,
+        styles: selectedStyles,
         count: generatedImages.length
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
