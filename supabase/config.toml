@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.analyze-ads]
 verify_jwt = false
 
+[functions.analyze-product]
+verify_jwt = false
+
 [functions.business-advisor]
 verify_jwt = false
 

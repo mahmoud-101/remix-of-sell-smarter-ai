@@ -23,10 +23,32 @@ import {
   Shirt,
   Sun,
   Layers,
-  Minimize2
+  Minimize2,
+  Brain,
+  Target,
+  Heart,
+  HelpCircle,
+  AlertTriangle,
+  CheckCircle2,
+  Lightbulb,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type ImageStyle = "lifestyle" | "flatlay" | "model" | "studio" | "minimal";
+
+interface ProductAnalysis {
+  coreFeature?: string;
+  features?: string[];
+  benefits?: string[];
+  problemsSolved?: string[];
+  customerGoals?: string[];
+  emotionalTriggers?: string[];
+  objections?: string[];
+  faqs?: string[];
+  imagePrompts?: Array<{ title: string; description: string; focus: string }>;
+}
 
 const imageStyles: Array<{
   value: ImageStyle;
@@ -89,8 +111,14 @@ export default function ImageStudio() {
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [productName, setProductName] = useState("");
+  const [productDescription, setProductDescription] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [style, setStyle] = useState<ImageStyle>("lifestyle");
+  
+  // Analysis State
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<ProductAnalysis | null>(null);
+  const [analysisOpen, setAnalysisOpen] = useState(true);
   
   const [loading, setLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Array<{ imageUrl: string; angle: string; angleAr: string }>>([]);
@@ -99,7 +127,6 @@ export default function ImageStudio() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       toast({
         title: isRTL ? "ملف غير صالح" : "Invalid file",
@@ -109,7 +136,6 @@ export default function ImageStudio() {
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: isRTL ? "الملف كبير جداً" : "File too large",
@@ -135,6 +161,75 @@ export default function ImageStudio() {
     }
   };
 
+  // Deep Analysis before generation
+  const handleAnalyze = async () => {
+    if (!user) {
+      toast({
+        title: isRTL ? "يرجى تسجيل الدخول" : "Please login",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!productName.trim()) {
+      toast({
+        title: isRTL ? "أدخل اسم المنتج" : "Enter product name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAnalyzing(true);
+    setAnalysis(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("analyze-product", {
+        body: {
+          productName,
+          productDescription,
+          category: "أزياء/جمال",
+          targetAudience: "نساء مصر 18-45",
+          productImage,
+          language: isRTL ? 'ar' : 'en',
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      if (data?.analysis) {
+        // Normalize the analysis response
+        const normalizedAnalysis: ProductAnalysis = {
+          coreFeature: data.analysis["الميزة الأساسية"] || data.analysis.coreFeature || "",
+          features: data.analysis["المميزات"] || data.analysis.features || [],
+          benefits: data.analysis["الفوائد"] || data.analysis.benefits || [],
+          problemsSolved: data.analysis["المشاكل التي يحلها"] || data.analysis.problemsSolved || [],
+          customerGoals: data.analysis["أهداف العميل"] || data.analysis.customerGoals || [],
+          emotionalTriggers: data.analysis["المحفزات العاطفية"] || data.analysis.emotionalTriggers || [],
+          objections: data.analysis["اعتراضات العميل"] || data.analysis.objections || [],
+          faqs: data.analysis["الأسئلة الشائعة"] || data.analysis.faqs || [],
+          imagePrompts: data.analysis["أفضل 4 زوايا تصوير للإعلانات"] || data.analysis.imagePrompts || [],
+        };
+        setAnalysis(normalizedAnalysis);
+        setAnalysisOpen(true);
+        
+        toast({
+          title: isRTL ? "✓ تم التحليل" : "✓ Analysis Complete",
+          description: isRTL ? "اضغط توليد لإنشاء الصور بناءً على التحليل" : "Click generate to create images based on analysis",
+        });
+      }
+    } catch (e: any) {
+      console.error("Analysis error:", e);
+      toast({
+        title: isRTL ? "خطأ في التحليل" : "Analysis Error",
+        description: e?.message || (isRTL ? "فشل التحليل" : "Analysis failed"),
+        variant: "destructive",
+      });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const handleGenerate = async () => {
     if (!user) {
       toast({
@@ -156,11 +251,24 @@ export default function ImageStudio() {
     setGeneratedImages([]);
 
     try {
-      // Build the prompt
       const styleInfo = imageStyles.find(s => s.value === style);
       const styleLabel = isRTL ? styleInfo?.label.ar : styleInfo?.label.en;
       
+      // Build enhanced prompt using analysis insights
       let prompt = customPrompt.trim() || `${productName}, ${styleLabel} style, professional product photography`;
+      
+      // Enhance prompt with analysis data if available
+      if (analysis) {
+        const benefits = Array.isArray(analysis.benefits) ? analysis.benefits.slice(0, 2).join("، ") : "";
+        const triggers = Array.isArray(analysis.emotionalTriggers) ? analysis.emotionalTriggers.slice(0, 2).join("، ") : "";
+        
+        if (benefits) {
+          prompt += `. Key benefits: ${benefits}`;
+        }
+        if (triggers) {
+          prompt += `. Emotional appeal: ${triggers}`;
+        }
+      }
       
       // Add style-specific enhancements
       switch (style) {
@@ -185,38 +293,34 @@ export default function ImageStudio() {
         body: {
           prompt,
           style,
-          productImage: productImage, // Base64 image if uploaded
+          productImage,
+          analysis, // Pass analysis for enhanced generation
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Handle multiple images response
       const images = data?.images as Array<{ imageUrl: string; angle: string; angleAr: string }> | undefined;
-      const imageCount = data?.count || 1;
       
       if (images && images.length > 0) {
         setGeneratedImages(images);
         
-        // Save to history automatically
         await saveToHistory(
           "design",
-          { productName, style, customPrompt },
+          { productName, style, customPrompt, hasAnalysis: !!analysis },
           { title: productName || customPrompt?.substring(0, 50), imageCount: images.length, style }
         );
         
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
           description: isRTL 
-            ? `تم إنشاء ${images.length} صور - تم الحفظ في السجل` 
-            : `${images.length} images created - saved to history`,
+            ? `تم إنشاء ${images.length} صور بناءً على التحليل العميق` 
+            : `${images.length} images created based on deep analysis`,
         });
       } else if (data?.imageUrl) {
-        // Backward compatibility
         setGeneratedImages([{ imageUrl: data.imageUrl, angle: "front", angleAr: "أمامي" }]);
         
-        // Save to history
         await saveToHistory(
           "design",
           { productName, style, customPrompt },
@@ -225,7 +329,6 @@ export default function ImageStudio() {
         
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
-          description: isRTL ? "تم إنشاء الصورة - تم الحفظ في السجل" : "Image created - saved to history",
         });
       } else {
         throw new Error(isRTL ? "لم يتم توليد الصورة" : "No image generated");
@@ -268,12 +371,31 @@ export default function ImageStudio() {
   const downloadAllImages = async () => {
     for (let i = 0; i < generatedImages.length; i++) {
       await downloadImage(generatedImages[i].imageUrl, generatedImages[i].angle, i);
-      // Small delay between downloads
       await new Promise(resolve => setTimeout(resolve, 500));
     }
     toast({
       title: isRTL ? "✓ تم تحميل جميع الصور" : "✓ All images downloaded",
     });
+  };
+
+  // Analysis Section Component
+  const AnalysisSection = ({ title, items, icon: Icon, color }: { title: string; items: string[] | undefined; icon: any; color: string }) => {
+    if (!items || items.length === 0) return null;
+    return (
+      <div className="space-y-2">
+        <div className={`flex items-center gap-2 text-sm font-medium ${color}`}>
+          <Icon className="w-4 h-4" />
+          {title}
+        </div>
+        <ul className="space-y-1 ps-6">
+          {items.map((item, i) => (
+            <li key={i} className="text-sm text-muted-foreground list-disc">
+              {typeof item === 'string' ? item : JSON.stringify(item)}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
   };
 
   return (
@@ -287,23 +409,39 @@ export default function ImageStudio() {
             </div>
             <div>
               <h1 className="text-2xl font-bold">
-                {isRTL ? "استوديو الصور" : "Image Studio"}
+                {isRTL ? "استوديو الصور المتقدم" : "Advanced Image Studio"}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {isRTL
-                  ? "صور إعلانية احترافية بجودة 4K • Gemini 3 Pro Image"
-                  : "Professional 4K ad images • Gemini 3 Pro Image"}
+                  ? "تحليل عميق + صور إعلانية احترافية بجودة 4K"
+                  : "Deep Analysis + Professional 4K Ad Images"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-1 text-amber-600 border-amber-300 bg-amber-50">
-              📸 Pro Image
+            <Badge variant="outline" className="gap-1 text-violet-600 border-violet-300 bg-violet-50">
+              <Brain className="w-3 h-3" />
+              {isRTL ? "تحليل ذكي" : "Smart Analysis"}
             </Badge>
             <Badge variant="secondary" className="gap-1">
               <Wand2 className="w-3 h-3" />
               AI Powered
             </Badge>
+          </div>
+        </div>
+
+        {/* Info Banner */}
+        <div className="p-4 bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-200 rounded-lg flex items-start gap-3">
+          <Lightbulb className="w-5 h-5 text-violet-600 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-violet-800">
+              {isRTL ? "كيف يعمل التحليل العميق؟" : "How does Deep Analysis work?"}
+            </p>
+            <p className="text-violet-700">
+              {isRTL 
+                ? "أدخل بيانات المنتج → اضغط تحليل → راجع النتائج → اضغط توليد للحصول على 4 صور مبنية على التحليل!"
+                : "Enter product data → Click Analyze → Review insights → Click Generate for 4 analysis-based images!"}
+            </p>
           </div>
         </div>
 
@@ -319,8 +457,8 @@ export default function ImageStudio() {
                 </CardTitle>
                 <CardDescription>
                   {isRTL 
-                    ? "ارفع صورة منتجك لتحسين النتائج (اختياري)"
-                    : "Upload your product image for better results (optional)"}
+                    ? "ارفع صورة منتجك لتحسين التحليل والنتائج"
+                    : "Upload your product image for better analysis and results"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -369,17 +507,30 @@ export default function ImageStudio() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5" />
-                  {isRTL ? "تفاصيل التوليد" : "Generation Details"}
+                  {isRTL ? "بيانات المنتج" : "Product Details"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{isRTL ? "اسم المنتج" : "Product Name"}</Label>
+                  <Label>{isRTL ? "اسم المنتج *" : "Product Name *"}</Label>
                   <Input
                     value={productName}
                     onChange={(e) => setProductName(e.target.value)}
                     placeholder={isRTL ? "فستان سهرة أسود" : "Black Evening Dress"}
                     className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{isRTL ? "وصف المنتج (يساعد في التحليل)" : "Product Description (helps analysis)"}</Label>
+                  <Textarea
+                    value={productDescription}
+                    onChange={(e) => setProductDescription(e.target.value)}
+                    placeholder={isRTL 
+                      ? "فستان سهرة أنيق من الساتان الفاخر، مناسب للحفلات..."
+                      : "Elegant satin evening dress, perfect for parties..."}
+                    rows={2}
+                    className="resize-none"
                   />
                 </div>
 
@@ -391,37 +542,125 @@ export default function ImageStudio() {
                     placeholder={isRTL 
                       ? "اكتب وصفاً تفصيلياً للصورة التي تريدها..."
                       : "Write a detailed description of the image you want..."}
-                    rows={3}
+                    rows={2}
                     className="resize-none"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    {isRTL 
-                      ? "💡 اترك فارغاً لاستخدام الاسم والستايل تلقائياً"
-                      : "💡 Leave empty to auto-generate from name and style"}
-                  </p>
                 </div>
 
-                {/* Generate Button */}
-                <Button
-                  size="lg"
-                  className="w-full h-14 text-lg gap-2"
-                  onClick={handleGenerate}
-                  disabled={loading || (!productName.trim() && !customPrompt.trim())}
-                >
-                  {loading ? (
-                    <>
-                      <RotateCcw className="w-5 h-5 animate-spin" />
-                      {isRTL ? "جارٍ التوليد..." : "Generating..."}
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5" />
-                      {isRTL ? "توليد صورة إعلانية" : "Generate Ad Image"}
-                    </>
-                  )}
-                </Button>
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Analyze Button */}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-14 text-base gap-2 border-violet-300 text-violet-700 hover:bg-violet-50"
+                    onClick={handleAnalyze}
+                    disabled={analyzing || !productName.trim()}
+                  >
+                    {analyzing ? (
+                      <>
+                        <RotateCcw className="w-5 h-5 animate-spin" />
+                        {isRTL ? "جارٍ التحليل..." : "Analyzing..."}
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="w-5 h-5" />
+                        {isRTL ? "تحليل عميق" : "Deep Analyze"}
+                      </>
+                    )}
+                  </Button>
+
+                  {/* Generate Button */}
+                  <Button
+                    size="lg"
+                    className="h-14 text-base gap-2"
+                    onClick={handleGenerate}
+                    disabled={loading || (!productName.trim() && !customPrompt.trim())}
+                  >
+                    {loading ? (
+                      <>
+                        <RotateCcw className="w-5 h-5 animate-spin" />
+                        {isRTL ? "جارٍ التوليد..." : "Generating..."}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        {isRTL ? "توليد 4 صور" : "Generate 4 Images"}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
+
+            {/* Analysis Results */}
+            {analysis && (
+              <Card className="border-violet-200 bg-gradient-to-br from-violet-50/50 to-purple-50/50">
+                <Collapsible open={analysisOpen} onOpenChange={setAnalysisOpen}>
+                  <CardHeader className="pb-2">
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between cursor-pointer">
+                        <CardTitle className="flex items-center gap-2 text-violet-800">
+                          <Brain className="w-5 h-5" />
+                          {isRTL ? "نتائج التحليل العميق" : "Deep Analysis Results"}
+                        </CardTitle>
+                        {analysisOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                      </div>
+                    </CollapsibleTrigger>
+                    <CardDescription>
+                      {isRTL ? "insights تسويقية لإنشاء صور إعلانية فعالة" : "Marketing insights for effective ad images"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CollapsibleContent>
+                    <CardContent className="space-y-4 pt-2">
+                      {/* Core Feature */}
+                      {analysis.coreFeature && (
+                        <div className="p-3 bg-violet-100 rounded-lg">
+                          <div className="flex items-center gap-2 text-sm font-medium text-violet-800 mb-1">
+                            <Target className="w-4 h-4" />
+                            {isRTL ? "الميزة الأساسية" : "Core Feature"}
+                          </div>
+                          <p className="text-sm text-violet-700">{analysis.coreFeature}</p>
+                        </div>
+                      )}
+
+                      <div className="grid gap-4">
+                        <AnalysisSection 
+                          title={isRTL ? "المميزات" : "Features"} 
+                          items={analysis.features} 
+                          icon={CheckCircle2} 
+                          color="text-green-600" 
+                        />
+                        <AnalysisSection 
+                          title={isRTL ? "الفوائد" : "Benefits"} 
+                          items={analysis.benefits} 
+                          icon={Sparkles} 
+                          color="text-blue-600" 
+                        />
+                        <AnalysisSection 
+                          title={isRTL ? "المشاكل المحلولة" : "Problems Solved"} 
+                          items={analysis.problemsSolved} 
+                          icon={AlertTriangle} 
+                          color="text-orange-600" 
+                        />
+                        <AnalysisSection 
+                          title={isRTL ? "المحفزات العاطفية" : "Emotional Triggers"} 
+                          items={analysis.emotionalTriggers} 
+                          icon={Heart} 
+                          color="text-pink-600" 
+                        />
+                        <AnalysisSection 
+                          title={isRTL ? "اعتراضات العميل" : "Customer Objections"} 
+                          items={analysis.objections} 
+                          icon={HelpCircle} 
+                          color="text-red-600" 
+                        />
+                      </div>
+                    </CardContent>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
+            )}
           </div>
 
           {/* Right Column: Style Selection & Results */}
@@ -535,12 +774,12 @@ export default function ImageStudio() {
                     <ImageIcon className="w-10 h-10 text-violet-500" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">
-                    {isRTL ? "الصورة ستظهر هنا" : "Image will appear here"}
+                    {isRTL ? "الصور ستظهر هنا" : "Images will appear here"}
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                     {isRTL
-                      ? "اختر ستايل وأدخل بيانات المنتج لتوليد صورة إعلانية"
-                      : "Choose a style and enter product details to generate an ad image"}
+                      ? "1️⃣ أدخل بيانات المنتج\n2️⃣ اضغط تحليل عميق\n3️⃣ اضغط توليد للصور"
+                      : "1️⃣ Enter product data\n2️⃣ Click Deep Analyze\n3️⃣ Click Generate for images"}
                   </p>
                 </CardContent>
               </Card>
