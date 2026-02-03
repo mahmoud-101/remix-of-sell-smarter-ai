@@ -25,6 +25,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useHistory } from "@/hooks/useHistory";
+import { AIModelSelector, getRecommendedModel, AI_MODELS } from "@/components/ai/AIModelSelector";
 
 const platforms = [
   { id: "facebook", label: "Facebook", icon: Facebook, color: "bg-blue-600" },
@@ -51,6 +52,7 @@ export default function AdsCopy() {
   const [priceOffer, setPriceOffer] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("facebook");
   const [campaignGoal, setCampaignGoal] = useState("conversions");
+  const [selectedModel, setSelectedModel] = useState(getRecommendedModel("ads"));
   
   const [generatedAds, setGeneratedAds] = useState<AdVariation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,10 +86,15 @@ export default function AdsCopy() {
     setGeneratedAds([]);
 
     try {
+      const modelData = AI_MODELS.find(m => m.id === selectedModel);
+      const provider = modelData?.provider || "lovable";
+      
       const { data, error } = await supabase.functions.invoke("ai-generate", {
         body: {
           toolType: "ads-copy",
           language: isRTL ? "ar" : "en",
+          model: selectedModel,
+          provider,
           input: {
             productName,
             productDescription,
@@ -315,6 +322,13 @@ export default function AdsCopy() {
                 />
               </div>
             </div>
+
+            {/* AI Model Selector */}
+            <AIModelSelector
+              toolType="ads"
+              selectedModel={selectedModel}
+              onModelChange={setSelectedModel}
+            />
 
             {/* Generate Button */}
             <Button

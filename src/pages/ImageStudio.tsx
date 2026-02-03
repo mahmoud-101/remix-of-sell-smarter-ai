@@ -11,6 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useHistory } from "@/hooks/useHistory";
+import { AIModelSelector, getRecommendedModel } from "@/components/ai/AIModelSelector";
 import { 
   ImageIcon, 
   Sparkles, 
@@ -114,6 +115,7 @@ export default function ImageStudio() {
   const [productDescription, setProductDescription] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
   const [style, setStyle] = useState<ImageStyle>("lifestyle");
+  const [selectedModel, setSelectedModel] = useState(getRecommendedModel("image"));
   
   // Analysis State
   const [analyzing, setAnalyzing] = useState(false);
@@ -606,6 +608,13 @@ export default function ImageStudio() {
                     className="resize-none"
                   />
                 </div>
+
+                {/* AI Model Selector */}
+                <AIModelSelector
+                  toolType="image"
+                  selectedModel={selectedModel}
+                  onModelChange={setSelectedModel}
+                />
 
                 {/* Generate Button - Single button that does analysis + generation */}
                 <Button
