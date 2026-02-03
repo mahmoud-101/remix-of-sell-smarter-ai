@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useHistory } from "@/hooks/useHistory";
 import { 
   Sparkles, 
   Copy, 
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { saveToHistory } = useHistory();
 
   // Form State
   const [productName, setProductName] = useState("");
@@ -169,9 +171,16 @@ export default function Dashboard() {
       }
       setResult(res);
       
+      // Save to history automatically
+      await saveToHistory(
+        "product",
+        { productName, productDescription, category, targetAudience, keyFeatures, priceRange, tone },
+        { title: res.shopifyTitle.ar, description: res.description.ar?.substring(0, 200) }
+      );
+      
       toast({
         title: isRTL ? "✓ تم التوليد بنجاح" : "✓ Generated successfully",
-        description: isRTL ? "6 أنواع محتوى جاهزة للنسخ" : "6 content types ready to copy",
+        description: isRTL ? "6 أنواع محتوى جاهزة للنسخ - تم الحفظ في السجل" : "6 content types ready - saved to history",
       });
     } catch (e: any) {
       console.error("Generation error:", e);

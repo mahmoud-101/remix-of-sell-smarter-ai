@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useHistory } from "@/hooks/useHistory";
 import { 
   Video, 
   Copy, 
@@ -68,6 +69,7 @@ export default function ReelsGenerator() {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { saveToHistory } = useHistory();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -160,11 +162,19 @@ export default function ReelsGenerator() {
           hashtags: data.hashtags,
           instructions: data.instructions,
         });
+        
+        // Save to history automatically
+        await saveToHistory(
+          "reels",
+          { productName, style },
+          { title: productName || style, scenesCount: data.scenes.length, caption: data.caption }
+        );
+        
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
           description: isRTL 
-            ? `تم إنشاء ${data.scenes.length} مشاهد للريل` 
-            : `${data.scenes.length} scenes created for your Reel`,
+            ? `تم إنشاء ${data.scenes.length} مشاهد - تم الحفظ في السجل` 
+            : `${data.scenes.length} scenes created - saved to history`,
         });
       } else {
         throw new Error(isRTL ? "لم يتم توليد المشاهد" : "No scenes generated");

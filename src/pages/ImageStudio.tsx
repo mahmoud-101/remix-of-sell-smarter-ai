@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useHistory } from "@/hooks/useHistory";
 import { 
   ImageIcon, 
   Sparkles, 
@@ -81,6 +82,7 @@ export default function ImageStudio() {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { saveToHistory } = useHistory();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
@@ -196,18 +198,34 @@ export default function ImageStudio() {
       
       if (images && images.length > 0) {
         setGeneratedImages(images);
+        
+        // Save to history automatically
+        await saveToHistory(
+          "design",
+          { productName, style, customPrompt },
+          { title: productName || customPrompt?.substring(0, 50), imageCount: images.length, style }
+        );
+        
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
           description: isRTL 
-            ? `تم إنشاء ${images.length} صور بزوايا مختلفة` 
-            : `${images.length} images created with different angles`,
+            ? `تم إنشاء ${images.length} صور - تم الحفظ في السجل` 
+            : `${images.length} images created - saved to history`,
         });
       } else if (data?.imageUrl) {
         // Backward compatibility
         setGeneratedImages([{ imageUrl: data.imageUrl, angle: "front", angleAr: "أمامي" }]);
+        
+        // Save to history
+        await saveToHistory(
+          "design",
+          { productName, style, customPrompt },
+          { title: productName || customPrompt?.substring(0, 50), imageCount: 1, style }
+        );
+        
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
-          description: isRTL ? "تم إنشاء الصورة بنجاح" : "Image created successfully",
+          description: isRTL ? "تم إنشاء الصورة - تم الحفظ في السجل" : "Image created - saved to history",
         });
       } else {
         throw new Error(isRTL ? "لم يتم توليد الصورة" : "No image generated");
