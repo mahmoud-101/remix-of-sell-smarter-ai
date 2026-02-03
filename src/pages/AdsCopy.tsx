@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useHistory } from "@/hooks/useHistory";
 
 const platforms = [
   { id: "facebook", label: "Facebook", icon: Facebook, color: "bg-blue-600" },
@@ -40,6 +41,7 @@ export default function AdsCopy() {
   const { isRTL } = useLanguage();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { saveToHistory } = useHistory();
 
   // Form State
   const [productName, setProductName] = useState("");
@@ -104,9 +106,17 @@ export default function AdsCopy() {
       const result = data?.result;
       if (result?.variations && Array.isArray(result.variations)) {
         setGeneratedAds(result.variations);
+        
+        // Save to history automatically
+        await saveToHistory(
+          "ads",
+          { productName, productDescription, keyBenefits, targetAudience, priceOffer, platform: selectedPlatform, goal: campaignGoal },
+          { title: productName, headline: result.variations[0]?.headline, count: result.variations.length }
+        );
+        
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
-          description: isRTL ? `${result.variations.length} إعلانات جاهزة` : `${result.variations.length} ads ready`,
+          description: isRTL ? `${result.variations.length} إعلانات جاهزة - تم الحفظ في السجل` : `${result.variations.length} ads ready - saved to history`,
         });
       } else {
         throw new Error(isRTL ? "استجابة غير صالحة" : "Invalid response format");

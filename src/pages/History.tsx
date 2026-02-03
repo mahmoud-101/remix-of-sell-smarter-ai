@@ -3,14 +3,13 @@ import {
   History as HistoryIcon,
   FileText,
   Megaphone,
-  Calendar,
+  Video,
   Palette,
-  Target,
   Search,
   Filter,
   Clock,
-  ChevronRight,
   Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
@@ -29,17 +28,17 @@ import { useToast } from "@/hooks/use-toast";
 const typeIcons: Record<string, any> = {
   product: FileText,
   ads: Megaphone,
-  campaign: Calendar,
+  reels: Video,
   design: Palette,
-  competitor: Target,
+  image: ImageIcon,
 };
 
 const typeColors: Record<string, string> = {
-  product: "from-blue-500 to-indigo-500",
+  product: "from-emerald-500 to-teal-500",
   ads: "from-pink-500 to-rose-500",
-  campaign: "from-amber-500 to-orange-500",
-  design: "from-emerald-500 to-teal-500",
-  competitor: "from-violet-500 to-purple-500",
+  reels: "from-purple-500 to-violet-500",
+  design: "from-amber-500 to-orange-500",
+  image: "from-blue-500 to-indigo-500",
 };
 
 export default function History() {
@@ -49,19 +48,18 @@ export default function History() {
   const { history, loading, deleteFromHistory } = useHistory();
   const { toast } = useToast();
 
-  const typeLabels: Record<string, string> = {
-    product: t("productCopy"),
-    ads: t("adsCopy"),
-    campaign: t("campaign"),
-    design: t("design"),
-    competitor: t("competitor"),
+  const typeLabels: Record<string, { ar: string; en: string }> = {
+    product: { ar: "استوديو المنتجات", en: "Product Studio" },
+    ads: { ar: "استوديو الإعلانات", en: "Ads Studio" },
+    reels: { ar: "استوديو الريلز", en: "Reels Studio" },
+    design: { ar: "استوديو الصور", en: "Image Studio" },
+    image: { ar: "صور", en: "Images" },
   };
 
   const filteredHistory = history.filter((item) => {
     const title = item.input_data?.productName || 
-                  item.input_data?.campaignName || 
-                  item.input_data?.competitorName || 
-                  item.input_data?.pageUrl || 
+                  item.output_data?.title ||
+                  item.input_data?.style || 
                   "";
     const matchesSearch = title.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "all" || item.tool_type === filter;
@@ -91,33 +89,37 @@ export default function History() {
 
   const getItemTitle = (item: any) => {
     return item.input_data?.productName || 
-           item.input_data?.campaignName || 
-           item.input_data?.competitorName || 
-           item.input_data?.pageUrl || 
+           item.output_data?.title ||
+           item.input_data?.style || 
            (isRTL ? "بدون عنوان" : "Untitled");
   };
 
   const getItemPreview = (item: any) => {
     const output = item.output_data;
-    if (output?.title) return output.title;
-    if (output?.description) return output.description.slice(0, 100);
-    if (output?.raw) return output.raw.slice(0, 100);
+    const input = item.input_data;
+    
+    if (output?.description) return output.description.substring(0, 100);
+    if (output?.headline) return output.headline;
+    if (output?.caption) return output.caption;
+    if (input?.productDescription) return input.productDescription.substring(0, 100);
+    if (output?.imageCount) return isRTL ? `${output.imageCount} صور` : `${output.imageCount} images`;
+    if (output?.scenesCount) return isRTL ? `${output.scenesCount} مشاهد` : `${output.scenesCount} scenes`;
     return isRTL ? "لا يوجد معاينة" : "No preview";
   };
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
               <HistoryIcon className="w-5 h-5 text-foreground" />
             </div>
-            <h1 className="text-2xl font-bold">{t("history")}</h1>
+            <h1 className="text-2xl font-bold">{isRTL ? "السجل" : "History"}</h1>
           </div>
           <p className="text-muted-foreground">
-            {t("historyDesc")}
+            {isRTL ? "كل المحتوى المُولّد من جميع الاستوديوهات" : "All generated content from all studios"}
           </p>
         </div>
 
@@ -126,24 +128,23 @@ export default function History() {
           <div className="relative flex-1">
             <Search className={`absolute ${isRTL ? "right-3" : "left-3"} top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground`} />
             <Input
-              placeholder={t("searchHistory")}
+              placeholder={isRTL ? "بحث في السجل..." : "Search history..."}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className={`${isRTL ? "pr-10" : "pl-10"} input-field`}
+              className={`${isRTL ? "pr-10" : "pl-10"}`}
             />
           </div>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] input-field">
+            <SelectTrigger className="w-full sm:w-[200px]">
               <Filter className={`w-4 h-4 ${isRTL ? "ml-2" : "mr-2"}`} />
-              <SelectValue placeholder={t("filter")} />
+              <SelectValue placeholder={isRTL ? "فلترة" : "Filter"} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("all")}</SelectItem>
-              <SelectItem value="product">{t("productCopy")}</SelectItem>
-              <SelectItem value="ads">{t("adsCopy")}</SelectItem>
-              <SelectItem value="campaign">{t("campaign")}</SelectItem>
-              <SelectItem value="design">{t("design")}</SelectItem>
-              <SelectItem value="competitor">{t("competitor")}</SelectItem>
+              <SelectItem value="all">{isRTL ? "الكل" : "All"}</SelectItem>
+              <SelectItem value="product">{isRTL ? "استوديو المنتجات" : "Product Studio"}</SelectItem>
+              <SelectItem value="ads">{isRTL ? "استوديو الإعلانات" : "Ads Studio"}</SelectItem>
+              <SelectItem value="reels">{isRTL ? "استوديو الريلز" : "Reels Studio"}</SelectItem>
+              <SelectItem value="design">{isRTL ? "استوديو الصور" : "Image Studio"}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -151,28 +152,29 @@ export default function History() {
         {/* History List */}
         <div className="space-y-4">
           {loading ? (
-            <div className="glass-card rounded-2xl p-8 text-center">
+            <div className="bg-card rounded-2xl p-8 text-center border">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
             </div>
           ) : filteredHistory.length === 0 ? (
-            <div className="glass-card rounded-2xl p-8 text-center">
+            <div className="bg-card rounded-2xl p-8 text-center border">
               <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center mx-auto mb-4">
                 <HistoryIcon className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="font-medium mb-2">{t("noHistory")}</h3>
+              <h3 className="font-medium mb-2">{isRTL ? "لا يوجد سجل" : "No history"}</h3>
               <p className="text-sm text-muted-foreground">
                 {search || filter !== "all"
-                  ? t("adjustFilters")
-                  : t("noHistoryDesc")}
+                  ? (isRTL ? "جرب تغيير الفلتر أو البحث" : "Try adjusting filters or search")
+                  : (isRTL ? "ابدأ بتوليد محتوى في أي استوديو وسيظهر هنا" : "Start generating content in any studio and it will appear here")}
               </p>
             </div>
           ) : (
             filteredHistory.map((item) => {
               const Icon = typeIcons[item.tool_type] || FileText;
+              const label = typeLabels[item.tool_type] || { ar: item.tool_type, en: item.tool_type };
               return (
                 <div
                   key={item.id}
-                  className="glass-card rounded-xl p-5 hover-lift group"
+                  className="bg-card rounded-xl p-5 border hover:shadow-md transition-shadow group"
                 >
                   <div className="flex items-start gap-4">
                     <div
@@ -185,7 +187,7 @@ export default function History() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-                          {typeLabels[item.tool_type] || item.tool_type}
+                          {isRTL ? label.ar : label.en}
                         </span>
                       </div>
                       <h3 className="font-medium group-hover:text-primary transition-colors">
