@@ -249,8 +249,52 @@ export default function ImageStudio() {
 
     setLoading(true);
     setGeneratedImages([]);
+    
+    let currentAnalysis = analysis;
 
     try {
+      // Step 1: Run deep analysis first if we have product name
+      if (productName.trim() && !currentAnalysis) {
+        setAnalyzing(true);
+        toast({
+          title: isRTL ? "جارٍ التحليل العميق..." : "Running deep analysis...",
+        });
+
+        const { data: analysisData, error: analysisError } = await supabase.functions.invoke("analyze-product", {
+          body: {
+            productName,
+            productDescription,
+            category: "أزياء/جمال",
+            targetAudience: "نساء مصر 18-45",
+            productImage,
+            language: isRTL ? 'ar' : 'en',
+          },
+        });
+
+        if (!analysisError && analysisData?.analysis) {
+          const normalizedAnalysis: ProductAnalysis = {
+            coreFeature: analysisData.analysis["الميزة الأساسية"] || analysisData.analysis.coreFeature || "",
+            features: analysisData.analysis["المميزات"] || analysisData.analysis.features || [],
+            benefits: analysisData.analysis["الفوائد"] || analysisData.analysis.benefits || [],
+            problemsSolved: analysisData.analysis["المشاكل التي يحلها"] || analysisData.analysis.problemsSolved || [],
+            customerGoals: analysisData.analysis["أهداف العميل"] || analysisData.analysis.customerGoals || [],
+            emotionalTriggers: analysisData.analysis["المحفزات العاطفية"] || analysisData.analysis.emotionalTriggers || [],
+            objections: analysisData.analysis["اعتراضات العميل"] || analysisData.analysis.objections || [],
+            faqs: analysisData.analysis["الأسئلة الشائعة"] || analysisData.analysis.faqs || [],
+            imagePrompts: analysisData.analysis["أفضل 4 زوايا تصوير للإعلانات"] || analysisData.analysis.imagePrompts || [],
+          };
+          setAnalysis(normalizedAnalysis);
+          setAnalysisOpen(true);
+          currentAnalysis = normalizedAnalysis;
+        }
+        setAnalyzing(false);
+      }
+
+      // Step 2: Generate images with analysis data
+      toast({
+        title: isRTL ? "جارٍ توليد الصور..." : "Generating images...",
+      });
+
       const styleInfo = imageStyles.find(s => s.value === style);
       const styleLabel = isRTL ? styleInfo?.label.ar : styleInfo?.label.en;
       
@@ -258,9 +302,9 @@ export default function ImageStudio() {
       let prompt = customPrompt.trim() || `${productName}, ${styleLabel} style, professional product photography`;
       
       // Enhance prompt with analysis data if available
-      if (analysis) {
-        const benefits = Array.isArray(analysis.benefits) ? analysis.benefits.slice(0, 2).join("، ") : "";
-        const triggers = Array.isArray(analysis.emotionalTriggers) ? analysis.emotionalTriggers.slice(0, 2).join("، ") : "";
+      if (currentAnalysis) {
+        const benefits = Array.isArray(currentAnalysis.benefits) ? currentAnalysis.benefits.slice(0, 2).join("، ") : "";
+        const triggers = Array.isArray(currentAnalysis.emotionalTriggers) ? currentAnalysis.emotionalTriggers.slice(0, 2).join("، ") : "";
         
         if (benefits) {
           prompt += `. Key benefits: ${benefits}`;
@@ -294,7 +338,7 @@ export default function ImageStudio() {
           prompt,
           style,
           productImage,
-          analysis, // Pass analysis for enhanced generation
+          analysis: currentAnalysis,
         },
       });
 
@@ -308,7 +352,7 @@ export default function ImageStudio() {
         
         await saveToHistory(
           "design",
-          { productName, style, customPrompt, hasAnalysis: !!analysis },
+          { productName, style, customPrompt, hasAnalysis: !!currentAnalysis },
           { title: productName || customPrompt?.substring(0, 50), imageCount: images.length, style }
         );
         
@@ -342,6 +386,7 @@ export default function ImageStudio() {
       });
     } finally {
       setLoading(false);
+      setAnalyzing(false);
     }
   };
 
@@ -562,49 +607,30 @@ export default function ImageStudio() {
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Analyze Button */}
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="h-14 text-base gap-2 border-violet-300 text-violet-700 hover:bg-violet-50"
-                    onClick={handleAnalyze}
-                    disabled={analyzing || !productName.trim()}
-                  >
-                    {analyzing ? (
-                      <>
-                        <RotateCcw className="w-5 h-5 animate-spin" />
-                        {isRTL ? "جارٍ التحليل..." : "Analyzing..."}
-                      </>
-                    ) : (
-                      <>
-                        <Brain className="w-5 h-5" />
-                        {isRTL ? "تحليل عميق" : "Deep Analyze"}
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Generate Button */}
-                  <Button
-                    size="lg"
-                    className="h-14 text-base gap-2"
-                    onClick={handleGenerate}
-                    disabled={loading || (!productName.trim() && !customPrompt.trim())}
-                  >
-                    {loading ? (
-                      <>
-                        <RotateCcw className="w-5 h-5 animate-spin" />
-                        {isRTL ? "جارٍ التوليد..." : "Generating..."}
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5" />
-                        {isRTL ? "توليد 4 صور" : "Generate 4 Images"}
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Generate Button - Single button that does analysis + generation */}
+                <Button
+                  size="lg"
+                  className="h-14 text-base gap-2 w-full"
+                  onClick={handleGenerate}
+                  disabled={loading || analyzing || (!productName.trim() && !customPrompt.trim())}
+                >
+                  {analyzing ? (
+                    <>
+                      <Brain className="w-5 h-5 animate-pulse" />
+                      {isRTL ? "جارٍ التحليل..." : "Analyzing..."}
+                    </>
+                  ) : loading ? (
+                    <>
+                      <RotateCcw className="w-5 h-5 animate-spin" />
+                      {isRTL ? "جارٍ التوليد..." : "Generating..."}
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5" />
+                      {isRTL ? "تحليل وتوليد 4 صور" : "Analyze & Generate 4 Images"}
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
 
