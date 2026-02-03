@@ -378,8 +378,23 @@ export default function ImageStudio() {
     });
   };
 
+  // Helper to safely convert any value to a displayable string
+  const safeString = (value: any): string => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    if (Array.isArray(value)) return value.map(safeString).join("، ");
+    if (typeof value === "object") {
+      // Try to extract meaningful text from object
+      const keys = Object.keys(value);
+      if (keys.length === 0) return "";
+      return keys.map(k => `${k}: ${safeString(value[k])}`).join(" | ");
+    }
+    return String(value);
+  };
+
   // Analysis Section Component
-  const AnalysisSection = ({ title, items, icon: Icon, color }: { title: string; items: string[] | undefined; icon: any; color: string }) => {
+  const AnalysisSection = ({ title, items, icon: Icon, color }: { title: string; items: any[] | undefined; icon: any; color: string }) => {
     if (!items || items.length === 0) return null;
     return (
       <div className="space-y-2">
@@ -390,7 +405,7 @@ export default function ImageStudio() {
         <ul className="space-y-1 ps-6">
           {items.map((item, i) => (
             <li key={i} className="text-sm text-muted-foreground list-disc">
-              {typeof item === 'string' ? item : JSON.stringify(item)}
+              {safeString(item)}
             </li>
           ))}
         </ul>
@@ -620,7 +635,7 @@ export default function ImageStudio() {
                             <Target className="w-4 h-4" />
                             {isRTL ? "الميزة الأساسية" : "Core Feature"}
                           </div>
-                          <p className="text-sm text-violet-700">{analysis.coreFeature}</p>
+                          <p className="text-sm text-violet-700">{safeString(analysis.coreFeature)}</p>
                         </div>
                       )}
 
