@@ -722,6 +722,10 @@ Return ONLY raw JSON.`;
         : "https://ai.gateway.lovable.dev/v1/chat/completions";
       const apiKey = useOpenRouter ? OPENROUTER_API_KEY : LOVABLE_API_KEY;
 
+      // OpenAI models use max_completion_tokens, others use max_tokens
+      const tokenLimit = retry ? Math.max(4000, maxTokens) : maxTokens;
+      const isOpenAIModel = selectedModel.startsWith("openai/");
+      
       const body: any = {
         model: selectedModel,
         messages: [
@@ -729,7 +733,7 @@ Return ONLY raw JSON.`;
           { role: "user", content: userPrompt }
         ],
         temperature: retry ? Math.min(0.25, temperature) : temperature,
-        max_tokens: retry ? Math.max(4000, maxTokens) : maxTokens,
+        ...(isOpenAIModel ? { max_completion_tokens: tokenLimit } : { max_tokens: tokenLimit }),
       };
 
       // OpenRouter doesn't fully support tool_choice, so use response_format for JSON
