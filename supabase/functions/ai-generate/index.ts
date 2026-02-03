@@ -16,13 +16,20 @@ serve(async (req) => {
     const toolType: string | undefined = payload?.toolType ?? payload?.type;
     const input = payload?.input ?? payload;
     const language = payload?.language;
+    const preferredProvider = payload?.provider || "lovable"; // "lovable" or "openrouter"
+    
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
+    // Check API key availability based on provider
+    if (preferredProvider === "openrouter" && !OPENROUTER_API_KEY) {
+      throw new Error("OPENROUTER_API_KEY is not configured");
+    }
+    if (preferredProvider === "lovable" && !LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log(`Processing ${toolType} for user ${authData?.userId}`);
+    console.log(`Processing ${toolType} for user ${authData?.userId} via ${preferredProvider}`);
 
     const langInstruction = language === 'ar' 
       ? "Output in Arabic (Professional marketing Arabic - Simplified Fusha)." 
@@ -50,6 +57,7 @@ serve(async (req) => {
     let userPrompt = "";
     // Model selection per tool type for optimal results
     let model = "google/gemini-2.5-flash"; // Default fast model
+    let openRouterModel = "google/gemini-2.5-flash-preview-05-20"; // OpenRouter equivalent
     let temperature = 0.7;
     let maxTokens = 2000;
     let toolSchema: any | null = null;
@@ -62,6 +70,7 @@ serve(async (req) => {
       // ============================================
       case "shopify-studio":
         model = "google/gemini-2.5-pro"; // Pro for comprehensive product content
+        openRouterModel = "google/gemini-2.5-pro-preview-05-06"; // OpenRouter Pro equivalent
         
         systemRole = `You are an ELITE Shopify content strategist for premium Fashion & Beauty brands in the MENA market.
 
@@ -188,6 +197,7 @@ Return ONLY the JSON object. No markdown, no explanations.`;
       // ============================================
       case "ads-copy":
         model = "openai/gpt-5-mini"; // GPT for creative, emotional ad copy
+        openRouterModel = "anthropic/claude-sonnet-4"; // OpenRouter creative equivalent
         
         systemRole = `You are a TOP-TIER Meta Ads copywriter specializing in Fashion & Beauty for the MENA market.
 
@@ -293,6 +303,7 @@ Return ONLY the JSON object.`;
       // ============================================
       case "reels-script":
         model = "openai/gpt-5"; // Full GPT-5 for complex creative scripts
+        openRouterModel = "anthropic/claude-sonnet-4"; // OpenRouter creative equivalent
         
         systemRole = `You are a VIRAL content strategist specializing in Fashion/Beauty Reels for the MENA market.
 
@@ -425,6 +436,7 @@ Return ONLY the JSON object.`;
       // ============================================
       case "product-copy":
         model = "google/gemini-2.5-flash";
+        openRouterModel = "google/gemini-2.5-flash-preview-05-20";
         systemRole = `You are an expert e-commerce copywriter for high-converting product content.
 
 ${segmentContext}
@@ -508,6 +520,7 @@ Return ONLY raw JSON.`;
 
       case "video-script":
         model = "google/gemini-2.5-flash";
+        openRouterModel = "google/gemini-2.5-flash-preview-05-20";
         systemRole = `You are a viral short-form video scriptwriter for TikTok/Reels.
 ${segmentContext}
 ${langInstruction}
@@ -561,6 +574,7 @@ Return ONLY raw JSON.`;
 
       case "seo-optimizer":
         model = "google/gemini-2.5-flash";
+        openRouterModel = "google/gemini-2.5-flash-preview-05-20";
         systemRole = `You are an e-commerce SEO specialist.
 ${segmentContext}
 ${langInstruction}
@@ -594,6 +608,7 @@ Return ONLY raw JSON.`;
 
       case "product":
         model = "google/gemini-2.5-flash";
+        openRouterModel = "google/gemini-2.5-flash-preview-05-20";
         systemRole = `You are an expert e-commerce copywriter.
 ${segmentContext}
 ${langInstruction}
@@ -699,8 +714,16 @@ Return ONLY raw JSON.`;
         ? "\n\nCRITICAL: Return COMPLETE JSON only. Keep each string single-line; use \\n for line breaks."
         : "\n\nCRITICAL: Return JSON only. Keep each string single-line; use \\n for line breaks.";
 
+      // Select model and endpoint based on provider
+      const useOpenRouter = preferredProvider === "openrouter";
+      const selectedModel = useOpenRouter ? openRouterModel : model;
+      const apiUrl = useOpenRouter 
+        ? "https://openrouter.ai/api/v1/chat/completions"
+        : "https://ai.gateway.lovable.dev/v1/chat/completions";
+      const apiKey = useOpenRouter ? OPENROUTER_API_KEY : LOVABLE_API_KEY;
+
       const body: any = {
-        model,
+        model: selectedModel,
         messages: [
           { role: "system", content: systemRole + strictSystemAddon },
           { role: "user", content: userPrompt }
@@ -725,14 +748,22 @@ Return ONLY raw JSON.`;
         body.response_format = { type: "json_object" };
       }
 
-      console.log(`Calling AI Gateway with model: ${model}`);
+      console.log(`Calling ${useOpenRouter ? 'OpenRouter' : 'Lovable AI'} with model: ${selectedModel}`);
 
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const headers: Record<string, string> = {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      };
+
+      // OpenRouter requires additional headers
+      if (useOpenRouter) {
+        headers["HTTP-Referer"] = "https://sellmata.lovable.app";
+        headers["X-Title"] = "Sellmata AI Studio";
+      }
+
+      const resp = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(body),
       });
 
