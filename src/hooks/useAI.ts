@@ -5,6 +5,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useUsageLimit } from "@/hooks/useUsageLimit";
 import { getCached, setCached, stableStringify, withTimeout } from "@/lib/memoryCache";
 
+// Get AI provider from localStorage (used instead of context for hooks simplicity)
+const getAIProvider = (): 'lovable' | 'openrouter' => {
+  const saved = localStorage.getItem('ai-provider');
+  return (saved === 'openrouter') ? 'openrouter' : 'lovable';
+};
+
 export const useAI = (toolType: string) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -34,11 +40,14 @@ export const useAI = (toolType: string) => {
 
     setIsLoading(true);
     try {
+      const provider = getAIProvider();
+      
       const invokePromise = supabase.functions.invoke('ai-generate', {
         body: {
           input: inputData,
           toolType: toolType,
           language: language === 'ar' ? 'ar' : 'en',
+          provider: provider, // Pass selected AI provider
         },
       });
 

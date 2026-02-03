@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Globe, Save } from "lucide-react";
+import { Globe, Save, Bot, Zap } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 export default function Settings() {
   const { t, isRTL, language, setLanguage } = useLanguage();
@@ -30,6 +31,10 @@ export default function Settings() {
   const [currentPlan, setCurrentPlan] = useState<string>("free");
   const [billingRows, setBillingRows] = useState<any[]>([]);
   const [monthUsage, setMonthUsage] = useState<number>(0);
+  const [aiProvider, setAIProvider] = useState<"lovable" | "openrouter">(() => {
+    const saved = localStorage.getItem('ai-provider');
+    return (saved === 'openrouter') ? 'openrouter' : 'lovable';
+  });
 
   const monthKey = useMemo(() => {
     const d = new Date();
@@ -95,6 +100,9 @@ export default function Settings() {
 
       // Update language context
       setLanguage(preferredLanguage as "ar" | "en");
+      
+      // Save AI provider preference to localStorage
+      localStorage.setItem('ai-provider', aiProvider);
 
       toast({
         title: isRTL ? "تم الحفظ!" : "Saved!",
@@ -174,6 +182,107 @@ export default function Settings() {
             <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
               <Save className="w-4 h-4 me-2" />
               {saving ? (isRTL ? "جارٍ الحفظ..." : "Saving...") : isRTL ? "حفظ" : "Save"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* AI Provider Selection */}
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              {isRTL ? "مزود الذكاء الاصطناعي" : "AI Provider"}
+            </CardTitle>
+            <CardDescription>
+              {isRTL 
+                ? "اختر مزود AI للتوليد - يمكنك استخدام OpenRouter لنماذج إضافية"
+                : "Choose AI provider for generation - use OpenRouter for additional models"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3">
+              <div 
+                onClick={() => setAIProvider('lovable')}
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  aiProvider === 'lovable' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <div className="font-semibold flex items-center gap-2">
+                        Lovable AI
+                        <Badge variant="secondary" className="text-xs">
+                          {isRTL ? "افتراضي" : "Default"}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {isRTL 
+                          ? "Gemini 2.5 Pro/Flash • GPT-5 • سريع ومستقر"
+                          : "Gemini 2.5 Pro/Flash • GPT-5 • Fast & Stable"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 ${
+                    aiProvider === 'lovable' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                  }`}>
+                    {aiProvider === 'lovable' && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-primary-foreground rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div 
+                onClick={() => setAIProvider('openrouter')}
+                className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                  aiProvider === 'openrouter' 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-destructive flex items-center justify-center">
+                      <Bot className="w-5 h-5 text-accent-foreground" />
+                    </div>
+                    <div>
+                      <div className="font-semibold flex items-center gap-2">
+                        OpenRouter
+                        <Badge variant="outline" className="text-xs">
+                          {isRTL ? "مخصص" : "Custom"}
+                        </Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {isRTL 
+                          ? "Claude Sonnet 4 • نماذج متعددة • مرونة أكثر"
+                          : "Claude Sonnet 4 • Multiple models • More flexibility"}
+                      </div>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 ${
+                    aiProvider === 'openrouter' ? 'border-primary bg-primary' : 'border-muted-foreground'
+                  }`}>
+                    {aiProvider === 'openrouter' && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-primary-foreground rounded-full" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Button onClick={handleSaveProfile} disabled={saving} className="w-full">
+              <Save className="w-4 h-4 me-2" />
+              {saving ? (isRTL ? "جارٍ الحفظ..." : "Saving...") : isRTL ? "حفظ التفضيلات" : "Save Preferences"}
             </Button>
           </CardContent>
         </Card>
