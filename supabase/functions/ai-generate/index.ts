@@ -57,7 +57,7 @@ serve(async (req) => {
     let userPrompt = "";
     // Model selection per tool type for optimal results
     let model = "google/gemini-2.5-flash"; // Default fast model
-    let openRouterModel = "google/gemini-2.5-flash-preview-05-20"; // OpenRouter equivalent
+    let openRouterModel = "google/gemini-2.0-flash-001"; // OpenRouter equivalent
     let temperature = 0.7;
     let maxTokens = 2000;
     let toolSchema: any | null = null;
@@ -70,7 +70,7 @@ serve(async (req) => {
       // ============================================
       case "shopify-studio":
         model = "google/gemini-2.5-pro"; // Pro for comprehensive product content
-        openRouterModel = "google/gemini-2.5-pro-preview-05-06"; // OpenRouter Pro equivalent
+        openRouterModel = "google/gemini-2.0-flash-001"; // OpenRouter equivalent
         
         systemRole = `You are an ELITE Shopify content strategist for premium Fashion & Beauty brands in the MENA market.
 
@@ -197,7 +197,7 @@ Return ONLY the JSON object. No markdown, no explanations.`;
       // ============================================
       case "ads-copy":
         model = "openai/gpt-5-mini"; // GPT for creative, emotional ad copy
-        openRouterModel = "anthropic/claude-sonnet-4"; // OpenRouter creative equivalent
+        openRouterModel = "anthropic/claude-3-5-sonnet-20241022"; // OpenRouter creative equivalent
         
         systemRole = `You are a TOP-TIER Meta Ads copywriter specializing in Fashion & Beauty for the MENA market.
 
@@ -303,7 +303,7 @@ Return ONLY the JSON object.`;
       // ============================================
       case "reels-script":
         model = "openai/gpt-5"; // Full GPT-5 for complex creative scripts
-        openRouterModel = "anthropic/claude-sonnet-4"; // OpenRouter creative equivalent
+        openRouterModel = "anthropic/claude-3-5-sonnet-20241022"; // OpenRouter creative equivalent
         
         systemRole = `You are a VIRAL content strategist specializing in Fashion/Beauty Reels for the MENA market.
 
@@ -436,7 +436,7 @@ Return ONLY the JSON object.`;
       // ============================================
       case "product-copy":
         model = "google/gemini-2.5-flash";
-        openRouterModel = "google/gemini-2.5-flash-preview-05-20";
+        openRouterModel = "google/gemini-2.0-flash-001";
         systemRole = `You are an expert e-commerce copywriter for high-converting product content.
 
 ${segmentContext}
@@ -732,7 +732,12 @@ Return ONLY raw JSON.`;
         max_tokens: retry ? Math.max(4000, maxTokens) : maxTokens,
       };
 
-      if (toolSchema) {
+      // OpenRouter doesn't fully support tool_choice, so use response_format for JSON
+      if (useOpenRouter) {
+        // OpenRouter: use response_format for structured JSON output
+        body.response_format = { type: "json_object" };
+      } else if (toolSchema) {
+        // Lovable AI: use tool calling for structured output
         body.tools = [
           {
             type: "function",
