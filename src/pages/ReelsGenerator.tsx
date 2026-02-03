@@ -21,8 +21,7 @@ import {
   Clock,
   Hash,
   RotateCcw,
-  Layers,
-  ExternalLink
+  Play
 } from "lucide-react";
 
 type VideoStyle = "unboxing" | "before_after" | "testimonial" | "showcase" | "trending";
@@ -47,14 +46,14 @@ const videoStyles: Array<{
   },
   { 
     value: "testimonial", 
-    label: { ar: "مراجعة", en: "Review" },
-    description: { ar: "عرض 360° مع تقييم 5 نجوم", en: "360° showcase with 5-star rating" },
+    label: { ar: "مراجعة 360°", en: "360° Review" },
+    description: { ar: "دوران كامل مع إضاءة احترافية", en: "Full rotation with pro lighting" },
     emoji: "⭐"
   },
   { 
     value: "showcase", 
     label: { ar: "عرض فاخر", en: "Showcase" },
-    description: { ar: "دوران احترافي مع إضاءة استوديو", en: "Pro rotation with studio lighting" },
+    description: { ar: "حركة كاميرا سينمائية", en: "Cinematic camera movement" },
     emoji: "✨"
   },
   { 
@@ -75,10 +74,11 @@ export default function ReelsGenerator() {
   const [adImage, setAdImage] = useState<string | null>(null);
   const [productName, setProductName] = useState("");
   const [style, setStyle] = useState<VideoStyle>("showcase");
+  const [duration, setDuration] = useState<5 | 10>(5);
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
-    scenes: Array<{ imageUrl: string; scene: number; description: string }>;
+    videoUrl: string;
     caption: string;
     hashtags: string[];
     instructions: string;
@@ -131,7 +131,7 @@ export default function ReelsGenerator() {
 
     if (!adImage) {
       toast({
-        title: isRTL ? "ارفع صورة الإعلان أولاً" : "Upload ad image first",
+        title: isRTL ? "ارفع صورة المنتج أولاً" : "Upload product image first",
         variant: "destructive",
       });
       return;
@@ -146,7 +146,7 @@ export default function ReelsGenerator() {
           imageUrl: adImage,
           productName,
           style,
-          duration: 5,
+          duration,
           language: isRTL ? 'ar' : 'en',
         },
       });
@@ -154,9 +154,9 @@ export default function ReelsGenerator() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      if (data?.scenes && data.scenes.length > 0) {
+      if (data?.videoUrl) {
         setResult({
-          scenes: data.scenes,
+          videoUrl: data.videoUrl,
           caption: data.caption,
           hashtags: data.hashtags,
           instructions: data.instructions,
@@ -164,11 +164,11 @@ export default function ReelsGenerator() {
         toast({
           title: isRTL ? "✓ تم التوليد" : "✓ Generated",
           description: isRTL 
-            ? `تم إنشاء ${data.scenes.length} مشاهد للريل` 
-            : `${data.scenes.length} scenes created for your Reel`,
+            ? `تم إنشاء الريل بنجاح` 
+            : `Video reel created successfully`,
         });
       } else {
-        throw new Error(isRTL ? "لم يتم توليد المشاهد" : "No scenes generated");
+        throw new Error(isRTL ? "لم يتم توليد الفيديو" : "No video generated");
       }
     } catch (e: any) {
       console.error("Reel generation error:", e);
@@ -192,35 +192,36 @@ export default function ReelsGenerator() {
     });
   };
 
-  const downloadScene = async (imageUrl: string, sceneNumber: number) => {
+  const downloadVideo = async () => {
+    if (!result?.videoUrl) return;
+    
     try {
-      const response = await fetch(imageUrl);
+      toast({
+        title: isRTL ? "جارٍ التحميل..." : "Downloading...",
+        description: isRTL ? "يتم تحميل الفيديو" : "Video is being downloaded",
+      });
+      
+      const response = await fetch(result.videoUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${productName.replace(/\s+/g, "-") || "reel"}-scene-${sceneNumber}.png`;
+      a.download = `${productName.replace(/\s+/g, "-") || "reel"}-${style}.mp4`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: isRTL ? "✓ تم التحميل" : "✓ Downloaded",
+        description: isRTL ? "تم تحميل الفيديو بنجاح" : "Video downloaded successfully",
+      });
     } catch {
       toast({
         title: isRTL ? "فشل التحميل" : "Download failed",
         variant: "destructive",
       });
     }
-  };
-
-  const downloadAllScenes = async () => {
-    if (!result) return;
-    for (let i = 0; i < result.scenes.length; i++) {
-      await downloadScene(result.scenes[i].imageUrl, result.scenes[i].scene);
-      await new Promise(resolve => setTimeout(resolve, 500));
-    }
-    toast({
-      title: isRTL ? "✓ تم تحميل كل المشاهد" : "✓ All scenes downloaded",
-    });
   };
 
   return (
@@ -238,34 +239,34 @@ export default function ReelsGenerator() {
               </h1>
               <p className="text-sm text-muted-foreground">
                 {isRTL
-                  ? "حوّل صورة الإعلان لـ Storyboard جاهز للمونتاج"
-                  : "Turn ad image into Storyboard ready for editing"}
+                  ? "حوّل صورة المنتج لفيديو ريل جاهز للنشر"
+                  : "Turn product image into video reel ready to post"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="gap-1 text-pink-600 border-pink-300 bg-pink-50">
-              <Layers className="w-3 h-3" />
-              {isRTL ? "3 مشاهد" : "3 Scenes"}
+              <Film className="w-3 h-3" />
+              {isRTL ? "فيديو حقيقي" : "Real Video"}
             </Badge>
             <Badge variant="secondary" className="gap-1">
               <Sparkles className="w-3 h-3" />
-              AI Powered
+              AI Video
             </Badge>
           </div>
         </div>
 
         {/* Info Banner */}
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-3">
-          <ExternalLink className="w-5 h-5 text-amber-600 mt-0.5" />
+        <div className="p-4 bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-lg flex items-start gap-3">
+          <Play className="w-5 h-5 text-pink-600 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-amber-800">
-              {isRTL ? "كيف تستخدم المشاهد؟" : "How to use the scenes?"}
+            <p className="font-medium text-pink-800">
+              {isRTL ? "فيديو AI حقيقي!" : "Real AI Video!"}
             </p>
-            <p className="text-amber-700">
+            <p className="text-pink-700">
               {isRTL 
-                ? "حمّل المشاهد واستخدمها في CapCut أو VN أو أي تطبيق مونتاج عشان تعمل ريل فيرال!"
-                : "Download the scenes and use them in CapCut, VN, or any editing app to create a viral Reel!"}
+                ? "الآن بنولّد فيديو حقيقي من صورة المنتج - حمّله مباشرة وانشره على TikTok أو Instagram!"
+                : "Now we generate real video from your product image - download and post directly on TikTok or Instagram!"}
             </p>
           </div>
         </div>
@@ -273,17 +274,17 @@ export default function ReelsGenerator() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left Column: Input */}
           <div className="space-y-6">
-            {/* Ad Image Upload */}
+            {/* Product Image Upload */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ImageIcon className="w-5 h-5" />
-                  {isRTL ? "صورة الإعلان" : "Ad Image"}
+                  {isRTL ? "صورة المنتج" : "Product Image"}
                 </CardTitle>
                 <CardDescription>
                   {isRTL 
-                    ? "ارفع صورة الإعلان من استوديو الصور"
-                    : "Upload your ad image from Image Studio"}
+                    ? "ارفع صورة المنتج وهنحولها لفيديو"
+                    : "Upload your product image and we'll turn it into video"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -291,7 +292,7 @@ export default function ReelsGenerator() {
                   <div className="relative group">
                     <img 
                       src={adImage} 
-                      alt="Ad" 
+                      alt="Product" 
                       className="w-full h-64 object-contain rounded-lg border bg-muted/50"
                     />
                     <Button
@@ -310,10 +311,10 @@ export default function ReelsGenerator() {
                   >
                     <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
                     <p className="font-medium mb-1">
-                      {isRTL ? "اضغط لرفع صورة الإعلان" : "Click to upload ad image"}
+                      {isRTL ? "اضغط لرفع صورة المنتج" : "Click to upload product image"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {isRTL ? "من استوديو الصور أو أي صورة إعلانية" : "From Image Studio or any ad image"}
+                      {isRTL ? "صورة واضحة للمنتج للحصول على أفضل نتيجة" : "Clear product image for best results"}
                     </p>
                   </div>
                 )}
@@ -344,6 +345,42 @@ export default function ReelsGenerator() {
                     placeholder={isRTL ? "فستان سهرة أنيق" : "Elegant Evening Dress"}
                     className="h-11"
                   />
+                </div>
+
+                {/* Duration Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {isRTL ? "مدة الفيديو" : "Video Duration"}
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setDuration(5)}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        duration === 5
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="font-medium">5 {isRTL ? "ثواني" : "seconds"}</span>
+                      <span className="text-xs text-muted-foreground block">
+                        {isRTL ? "مثالي للـ Reels" : "Perfect for Reels"}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setDuration(10)}
+                      className={`p-3 rounded-lg border-2 transition-all ${
+                        duration === 10
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="font-medium">10 {isRTL ? "ثواني" : "seconds"}</span>
+                      <span className="text-xs text-muted-foreground block">
+                        {isRTL ? "عرض تفصيلي" : "Detailed showcase"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Style Selection */}
@@ -384,61 +421,55 @@ export default function ReelsGenerator() {
                   {loading ? (
                     <>
                       <RotateCcw className="w-5 h-5 animate-spin" />
-                      {isRTL ? "جارٍ التوليد..." : "Generating..."}
+                      {isRTL ? "جارٍ إنشاء الفيديو..." : "Creating video..."}
                     </>
                   ) : (
                     <>
                       <Film className="w-5 h-5" />
-                      {isRTL ? "توليد مشاهد الريل" : "Generate Reel Scenes"}
+                      {isRTL ? "إنشاء فيديو الريل" : "Generate Video Reel"}
                     </>
                   )}
                 </Button>
+
+                {loading && (
+                  <p className="text-sm text-center text-muted-foreground">
+                    {isRTL 
+                      ? "⏱️ توليد الفيديو يستغرق 2-4 دقائق - انتظر شوية..."
+                      : "⏱️ Video generation takes 2-4 minutes - please wait..."}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Right Column: Results */}
           <div className="space-y-6">
-            {/* Generated Scenes */}
+            {/* Generated Video */}
             {result && (
               <Card className="border-primary/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-primary" />
-                      {isRTL ? `مشاهد الريل (${result.scenes.length})` : `Reel Scenes (${result.scenes.length})`}
+                      <Play className="w-5 h-5 text-primary" />
+                      {isRTL ? "الفيديو جاهز!" : "Video Ready!"}
                     </CardTitle>
-                    <Button variant="outline" size="sm" onClick={downloadAllScenes} className="gap-2">
+                    <Button variant="default" size="sm" onClick={downloadVideo} className="gap-2">
                       <Download className="w-4 h-4" />
-                      {isRTL ? "تحميل الكل" : "Download All"}
+                      {isRTL ? "تحميل" : "Download"}
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Scenes Grid */}
-                  <div className="grid grid-cols-3 gap-3">
-                    {result.scenes.map((scene, index) => (
-                      <div key={index} className="relative group">
-                        <div className="aspect-[9/16] rounded-lg overflow-hidden border">
-                          <img 
-                            src={scene.imageUrl} 
-                            alt={`Scene ${scene.scene}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="absolute top-2 start-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                          {isRTL ? `مشهد ${scene.scene}` : `Scene ${scene.scene}`}
-                        </div>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="absolute bottom-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                          onClick={() => downloadScene(scene.imageUrl, scene.scene)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
+                  {/* Video Player */}
+                  <div className="relative aspect-[9/16] bg-black rounded-lg overflow-hidden max-h-[500px]">
+                    <video 
+                      src={result.videoUrl}
+                      controls
+                      autoPlay
+                      loop
+                      playsInline
+                      className="w-full h-full object-contain"
+                    />
                   </div>
 
                   {/* Instructions */}
@@ -457,27 +488,17 @@ export default function ReelsGenerator() {
                         {isRTL ? "الكابشن" : "Caption"}
                       </Label>
                       <Button variant="ghost" size="sm" onClick={copyCaption}>
-                        <Copy className="w-4 h-4 me-1" />
+                        <Copy className="w-4 h-4 me-2" />
                         {isRTL ? "نسخ الكل" : "Copy All"}
                       </Button>
                     </div>
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm font-medium">{result.caption}</p>
-                    </div>
-                  </div>
-
-                  {/* Hashtags */}
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Hash className="w-4 h-4" />
-                      {isRTL ? "الهاشتاقات" : "Hashtags"}
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      {result.hashtags.map((tag, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
+                    <div className="p-3 bg-muted rounded-lg text-sm">
+                      <p className="whitespace-pre-wrap mb-3">{result.caption}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {result.hashtags.map((tag, i) => (
+                          <span key={i} className="text-primary font-medium">{tag}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -488,16 +509,16 @@ export default function ReelsGenerator() {
             {!result && !loading && (
               <Card className="border-dashed">
                 <CardContent className="py-16 text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/10 flex items-center justify-center mx-auto mb-6">
-                    <Layers className="w-10 h-10 text-pink-500" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                    <Film className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    {isRTL ? "المشاهد هتظهر هنا" : "Scenes will appear here"}
+                  <h3 className="font-medium mb-2">
+                    {isRTL ? "الفيديو هيظهر هنا" : "Video will appear here"}
                   </h3>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    {isRTL
-                      ? "ارفع صورة إعلانية واختار نوع الريل ثم اضغط توليد"
-                      : "Upload an ad image, choose a type, and click generate"}
+                  <p className="text-sm text-muted-foreground">
+                    {isRTL 
+                      ? "ارفع صورة المنتج واختار النوع عشان نعملك فيديو"
+                      : "Upload product image and select type to create your video"}
                   </p>
                 </CardContent>
               </Card>
@@ -505,27 +526,21 @@ export default function ReelsGenerator() {
 
             {/* Loading State */}
             {loading && (
-              <Card>
+              <Card className="border-primary/30">
                 <CardContent className="py-16 text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-500/20 to-rose-500/10 flex items-center justify-center mx-auto mb-6">
-                    <RotateCcw className="w-10 h-10 text-pink-500 animate-spin" />
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                    <RotateCcw className="w-8 h-8 text-primary animate-spin" />
                   </div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    {isRTL ? "جارٍ إنشاء المشاهد..." : "Creating scenes..."}
+                  <h3 className="font-medium mb-2">
+                    {isRTL ? "جارٍ إنشاء الفيديو..." : "Creating your video..."}
                   </h3>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    {isRTL
-                      ? "بنولد 3 مشاهد مختلفة للريل بتاعك"
-                      : "Generating 3 different scenes for your Reel"}
+                  <p className="text-sm text-muted-foreground">
+                    {isRTL 
+                      ? "الـ AI بيحوّل صورتك لفيديو احترافي"
+                      : "AI is turning your image into a professional video"}
                   </p>
-                  <div className="mt-4 flex justify-center gap-1">
-                    {[...Array(3)].map((_, i) => (
-                      <div 
-                        key={i}
-                        className="w-2 h-2 rounded-full bg-primary animate-bounce"
-                        style={{ animationDelay: `${i * 0.2}s` }}
-                      />
-                    ))}
+                  <div className="mt-4 w-48 mx-auto h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
                   </div>
                 </CardContent>
               </Card>
