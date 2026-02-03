@@ -32,7 +32,8 @@ serve(async (req) => {
     console.log(`Processing ${toolType} for user ${authData?.userId} via ${preferredProvider}`);
 
     const langInstruction = language === 'ar' 
-      ? "Output in Arabic (Professional marketing Arabic - Simplified Fusha)." 
+      ? `استخدم اللهجة المصرية العامية فقط - مش فصحى ولا خليجي!
+أمثلة: "دلوقتي" مش "الآن"، "عشان" مش "لأن"، "كده" مش "هكذا"، "إيه" مش "ماذا"، "ازاي" مش "كيف"، "ببلاش" مش "مجاناً"، "حاجة" مش "شيء"، "بتاعي" مش "خاصتي".`
       : "Output in English (Professional marketing English).";
 
     const segmentContext = language === 'ar'
