@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   History as HistoryIcon,
   FileText,
@@ -10,6 +11,8 @@ import {
   Clock,
   Trash2,
   Image as ImageIcon,
+  ExternalLink,
+  Eye,
 } from "lucide-react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Input } from "@/components/ui/input";
@@ -21,6 +24,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useHistory } from "@/hooks/useHistory";
 import { useToast } from "@/hooks/use-toast";
@@ -48,12 +58,23 @@ export default function History() {
   const { history, loading, deleteFromHistory } = useHistory();
   const { toast } = useToast();
 
+  const navigate = useNavigate();
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+
   const typeLabels: Record<string, { ar: string; en: string }> = {
     product: { ar: "استوديو المنتجات", en: "Product Studio" },
     ads: { ar: "استوديو الإعلانات", en: "Ads Studio" },
     reels: { ar: "استوديو الريلز", en: "Reels Studio" },
     design: { ar: "استوديو الصور", en: "Image Studio" },
     image: { ar: "صور", en: "Images" },
+  };
+
+  const studioRoutes: Record<string, string> = {
+    product: "/dashboard",
+    ads: "/dashboard/ads",
+    reels: "/dashboard/reels",
+    design: "/dashboard/images",
+    image: "/dashboard/images",
   };
 
   const filteredHistory = history.filter((item) => {
@@ -105,6 +126,138 @@ export default function History() {
     if (output?.imageCount) return isRTL ? `${output.imageCount} صور` : `${output.imageCount} images`;
     if (output?.scenesCount) return isRTL ? `${output.scenesCount} مشاهد` : `${output.scenesCount} scenes`;
     return isRTL ? "لا يوجد معاينة" : "No preview";
+  };
+
+  const handleOpenItem = (item: any) => {
+    setSelectedItem(item);
+  };
+
+  const handleGoToStudio = (toolType: string) => {
+    const route = studioRoutes[toolType] || "/dashboard";
+    navigate(route);
+  };
+
+  const renderItemContent = (item: any) => {
+    const output = item.output_data;
+    const input = item.input_data;
+    const toolType = item.tool_type;
+
+    return (
+      <div className="space-y-4">
+        {/* Input Data */}
+        <div>
+          <h4 className="font-medium mb-2 text-sm text-muted-foreground">
+            {isRTL ? "البيانات المدخلة" : "Input Data"}
+          </h4>
+          <div className="bg-secondary/50 rounded-lg p-3 space-y-2">
+            {input?.productName && (
+              <p><span className="font-medium">{isRTL ? "اسم المنتج:" : "Product:"}</span> {input.productName}</p>
+            )}
+            {input?.style && (
+              <p><span className="font-medium">{isRTL ? "الستايل:" : "Style:"}</span> {input.style}</p>
+            )}
+            {input?.productDescription && (
+              <p className="text-sm">{input.productDescription}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Output Data */}
+        <div>
+          <h4 className="font-medium mb-2 text-sm text-muted-foreground">
+            {isRTL ? "النتائج" : "Output"}
+          </h4>
+          
+          {/* Images */}
+          {(toolType === "design" || toolType === "image") && output?.images && (
+            <div className="grid grid-cols-2 gap-2">
+              {output.images.map((img: any, idx: number) => (
+                <div key={idx} className="relative group">
+                  <img 
+                    src={img.imageUrl || img} 
+                    alt={`Generated ${idx + 1}`}
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  <span className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded">
+                    {img.angleAr || img.angle || `صورة ${idx + 1}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Reels/Video Scripts */}
+          {toolType === "reels" && output?.scenes && (
+            <div className="space-y-3">
+              {output.scenes.map((scene: any, idx: number) => (
+                <div key={idx} className="bg-secondary/50 rounded-lg p-3">
+                  <p className="font-medium text-sm mb-1">{isRTL ? `مشهد ${idx + 1}` : `Scene ${idx + 1}`}</p>
+                  {scene.hook && <p className="text-primary font-medium">{scene.hook}</p>}
+                  {scene.caption && <p className="text-sm mt-1">{scene.caption}</p>}
+                  {scene.cta && <p className="text-sm text-muted-foreground mt-1">CTA: {scene.cta}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Product Content */}
+          {toolType === "product" && (
+            <div className="space-y-3">
+              {output?.title && (
+                <div className="bg-secondary/50 rounded-lg p-3">
+                  <p className="font-medium text-sm mb-1">{isRTL ? "العنوان" : "Title"}</p>
+                  <p>{output.title}</p>
+                </div>
+              )}
+              {output?.description && (
+                <div className="bg-secondary/50 rounded-lg p-3">
+                  <p className="font-medium text-sm mb-1">{isRTL ? "الوصف" : "Description"}</p>
+                  <p className="text-sm">{output.description}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Ads Content */}
+          {toolType === "ads" && (
+            <div className="space-y-3">
+              {output?.headline && (
+                <div className="bg-secondary/50 rounded-lg p-3">
+                  <p className="font-medium text-sm mb-1">{isRTL ? "العنوان الرئيسي" : "Headline"}</p>
+                  <p className="text-primary font-medium">{output.headline}</p>
+                </div>
+              )}
+              {output?.primaryText && (
+                <div className="bg-secondary/50 rounded-lg p-3">
+                  <p className="font-medium text-sm mb-1">{isRTL ? "النص الأساسي" : "Primary Text"}</p>
+                  <p className="text-sm whitespace-pre-wrap">{output.primaryText}</p>
+                </div>
+              )}
+              {output?.variations && output.variations.length > 0 && (
+                <div className="space-y-2">
+                  <p className="font-medium text-sm">{isRTL ? "الإعلانات" : "Ad Variations"}</p>
+                  {output.variations.map((ad: any, idx: number) => (
+                    <div key={idx} className="bg-secondary/50 rounded-lg p-3">
+                      <p className="font-medium">{ad.headline}</p>
+                      <p className="text-sm mt-1">{ad.primaryText}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Generic fallback */}
+          {!output?.images && !output?.scenes && !output?.title && !output?.headline && !output?.variations && (
+            <div className="bg-secondary/50 rounded-lg p-3">
+              <pre className="text-xs overflow-auto whitespace-pre-wrap">
+                {JSON.stringify(output, null, 2)}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -174,7 +327,8 @@ export default function History() {
               return (
                 <div
                   key={item.id}
-                  className="bg-card rounded-xl p-5 border hover:shadow-md transition-shadow group"
+                  onClick={() => handleOpenItem(item)}
+                  className="bg-card rounded-xl p-5 border hover:shadow-md transition-shadow group cursor-pointer"
                 >
                   <div className="flex items-start gap-4">
                     <div
@@ -201,20 +355,81 @@ export default function History() {
                         {formatDate(item.created_at)}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(item.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenItem(item);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(item.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
             })
           )}
         </div>
+
+        {/* Detail Dialog */}
+        <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh]" dir={isRTL ? "rtl" : "ltr"}>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                {selectedItem && (
+                  <>
+                    <div
+                      className={`w-8 h-8 rounded-lg bg-gradient-to-br ${
+                        typeColors[selectedItem.tool_type] || "from-gray-500 to-gray-600"
+                      } flex items-center justify-center`}
+                    >
+                      {(() => {
+                        const Icon = typeIcons[selectedItem.tool_type] || FileText;
+                        return <Icon className="w-4 h-4 text-white" />;
+                      })()}
+                    </div>
+                    <span>{getItemTitle(selectedItem)}</span>
+                  </>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] pr-4">
+              {selectedItem && renderItemContent(selectedItem)}
+            </ScrollArea>
+            <div className="flex justify-between items-center pt-4 border-t">
+              <p className="text-xs text-muted-foreground">
+                {selectedItem && formatDate(selectedItem.created_at)}
+              </p>
+              <Button
+                onClick={() => {
+                  if (selectedItem) {
+                    handleGoToStudio(selectedItem.tool_type);
+                    setSelectedItem(null);
+                  }
+                }}
+                className="gap-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                {isRTL ? "فتح الاستوديو" : "Open Studio"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
