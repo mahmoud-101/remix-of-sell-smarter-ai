@@ -1,4 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+const serve = (handler: (req: Request) => Promise<Response>) => {
+  Deno.serve(handler);
+};
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
