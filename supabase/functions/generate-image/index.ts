@@ -3,17 +3,7 @@ const serve = (handler: (req: Request) => Promise<Response>) => {
 };
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
-const RUNWARE_API_URL = "https://api.runware.ai/v1";
-
-interface RunwareImageResult {
-  taskType: string;
-  taskUUID: string;
-  imageUUID: string;
-  imageURL: string;
-  NSFWContent?: boolean;
-  seed?: number;
-  positivePrompt?: string;
-}
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -30,43 +20,30 @@ serve(async (req) => {
 
   try {
     const { prompt, style, productImage, productAnalysis, language = 'ar', model } = await req.json();
-    const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!RUNWARE_API_KEY) {
-      throw new Error("RUNWARE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     // ============================================
     // IMAGE STUDIO - Professional MENA E-commerce Ad Creatives
-    // Using Runware AI Platform for Image Generation
-    // CRITICAL: Preserve original product appearance!
+    // Using Lovable AI Gateway with Gemini Image Generation
     // ============================================
 
-    // Background/environment prompts ONLY - product stays exactly the same
-    const environmentPrompts: Record<string, string> = {
-      lifestyle: `Background setting: Warm cozy living room with soft golden sunlight, modern Egyptian home interior, elegant furniture hints in bokeh background. Professional product photography lighting.`,
-
-      flatlay: `Background setting: Clean marble or velvet surface, bird's eye flatlay composition with elegant props, scattered gold accents, professional studio lighting from above.`,
-
-      model: `Background setting: Professional studio with beauty dish lighting, elegant gradient backdrop, high-fashion editorial atmosphere.`,
-
-      studio: `Background setting: Clean gradient studio backdrop, professional 3-point lighting setup, floating geometric accent shapes, modern product photography.`,
-
-      minimal: `Background setting: Ultra-clean white or cream backdrop with generous negative space, subtle shadows, luxury brand aesthetic lighting.`,
-
-      streetwear: `Background setting: Urban textured wall, graffiti art hints in background, neon color accents, street photography style.`,
-
-      vintage: `Background setting: Nostalgic warm-toned setting with vintage film aesthetic, sepia undertones, classic elegant props.`,
-
-      glam: `Background setting: Luxurious velvet or silk backdrop with sparkle effects, glamorous lighting with rim light, rose gold and champagne accents.`,
+    // Style prompts for different ad types
+    const stylePrompts: Record<string, string> = {
+      lifestyle: "Warm cozy living room setting with soft golden sunlight, modern Egyptian home interior, elegant furniture in background. Professional product photography.",
+      flatlay: "Clean marble surface, bird's eye flatlay composition with elegant props, scattered gold accents, professional studio lighting from above.",
+      model: "Professional studio with beauty dish lighting, elegant gradient backdrop, high-fashion editorial atmosphere.",
+      studio: "Clean gradient studio backdrop, professional 3-point lighting setup, floating geometric accent shapes, modern product photography.",
+      minimal: "Ultra-clean white or cream backdrop with generous negative space, subtle shadows, luxury brand aesthetic.",
+      streetwear: "Urban textured wall with graffiti art hints, neon color accents, street photography style.",
+      vintage: "Nostalgic warm-toned setting with vintage film aesthetic, sepia undertones, classic elegant props.",
+      glam: "Luxurious velvet or silk backdrop with sparkle effects, glamorous rim lighting, rose gold and champagne accents."
     };
 
-    // Randomly select 3 different styles for variety
-    const styleKeys = Object.keys(environmentPrompts);
-    const shuffledStyles = styleKeys.sort(() => Math.random() - 0.5);
-    const selectedStyles = style ? [style, ...shuffledStyles.filter(s => s !== style).slice(0, 2)] : shuffledStyles.slice(0, 3);
-
-    // Arabic style names mapping
+    // Arabic style names
     const styleNamesAr: Record<string, string> = {
       lifestyle: "لايف ستايل",
       flatlay: "فلات لاي", 
@@ -78,205 +55,143 @@ serve(async (req) => {
       glam: "جلام"
     };
 
-    // Define multiple style variations for fashion variety
-    const styleVariations = selectedStyles.map((styleKey) => ({
-      name: styleKey,
-      nameAr: styleNamesAr[styleKey] || styleKey,
-      prompt: environmentPrompts[styleKey as keyof typeof environmentPrompts] || environmentPrompts.lifestyle
-    }));
+    // Select 3 different styles for variety
+    const styleKeys = Object.keys(stylePrompts);
+    const shuffledStyles = styleKeys.sort(() => Math.random() - 0.5);
+    const selectedStyles = style ? [style, ...shuffledStyles.filter(s => s !== style).slice(0, 2)] : shuffledStyles.slice(0, 3);
 
-    console.log(`User ${authData?.userId} generating ${styleVariations.length} images with Runware, styles: ${selectedStyles.join(', ')}, hasProductImage: ${!!productImage}, hasAnalysis: ${!!productAnalysis}`);
+    console.log(`User ${authData?.userId} generating ${selectedStyles.length} images with Gemini, styles: ${selectedStyles.join(', ')}`);
 
-    // Generate images using Runware API
     const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string }> = [];
 
-    for (const variation of styleVariations) {
-      // Build prompt that PRESERVES the product and only changes the environment
-      const fullPrompt = productImage 
-        ? `PRODUCT PRESERVATION IMAGE-TO-IMAGE GENERATION:
+    for (const styleKey of selectedStyles) {
+      const stylePrompt = stylePrompts[styleKey] || stylePrompts.lifestyle;
+      
+      // Build comprehensive prompt for Gemini image generation
+      const imagePrompt = `Generate a professional e-commerce product advertisement image.
 
-CRITICAL INSTRUCTION: The product in the input image MUST remain EXACTLY identical in the output:
-- Same product shape, silhouette, and proportions
-- Same colors, patterns, and design details  
-- Same branding, logos, and text if visible
-- Same material appearance and texture
+Product: ${prompt || "Fashion product"}
+${productAnalysis?.core_feature ? `Key Feature: ${productAnalysis.core_feature}` : ''}
+${productAnalysis?.benefits ? `Benefits: ${productAnalysis.benefits.slice(0, 2).join(', ')}` : ''}
 
-DO NOT:
-- Change the product design in any way
-- Add new elements to the product
-- Alter the product's colors or patterns
-- Modify the product's shape or size
+Style: ${stylePrompt}
 
-ONLY CHANGE THE BACKGROUND/ENVIRONMENT:
-${variation.prompt}
-
-Product Info: ${prompt}
-${productAnalysis ? `
-Marketing Context:
-- Core Feature: ${productAnalysis.core_feature || ''}
-- Key Benefits: ${productAnalysis.benefits?.slice(0, 2).join(', ') || ''}
-` : ''}
-
-OUTPUT REQUIREMENTS:
-- Product must look EXACTLY like the input image
-- Only the background/environment should change
-- Professional e-commerce quality
-- Sharp focus on product
-- 4K resolution advertising style`
-        : `Professional e-commerce product photography:
-
-${variation.prompt}
-
-Product: ${prompt}
-${productAnalysis ? `
-Marketing Focus:
-- Highlight: ${productAnalysis.core_feature || ''}
-- Benefits: ${productAnalysis.benefits?.slice(0, 2).join(', ') || ''}
-` : ''}
-
-REQUIREMENTS:
+Requirements:
 - Professional 4K quality e-commerce advertisement
 - Sharp product focus with attractive background
-- Egyptian market appeal
-- Instagram-ready composition`;
+- Egyptian/MENA market appeal
+- Instagram-ready composition
+- Vertical 9:16 format for social media
+- High-end luxury fashion aesthetic
+- No text or watermarks on the image`;
 
       try {
-        console.log(`Generating ${variation.name} style with Runware...`);
+        console.log(`Generating ${styleKey} style with Gemini...`);
 
-        // Build Runware API request
-        const taskUUID = crypto.randomUUID();
-        
-        const runwarePayload: any[] = [
-          {
-            taskType: "authentication",
-            apiKey: RUNWARE_API_KEY
-          }
-        ];
-
-        if (productImage && productImage.startsWith('data:')) {
-          // Image-to-image generation with uploaded product image
-          // CRITICAL: Low strength to preserve product, only change background
-          const imageBase64 = productImage.split(',')[1];
-          
-          runwarePayload.push({
-            taskType: "imageInference",
-            taskUUID,
-            positivePrompt: fullPrompt,
-            negativePrompt: "change product, modify product, different product, altered product, wrong colors, wrong design, distorted product, deformed product, blurry product",
-            width: 1024,
-            height: 1024,
-            model: model || "runware:100@1",
-            numberResults: 1,
-            outputFormat: "WEBP",
-            CFGScale: 7,
-            scheduler: "DPMSolverMultistepScheduler",
-            steps: 25,
-            // VERY LOW strength to preserve original product - only change environment
-            strength: 0.25,
-            inputImage: `data:image/png;base64,${imageBase64}`
-          });
-        } else if (productImage && productImage.startsWith('http')) {
-          // Image-to-image with URL
-          runwarePayload.push({
-            taskType: "imageInference",
-            taskUUID,
-            positivePrompt: fullPrompt,
-            negativePrompt: "change product, modify product, different product, altered product, wrong colors, wrong design, distorted product, deformed product, blurry product",
-            width: 1024,
-            height: 1024,
-            model: model || "runware:100@1",
-            numberResults: 1,
-            outputFormat: "WEBP",
-            CFGScale: 7,
-            scheduler: "DPMSolverMultistepScheduler",
-            steps: 25,
-            strength: 0.25,
-            inputImage: productImage
-          });
-        } else {
-          // Text-to-image generation
-          runwarePayload.push({
-            taskType: "imageInference",
-            taskUUID,
-            positivePrompt: fullPrompt,
-            negativePrompt: "blurry, low quality, distorted, ugly, bad composition",
-            width: 1024,
-            height: 1024,
-            model: model || "runware:100@1",
-            numberResults: 1,
-            outputFormat: "WEBP",
-            CFGScale: 7,
-            steps: 25,
-            scheduler: "DPMSolverMultistepScheduler"
-          });
-        }
-
-        const response = await fetch(RUNWARE_API_URL, {
+        const response = await fetch(LOVABLE_AI_URL, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json"
           },
-          body: JSON.stringify(runwarePayload)
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: imagePrompt
+              }
+            ]
+          })
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`Runware API error for ${variation.name}:`, response.status, errorText);
+          console.error(`Gemini API error for ${styleKey}:`, response.status, errorText);
           
-          if (response.status === 401) {
-            throw new Error("Invalid Runware API key");
+          if (response.status === 429) {
+            throw new Error(language === 'ar' 
+              ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً"
+              : "Rate limit exceeded, please try again later");
           }
           if (response.status === 402) {
-            throw new Error("Runware credits exhausted - please add more credits");
-          }
-          if (response.status === 429) {
-            throw new Error("Rate limit exceeded - please try again in a moment");
+            throw new Error(language === 'ar'
+              ? "الرصيد غير كافي، يرجى شحن الرصيد"
+              : "Insufficient credits, please top up");
           }
           continue;
         }
 
         const data = await response.json();
-        console.log(`Runware response for ${variation.name}:`, JSON.stringify(data).substring(0, 500));
+        console.log(`Gemini response for ${styleKey}:`, JSON.stringify(data).substring(0, 500));
 
-        // Extract image from Runware response
-        const imageResults = data.data?.filter((item: any) => item.taskType === "imageInference") || [];
+        // Extract image from Gemini response
+        // Gemini image generation returns base64 or URL in the response
+        const content = data.choices?.[0]?.message?.content;
         
-        if (imageResults.length > 0 && imageResults[0].imageURL) {
-          generatedImages.push({
-            imageUrl: imageResults[0].imageURL,
-            angle: variation.name,
-            angleAr: variation.nameAr
-          });
-          console.log(`Successfully generated ${variation.name} style with Runware`);
+        if (content) {
+          // Check if response contains image data
+          let imageUrl = null;
+          
+          // Handle different response formats
+          if (typeof content === 'string') {
+            // Check for base64 image data
+            if (content.includes('data:image')) {
+              imageUrl = content.match(/data:image\/[^;]+;base64,[^"'\s]+/)?.[0];
+            }
+            // Check for URL
+            else if (content.includes('http')) {
+              imageUrl = content.match(/https?:\/\/[^\s"']+\.(png|jpg|jpeg|webp|gif)/i)?.[0];
+            }
+          } else if (content.image_url) {
+            imageUrl = content.image_url;
+          } else if (data.choices?.[0]?.message?.image_url) {
+            imageUrl = data.choices[0].message.image_url;
+          }
+
+          if (imageUrl) {
+            generatedImages.push({
+              imageUrl,
+              angle: styleKey,
+              angleAr: styleNamesAr[styleKey] || styleKey
+            });
+            console.log(`Successfully generated ${styleKey} style`);
+          } else {
+            console.log(`No image URL found in response for ${styleKey}, content preview:`, 
+              typeof content === 'string' ? content.substring(0, 200) : JSON.stringify(content).substring(0, 200));
+          }
         }
       } catch (styleError) {
-        console.error(`Error generating ${variation.name} style:`, styleError);
+        console.error(`Error generating ${styleKey} style:`, styleError);
         if (styleError instanceof Error && 
-            (styleError.message.includes("credits") || 
-             styleError.message.includes("API key") ||
-             styleError.message.includes("Rate limit"))) {
+            (styleError.message.includes("Rate limit") || 
+             styleError.message.includes("credits") ||
+             styleError.message.includes("حد الطلبات") ||
+             styleError.message.includes("الرصيد"))) {
           throw styleError;
         }
       }
     }
 
-    // If no images were generated with Runware, provide helpful error
     if (generatedImages.length === 0) {
-      throw new Error("Failed to generate images with Runware. Please check your API key and credits.");
+      throw new Error(language === 'ar' 
+        ? "فشل توليد الصور - حاول مرة أخرى"
+        : "Failed to generate images - please try again");
     }
 
-    console.log(`Successfully generated ${generatedImages.length} images with Runware for user ${authData?.userId}`);
+    console.log(`Successfully generated ${generatedImages.length} images for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ 
         images: generatedImages,
         imageUrl: generatedImages[0]?.imageUrl,
-        description: `Egyptian fashion ads with ${generatedImages.length} different styles`,
+        description: language === 'ar' 
+          ? `إعلانات أزياء مصرية بـ ${generatedImages.length} أنماط مختلفة`
+          : `Egyptian fashion ads with ${generatedImages.length} different styles`,
         mode: productImage ? "edit" : "generate",
         styles: selectedStyles,
         count: generatedImages.length,
-        provider: "runware",
-        productPreserved: !!productImage
+        provider: "gemini"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
