@@ -1,6 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
+const RUNWARE_API_URL = "https://api.runware.ai/v1";
+
+interface RunwareImageResult {
+  taskType: string;
+  taskUUID: string;
+  imageUUID: string;
+  imageURL: string;
+  NSFWContent?: boolean;
+  seed?: number;
+  positivePrompt?: string;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,106 +27,97 @@ serve(async (req) => {
   console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
-    const { prompt, style, productImage, language = 'ar' } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const { prompt, style, productImage, language = 'ar', model } = await req.json();
+    const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!RUNWARE_API_KEY) {
+      throw new Error("RUNWARE_API_KEY is not configured");
     }
 
     // ============================================
     // IMAGE STUDIO - Professional MENA E-commerce Ad Creatives
-    // Using Lovable AI Gateway with Gemini Pro Image
+    // Using Runware AI Platform for Image Generation
     // ============================================
 
     // Professional Egyptian Fashion & Beauty e-commerce ad creative styles
-    // More variety for fashion niche with Egyptian Arabic text styling
     const stylePrompts: Record<string, string> = {
-      lifestyle: `Egyptian Fashion E-commerce Lifestyle Ad - STYLE 1:
+      lifestyle: `Professional Egyptian Fashion E-commerce Lifestyle Ad:
 - Product as hero with sharp focus, lifestyle context
-- Warm golden hour lighting with soft bokeh background
+- Warm golden hour lighting with soft bokeh background  
 - Modern Egyptian woman lifestyle setting
-- ARABIC TEXT: Bold modern Arabic sans-serif font (NO tashkeel/diacritics)
-- Text design: Neon glow effect or gradient fill
-- Price badge: "٢٩٩ ج.م" in decorative circle/ribbon
-- Discount splash: "خصم ٥٠٪" in dynamic starburst shape
-- Instagram-ready 4K, vibrant colors
+- Bold modern Arabic text overlay with neon glow effect
+- Price badge showing Egyptian Pounds (ج.م) in decorative circle
+- Discount splash with dynamic starburst shape
+- Instagram-ready 4K resolution, vibrant colors
 - Egyptian market appeal, trendy fashion mood`,
 
-      flatlay: `Egyptian Fashion Flatlay Ad - STYLE 2:
-- Bird's eye view product arrangement on marble/velvet
-- Fashion accessories around main product
+      flatlay: `Egyptian Fashion Flatlay Advertisement:
+- Bird's eye view product arrangement on marble or velvet surface
+- Fashion accessories arranged around main product
 - Scattered rose petals or gold confetti accents
-- ARABIC TEXT: Chunky bold Arabic display font (NO tashkeel)
-- Text design: 3D effect with drop shadow
-- Price: "السعر ١٩٩ ج.م فقط" in elegant banner
-- Promo text in speech bubble or tag shape
+- Chunky bold Arabic display text with 3D drop shadow effect
+- Price display in elegant banner style
+- Promotional text in speech bubble or tag shape
 - Soft diffused lighting, Instagram aesthetic
-- Pastel pinks, golds, cream, rose gold accents`,
+- Pastel pinks, golds, cream, rose gold color accents`,
 
-      model: `Egyptian Fashion Model Ad - STYLE 3:
+      model: `Egyptian Fashion Model Advertisement:
 - Egyptian model showcasing fashion product
-- Product clearly visible and styled
-- Professional studio lighting, beauty dish
-- ARABIC TEXT: Elegant Arabic calligraphy-inspired modern font (NO tashkeel)
-- Text design: Brush stroke background behind text
-- "اطلبي دلوقتي" CTA in bold decorative button
-- Price "٣٩٩ ج.م" with strikethrough old price
-- High-fashion editorial quality
+- Product clearly visible and professionally styled
+- Professional studio lighting with beauty dish
+- Elegant Arabic text with brush stroke background
+- Bold decorative CTA button design
+- Price with strikethrough old price comparison
+- High-fashion editorial quality photography
 - Soft pinks, neutrals, champagne, bronze tones`,
 
-      studio: `Egyptian Fashion Catalog Ad - STYLE 4:
+      studio: `Egyptian Fashion Catalog Studio Ad:
 - Product hero shot on clean gradient backdrop
-- Professional product photography lighting
+- Professional product photography lighting setup
 - Floating elements or geometric shapes accent
-- ARABIC TEXT: Bold condensed Arabic font (NO tashkeel)
-- Text design: Text inside geometric shapes (circles, hexagons)
-- Price "٤٩٩ ج.م" in modern price tag design
+- Bold condensed Arabic text inside geometric shapes
+- Modern price tag design element
 - Feature icons with Arabic labels
-- "توصيل لحد البيت" delivery badge
-- White, soft gray, accent color pops`,
+- Delivery badge with Egyptian messaging
+- White, soft gray, with accent color pops`,
 
-      minimal: `Egyptian Luxury Fashion Ad - STYLE 5:
+      minimal: `Egyptian Luxury Fashion Minimal Ad:
 - Product with generous negative space
-- Ultra-clean luxury presentation
+- Ultra-clean luxury brand presentation
 - Subtle gradient or solid elegant backdrop
-- ARABIC TEXT: Thin elegant Arabic serif (NO tashkeel)
-- Text design: Minimalist with gold foil effect
-- Price "٧٩٩ ج.م" in understated elegant format
+- Thin elegant Arabic serif text with gold foil effect
+- Understated elegant price format
 - Single line Arabic tagline
-- Premium brand aesthetic
-- Cream, black, gold, champagne colors`,
+- Premium high-end brand aesthetic
+- Cream, black, gold, champagne color palette`,
 
-      streetwear: `Egyptian Streetwear Fashion Ad - STYLE 6:
+      streetwear: `Egyptian Streetwear Urban Fashion Ad:
 - Urban trendy product presentation
 - Graffiti or urban texture backgrounds
 - Bold dynamic angles and composition
-- ARABIC TEXT: Graffiti-style Arabic font (NO tashkeel)
-- Text design: Spray paint effect, dripping text
-- Price "١٤٩ ج.م" in street art style tag
-- "ستايل الشارع" urban vibe text
-- Neon accents, bold contrasts
-- Electric colors, black, white, neon pink/green`,
+- Graffiti-style Arabic text with spray paint effect
+- Street art style price tag
+- Urban vibe Egyptian messaging
+- Neon accents with bold contrasts
+- Electric colors, black, white, neon pink and green`,
 
-      vintage: `Egyptian Vintage Fashion Ad - STYLE 7:
+      vintage: `Egyptian Vintage Fashion Retro Ad:
 - Retro-inspired product styling
-- Vintage film grain and warm tones
+- Vintage film grain and warm nostalgic tones
 - Classic elegant composition
-- ARABIC TEXT: Retro Arabic display font (NO tashkeel)
-- Text design: Vintage badge or stamp effect
-- Price "٢٤٩ ج.م" in classic oval frame
-- "كلاسيك" vintage charm elements
-- Sepia, warm browns, dusty rose, gold`,
+- Retro Arabic display text with vintage badge effect
+- Price in classic oval frame design
+- Vintage charm decorative elements
+- Sepia, warm browns, dusty rose, gold tones`,
 
-      glam: `Egyptian Glam Fashion Ad - STYLE 8:
+      glam: `Egyptian Glam Fashion Luxury Ad:
 - High-end glamorous product shot
-- Sparkle and shimmer effects
+- Sparkle and shimmer visual effects
 - Luxury velvet or silk backgrounds
-- ARABIC TEXT: Glamorous Arabic script (NO tashkeel)
-- Text design: Glitter fill or diamond encrusted effect
-- Price "٥٩٩ ج.م" in luxury gold frame
-- "لوك فخم" glamour messaging
-- Rose gold, champagne, deep purple, black`,
+- Glamorous Arabic script with glitter fill effect
+- Price in luxury gold frame design
+- Glamour messaging with Egyptian flair
+- Rose gold, champagne, deep purple, black palette`,
     };
 
     // Randomly select 3 different styles for variety
@@ -125,7 +128,7 @@ serve(async (req) => {
     // Arabic style names mapping
     const styleNamesAr: Record<string, string> = {
       lifestyle: "لايف ستايل",
-      flatlay: "فلات لاي",
+      flatlay: "فلات لاي", 
       model: "موديل",
       studio: "استوديو",
       minimal: "مينيمال",
@@ -141,145 +144,165 @@ serve(async (req) => {
       prompt: stylePrompts[styleKey as keyof typeof stylePrompts] || stylePrompts.lifestyle
     }));
 
-    console.log(`User ${authData?.userId} generating ${styleVariations.length} varied fashion images with Lovable AI Gateway, styles: ${selectedStyles.join(', ')}, hasProductImage: ${!!productImage}`);
+    console.log(`User ${authData?.userId} generating ${styleVariations.length} images with Runware, styles: ${selectedStyles.join(', ')}, hasProductImage: ${!!productImage}`);
 
-    // Generate multiple images with different styles for fashion variety
+    // Generate images using Runware API
     const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string }> = [];
-    
+
     for (const variation of styleVariations) {
-      // Build the image editing prompt that preserves the original product
-      const editPrompt = productImage 
-        ? `CRITICAL: Keep the EXACT product from the image - do NOT change the product itself.
+      const fullPrompt = productImage 
+        ? `Professional e-commerce advertisement photo. ${variation.prompt}
 
-PRODUCT PRESERVATION:
-- Keep exact shape, colors, materials, branding
-- Do not modify or replace the product
+Product description: ${prompt}
 
-CREATE Egyptian Fashion Advertisement:
-${variation.prompt}
-
-ARABIC TEXT RULES (CRITICAL):
-- NO tashkeel/diacritics (لا تشكيل) - clean modern Arabic only
-- Use decorative, eye-catching text designs
-- Price in Egyptian Pounds (ج.م)
-- Egyptian dialect phrases: "اطلبي دلوقتي", "توصيل لحد البيت", "خصم"
-
-Product context: ${prompt}
-
-OUTPUT: Egyptian fashion e-commerce ad with ${variation.name} style, attractive Arabic text designs, Egyptian market appeal.`
+IMPORTANT REQUIREMENTS:
+- Keep the original product design exactly as shown
+- Create professional advertising composition
+- Add attractive Arabic text overlays (no diacritics)
+- Include Egyptian Pound pricing (ج.م)
+- Make it Instagram-ready and eye-catching
+- Egyptian market appeal with local dialect phrases`
         : `${variation.prompt}
 
 Product: ${prompt}
 
-ARABIC TEXT RULES (CRITICAL):
-- NO tashkeel/diacritics (لا تشكيل) - clean modern text
-- Eye-catching decorative text effects (glow, shadow, 3D, gradients)
-- Prices in Egyptian Pounds: "١٩٩ ج.م", "٢٩٩ ج.م", "٣٩٩ ج.م"
-- Egyptian phrases: "اطلبي دلوقتي", "توصيل مجاني", "خصم ٥٠٪"
-- Bold, modern Arabic fonts - NOT calligraphy
-- Text integrated as design elements (badges, banners, bubbles)
-
-OUTPUT: 4K Egyptian fashion advertisement, Instagram-ready, vibrant colors, professional quality`;
-
-      // Build the message content based on whether we have a product image
-      let messageContent: any;
-      
-      if (productImage) {
-        // Image-to-image editing mode: pass the product image for preservation
-        messageContent = [
-          {
-            type: "text",
-            text: editPrompt
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: productImage
-            }
-          }
-        ];
-      } else {
-        // Text-to-image generation mode
-        messageContent = editPrompt;
-      }
+REQUIREMENTS:
+- Professional 4K quality e-commerce advertisement
+- Eye-catching Arabic text overlays (modern, no diacritics)
+- Egyptian Pound pricing display (ج.م)
+- Egyptian dialect phrases like "اطلبي دلوقتي", "توصيل مجاني"
+- Instagram-ready vibrant colors
+- Professional product photography style`;
 
       try {
-        console.log(`Generating ${variation.name} style...`);
+        console.log(`Generating ${variation.name} style with Runware...`);
+
+        // Build Runware API request
+        const taskUUID = crypto.randomUUID();
         
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const runwarePayload: any[] = [
+          {
+            taskType: "authentication",
+            apiKey: RUNWARE_API_KEY
+          }
+        ];
+
+        if (productImage && productImage.startsWith('data:')) {
+          // Image-to-image generation with uploaded product image
+          const imageBase64 = productImage.split(',')[1];
+          
+          runwarePayload.push({
+            taskType: "imageInference",
+            taskUUID,
+            positivePrompt: fullPrompt,
+            width: 1024,
+            height: 1024,
+            model: model || "runware:100@1",
+            numberResults: 1,
+            outputFormat: "WEBP",
+            CFGScale: 1,
+            scheduler: "FlowMatchEulerDiscreteScheduler",
+            strength: 0.75,
+            inputImage: `data:image/png;base64,${imageBase64}`
+          });
+        } else if (productImage && productImage.startsWith('http')) {
+          // Image-to-image with URL
+          runwarePayload.push({
+            taskType: "imageInference",
+            taskUUID,
+            positivePrompt: fullPrompt,
+            width: 1024,
+            height: 1024,
+            model: model || "runware:100@1",
+            numberResults: 1,
+            outputFormat: "WEBP",
+            CFGScale: 1,
+            scheduler: "FlowMatchEulerDiscreteScheduler",
+            strength: 0.75,
+            inputImage: productImage
+          });
+        } else {
+          // Text-to-image generation
+          runwarePayload.push({
+            taskType: "imageInference",
+            taskUUID,
+            positivePrompt: fullPrompt,
+            width: 1024,
+            height: 1024,
+            model: model || "runware:100@1",
+            numberResults: 1,
+            outputFormat: "WEBP",
+            CFGScale: 1,
+            steps: 4,
+            scheduler: "FlowMatchEulerDiscreteScheduler"
+          });
+        }
+
+        const response = await fetch(RUNWARE_API_URL, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            model: "google/gemini-3-pro-image-preview",
-            messages: [
-              {
-                role: "user",
-                content: messageContent
-              }
-            ],
-            modalities: ["image", "text"]
-          })
+          body: JSON.stringify(runwarePayload)
         });
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`Lovable AI Gateway error for ${variation.name}:`, response.status, errorText);
+          console.error(`Runware API error for ${variation.name}:`, response.status, errorText);
           
           if (response.status === 401) {
-            throw new Error("Invalid Lovable API key");
+            throw new Error("Invalid Runware API key");
           }
           if (response.status === 402) {
-            throw new Error("Lovable AI quota exceeded");
+            throw new Error("Runware credits exhausted - please add more credits");
           }
           if (response.status === 429) {
             throw new Error("Rate limit exceeded - please try again in a moment");
           }
-          // Continue to next style on other errors
           continue;
         }
 
         const data = await response.json();
-        const imageData = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        console.log(`Runware response for ${variation.name}:`, JSON.stringify(data).substring(0, 500));
+
+        // Extract image from Runware response
+        const imageResults = data.data?.filter((item: any) => item.taskType === "imageInference") || [];
         
-        if (imageData) {
+        if (imageResults.length > 0 && imageResults[0].imageURL) {
           generatedImages.push({
-            imageUrl: imageData,
+            imageUrl: imageResults[0].imageURL,
             angle: variation.name,
             angleAr: variation.nameAr
           });
-          console.log(`Successfully generated ${variation.name} style`);
+          console.log(`Successfully generated ${variation.name} style with Runware`);
         }
       } catch (styleError) {
         console.error(`Error generating ${variation.name} style:`, styleError);
-        // If it's a critical error, throw it
         if (styleError instanceof Error && 
-            (styleError.message.includes("quota") || 
+            (styleError.message.includes("credits") || 
              styleError.message.includes("API key") ||
              styleError.message.includes("Rate limit"))) {
           throw styleError;
         }
-        // Otherwise continue to next style
       }
     }
 
+    // If no images were generated with Runware, provide helpful error
     if (generatedImages.length === 0) {
-      throw new Error("No images were generated");
+      throw new Error("Failed to generate images with Runware. Please check your API key and credits.");
     }
 
-    console.log(`Successfully generated ${generatedImages.length} varied fashion images for user ${authData?.userId}`);
+    console.log(`Successfully generated ${generatedImages.length} images with Runware for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ 
         images: generatedImages,
-        // Keep backward compatibility
         imageUrl: generatedImages[0]?.imageUrl,
         description: `Egyptian fashion ads with ${generatedImages.length} different styles`,
         mode: productImage ? "edit" : "generate",
         styles: selectedStyles,
-        count: generatedImages.length
+        count: generatedImages.length,
+        provider: "runware"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
