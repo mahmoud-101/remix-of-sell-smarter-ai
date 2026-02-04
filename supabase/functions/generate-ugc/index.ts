@@ -3,7 +3,7 @@ const serve = (handler: (req: Request) => Promise<Response>) => {
 };
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
-const RUNWARE_API_URL = "https://api.runware.ai/v1";
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -27,14 +27,15 @@ serve(async (req) => {
       language = 'ar'
     } = await req.json();
     
-    const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!RUNWARE_API_KEY) {
-      throw new Error("RUNWARE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     // ============================================
     // UGC STUDIO - User Generated Content Images
+    // Using Lovable AI Gateway with Gemini Image Generation
     // Generates 3 high-quality UGC-style images
     // Arabic content for Egyptian market
     // ============================================
@@ -52,15 +53,15 @@ serve(async (req) => {
       lifestyle: {
         scenes: [
           {
-            imagePrompt: `UGC lifestyle photo: Product held naturally in hands against cozy home background, warm natural lighting, authentic feel, vertical 9:16 format`,
+            imagePrompt: "UGC lifestyle photo: Product held naturally in hands against cozy home background, warm natural lighting, authentic influencer feel",
             arabicCaption: "شوفي الجمال ده! 😍"
           },
           {
-            imagePrompt: `UGC lifestyle: Product on stylish vanity table with makeup items, warm bedroom lighting, influencer aesthetic, vertical 9:16 format`,
+            imagePrompt: "UGC lifestyle: Product on stylish vanity table with makeup items, warm bedroom lighting, influencer aesthetic",
             arabicCaption: "لازم يكون عندك! ✨"
           },
           {
-            imagePrompt: `UGC lifestyle: Product in aesthetic flatlay arrangement, clean modern background, Instagram worthy, vertical 9:16 format`,
+            imagePrompt: "UGC lifestyle: Product in aesthetic flatlay arrangement, clean modern background, Instagram worthy",
             arabicCaption: "اطلبيه دلوقتي! 🛒"
           }
         ],
@@ -71,15 +72,15 @@ serve(async (req) => {
       review: {
         scenes: [
           {
-            imagePrompt: `Product review style: Product with 5-star rating visual, clean professional background, testimonial feel, vertical 9:16 format`,
+            imagePrompt: "Product review style: Product with 5-star rating visual, clean professional background, testimonial feel",
             arabicCaption: "⭐⭐⭐⭐⭐ الكل بيحبه!"
           },
           {
-            imagePrompt: `Before/after comparison layout with product in center, transformation visual, bright lighting, vertical 9:16 format`,
+            imagePrompt: "Before/after comparison layout with product in center, transformation visual, bright lighting",
             arabicCaption: "الفرق واضح! 🔥"
           },
           {
-            imagePrompt: `Product close-up showing quality details, professional macro shot, premium feel, vertical 9:16 format`,
+            imagePrompt: "Product close-up showing quality details, professional macro shot, premium feel",
             arabicCaption: "جودة عالية جداً 💎"
           }
         ],
@@ -90,15 +91,15 @@ serve(async (req) => {
       unboxing: {
         scenes: [
           {
-            imagePrompt: `Elegant gift box with product inside, luxury packaging, dramatic lighting, anticipation moment, vertical 9:16 format`,
+            imagePrompt: "Elegant gift box with product inside, luxury packaging, dramatic lighting, anticipation moment",
             arabicCaption: "الطرد وصل! 📦😍"
           },
           {
-            imagePrompt: `Product emerging from tissue paper, sparkle effects, excitement moment capture, vertical 9:16 format`,
+            imagePrompt: "Product emerging from tissue paper, sparkle effects, excitement moment capture",
             arabicCaption: "شوفوا الجمال! ✨"
           },
           {
-            imagePrompt: `Product hero shot after unboxing, professional display, satisfied reveal, vertical 9:16 format`,
+            imagePrompt: "Product hero shot after unboxing, professional display, satisfied reveal",
             arabicCaption: "يستاهل كل قرش! 💜"
           }
         ],
@@ -109,15 +110,15 @@ serve(async (req) => {
       selfie: {
         scenes: [
           {
-            imagePrompt: `Mirror selfie style with product visible, modern bathroom/bedroom, ring light lighting, vertical 9:16 format`,
+            imagePrompt: "Mirror selfie style with product visible, modern bathroom/bedroom, ring light lighting",
             arabicCaption: "سيلفي مع الحب الجديد! 📸"
           },
           {
-            imagePrompt: `Front-facing selfie composition with product, casual aesthetic, natural daylight, vertical 9:16 format`,
+            imagePrompt: "Front-facing selfie composition with product, casual aesthetic, natural daylight",
             arabicCaption: "أنا وصاحبي الجديد! 💕"
           },
           {
-            imagePrompt: `Aesthetic selfie with product in cute pose, clean modern background, Instagram style, vertical 9:16 format`,
+            imagePrompt: "Aesthetic selfie with product in cute pose, clean modern background, Instagram style",
             arabicCaption: "لازم تجربوه! 🔥"
           }
         ],
@@ -128,15 +129,15 @@ serve(async (req) => {
       tutorial: {
         scenes: [
           {
-            imagePrompt: `Tutorial style: Hands demonstrating product step 1, clean white background, instructional, vertical 9:16 format`,
+            imagePrompt: "Tutorial style: Hands demonstrating product step 1, clean white background, instructional",
             arabicCaption: "الخطوة الأولى... 1️⃣"
           },
           {
-            imagePrompt: `Tutorial step 2: Product application/usage demonstration, clear visibility, vertical 9:16 format`,
+            imagePrompt: "Tutorial step 2: Product application/usage demonstration, clear visibility",
             arabicCaption: "كده بالظبط! 2️⃣"
           },
           {
-            imagePrompt: `Tutorial result: Final result showcase, success visual, satisfied completion, vertical 9:16 format`,
+            imagePrompt: "Tutorial result: Final result showcase, success visual, satisfied completion",
             arabicCaption: "النتيجة النهائية! ✅"
           }
         ],
@@ -164,72 +165,76 @@ serve(async (req) => {
       
       try {
         console.log(`Generating UGC image scene ${i + 1}...`);
-
-        const imageTaskUUID = crypto.randomUUID();
         
-        const imagePrompt = productImage
-          ? `PRESERVE THE EXACT PRODUCT from input image.
-${scene.imagePrompt}
-Product: ${productName || "Product"}
-${productAnalysis?.core_feature ? `Key feature: ${productAnalysis.core_feature}` : ''}
-Keep product identical, only change context/environment.
-Egyptian/MENA market style, authentic UGC aesthetic.`
-          : `${scene.imagePrompt}
+        const imagePrompt = `Generate a professional UGC (User Generated Content) style image for social media marketing.
+
 Product: ${productName || "Fashion product"}
-Egyptian/MENA market style, authentic UGC aesthetic.`;
+${productAnalysis?.core_feature ? `Key feature: ${productAnalysis.core_feature}` : ''}
 
-        const imagePayload: any[] = [
-          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
-          {
-            taskType: "imageInference",
-            taskUUID: imageTaskUUID,
-            positivePrompt: imagePrompt,
-            negativePrompt: "different product, wrong colors, cartoon, anime, artificial, text, watermark, deformed",
-            width: 576,
-            height: 1024,
-            model: model || "runware:100@1",
-            numberResults: 1,
-            outputFormat: "WEBP",
-            CFGScale: 7,
-            steps: 25,
-            scheduler: "DPMSolverMultistepScheduler"
-          }
-        ];
+Scene: ${scene.imagePrompt}
 
-        // Add input image for image-to-image if provided
-        if (productImage) {
-          const imageInput = productImage.startsWith('data:') 
-            ? `data:image/png;base64,${productImage.split(',')[1]}`
-            : productImage;
-          imagePayload[1].inputImage = imageInput;
-          imagePayload[1].strength = 0.30;
-        }
+Requirements:
+- Authentic UGC/influencer aesthetic (not too polished)
+- Vertical 9:16 format for Instagram/TikTok
+- Egyptian/MENA market appeal
+- Natural lighting and real-life setting
+- Relatable and shareable content
+- No text or watermarks
+- High quality but authentic feel`;
 
-        // Generate image
-        const imageResponse = await fetch(RUNWARE_API_URL, {
+        const response = await fetch(LOVABLE_AI_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(imagePayload)
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: imagePrompt
+              }
+            ]
+          })
         });
 
-        if (!imageResponse.ok) {
-          console.error(`Image generation failed for scene ${i + 1}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Gemini API error for scene ${i + 1}:`, response.status, errorText);
+          
+          if (response.status === 429) {
+            throw new Error(language === 'ar' 
+              ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً"
+              : "Rate limit exceeded, please try again later");
+          }
+          if (response.status === 402) {
+            throw new Error(language === 'ar'
+              ? "الرصيد غير كافي، يرجى شحن الرصيد"
+              : "Insufficient credits, please top up");
+          }
           continue;
         }
 
-        const imageData = await imageResponse.json();
-
-        // Check for errors
-        if (imageData.errors && imageData.errors.length > 0) {
-          console.error(`Runware error for scene ${i + 1}:`, JSON.stringify(imageData.errors));
-          continue;
-        }
-
-        const imageResult = imageData.data?.find((item: any) => item.taskType === "imageInference" && item.imageURL);
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
         
-        if (imageResult?.imageURL) {
+        let imageUrl = null;
+        if (typeof content === 'string') {
+          if (content.includes('data:image')) {
+            imageUrl = content.match(/data:image\/[^;]+;base64,[^"'\s]+/)?.[0];
+          } else if (content.includes('http')) {
+            imageUrl = content.match(/https?:\/\/[^\s"']+\.(png|jpg|jpeg|webp|gif)/i)?.[0];
+          }
+        } else if (content?.image_url) {
+          imageUrl = content.image_url;
+        } else if (data.choices?.[0]?.message?.image_url) {
+          imageUrl = data.choices[0].message.image_url;
+        }
+
+        if (imageUrl) {
           generatedImages.push({
-            imageUrl: imageResult.imageURL,
+            imageUrl,
             scene: i + 1,
             caption: scene.arabicCaption,
             type: selectedType.nameEn,
@@ -242,6 +247,11 @@ Egyptian/MENA market style, authentic UGC aesthetic.`;
 
       } catch (sceneError) {
         console.error(`Error generating scene ${i + 1}:`, sceneError);
+        if (sceneError instanceof Error && 
+            (sceneError.message.includes("Rate limit") || 
+             sceneError.message.includes("credits"))) {
+          throw sceneError;
+        }
       }
     }
 
@@ -261,7 +271,7 @@ Egyptian/MENA market style, authentic UGC aesthetic.`;
         description: selectedType.description,
         count: generatedImages.length,
         format: "9:16 vertical",
-        provider: "runware",
+        provider: "gemini",
         arabicContent: true,
         tips: [
           "الصور جاهزة للنشر على انستجرام وتيك توك",

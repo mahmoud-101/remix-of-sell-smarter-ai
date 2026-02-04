@@ -3,7 +3,7 @@ const serve = (handler: (req: Request) => Promise<Response>) => {
 };
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
-const RUNWARE_API_URL = "https://api.runware.ai/v1";
+const LOVABLE_AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,20 +28,15 @@ serve(async (req) => {
       model
     } = await req.json();
     
-    const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!RUNWARE_API_KEY) {
-      throw new Error("RUNWARE_API_KEY is not configured");
-    }
-
-    const sourceImage = productImage || imageUrl;
-
-    if (!sourceImage) {
-      throw new Error(language === 'ar' ? "صورة المنتج مطلوبة" : "Product image is required");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     // ============================================
     // REELS STUDIO - AI Storyboard Generator
+    // Using Lovable AI Gateway with Gemini Image Generation
     // Generates 3 high-quality vertical images for Reel creation
     // Arabic content for Egyptian market
     // ============================================
@@ -61,17 +56,17 @@ serve(async (req) => {
       unboxing: {
         scenes: [
           {
-            imagePrompt: "Luxury gift box with golden ribbon, product inside partially visible, dramatic spotlight, anticipation moment, vertical 9:16 format",
+            imagePrompt: "Luxury gift box with golden ribbon, product inside partially visible, dramatic spotlight, anticipation moment",
             arabicCaption: "الطرد وصل! 📦",
             arabicHook: "استنوا تشوفوا!"
           },
           {
-            imagePrompt: "Product emerging from elegant packaging, tissue paper, sparkle effects, excitement moment, vertical 9:16 format",
+            imagePrompt: "Product emerging from elegant packaging, tissue paper, sparkle effects, excitement moment",
             arabicCaption: "شوفوا الجمال! ✨",
             arabicHook: "مش هتصدقوا!"
           },
           {
-            imagePrompt: "Product hero shot, professional display, satisfied reveal, premium presentation, vertical 9:16 format",
+            imagePrompt: "Product hero shot, professional display, satisfied reveal, premium presentation",
             arabicCaption: "اطلبوه دلوقتي! 🛒",
             arabicHook: "لينك في البايو!"
           }
@@ -84,17 +79,17 @@ serve(async (req) => {
       before_after: {
         scenes: [
           {
-            imagePrompt: "Before state: dim lighting, muted colors, problem visualization, dull atmosphere, vertical 9:16 format",
+            imagePrompt: "Before state: dim lighting, muted colors, problem visualization, dull atmosphere",
             arabicCaption: "قبل... 😔",
             arabicHook: "كنت كده!"
           },
           {
-            imagePrompt: "Transformation: product spotlight, magical glow transition, change happening, vertical 9:16 format",
+            imagePrompt: "Transformation: product spotlight, magical glow transition, change happening",
             arabicCaption: "التحول! ✨",
             arabicHook: "وبعدين...!"
           },
           {
-            imagePrompt: "After state: bright vibrant lighting, success colors, radiant result, premium feel, vertical 9:16 format",
+            imagePrompt: "After state: bright vibrant lighting, success colors, radiant result, premium feel",
             arabicCaption: "بعد! 😍🔥",
             arabicHook: "الفرق واضح!"
           }
@@ -107,17 +102,17 @@ serve(async (req) => {
       testimonial: {
         scenes: [
           {
-            imagePrompt: "Product with floating 5-star rating visual, trust badges, testimonial style, professional, vertical 9:16 format",
+            imagePrompt: "Product with floating 5-star rating visual, trust badges, testimonial style, professional",
             arabicCaption: "⭐⭐⭐⭐⭐",
             arabicHook: "ألف بنت قالت!"
           },
           {
-            imagePrompt: "Product macro detail shot, quality close-up, premium materials visible, vertical 9:16 format",
+            imagePrompt: "Product macro detail shot, quality close-up, premium materials visible",
             arabicCaption: "جودة مش عادية! 💎",
             arabicHook: "شوفي التفاصيل!"
           },
           {
-            imagePrompt: "Product with Order Now visual, discount badge, urgency CTA design, vertical 9:16 format",
+            imagePrompt: "Product with Order Now visual, discount badge, urgency CTA design",
             arabicCaption: "اطلبي قبل ما يخلص! ⏰",
             arabicHook: "العرض لفترة محدودة!"
           }
@@ -130,17 +125,17 @@ serve(async (req) => {
       showcase: {
         scenes: [
           {
-            imagePrompt: "Product front view, clean white studio, professional 3-point lighting setup, vertical 9:16 format",
+            imagePrompt: "Product front view, clean white studio, professional 3-point lighting setup",
             arabicCaption: "المنتج الأكثر مبيعاً! 🔥",
             arabicHook: "الكل بيسأل عليه!"
           },
           {
-            imagePrompt: "Product 45-degree angle, rim lighting, depth dimension, premium feel, vertical 9:16 format",
+            imagePrompt: "Product 45-degree angle, rim lighting, depth dimension, premium feel",
             arabicCaption: "تصميم مميز! ✨",
             arabicHook: "شوفي من كل الزوايا!"
           },
           {
-            imagePrompt: "Product in full ad composition, promotional graphics, call to action, vertical 9:16 format",
+            imagePrompt: "Product in full ad composition, promotional graphics, call to action",
             arabicCaption: "متوفر دلوقتي! 🛒",
             arabicHook: "اللينك في البايو!"
           }
@@ -153,17 +148,17 @@ serve(async (req) => {
       trending: {
         scenes: [
           {
-            imagePrompt: "Product in TikTok viral style, bold neon RGB lighting, high energy aesthetic, vertical 9:16 format",
+            imagePrompt: "Product in TikTok viral style, bold neon RGB lighting, high energy aesthetic",
             arabicCaption: "🔥 الترند الجديد!",
             arabicHook: "لو مشفتيش ده!"
           },
           {
-            imagePrompt: "Product with dynamic effects, RGB color shifts, motion blur energy, vertical 9:16 format",
+            imagePrompt: "Product with dynamic effects, RGB color shifts, motion blur energy",
             arabicCaption: "الكل بيتكلم عنه! 📣",
             arabicHook: "فيرال على تيك توك!"
           },
           {
-            imagePrompt: "Product with FOMO urgency graphics, countdown visual, limited stock alert, vertical 9:16 format",
+            imagePrompt: "Product with FOMO urgency graphics, countdown visual, limited stock alert",
             arabicCaption: "⚡ هيخلص!",
             arabicHook: "احجزي دلوقتي!"
           }
@@ -192,66 +187,76 @@ serve(async (req) => {
       
       try {
         console.log(`Generating Reel scene ${i + 1}...`);
+        
+        const imagePrompt = `Generate a professional vertical 9:16 social media Reel scene image.
 
-        const imageTaskUUID = crypto.randomUUID();
-        
-        // Prepare image input
-        let imageInput = sourceImage;
-        if (sourceImage.startsWith('data:')) {
-          imageInput = `data:image/png;base64,${sourceImage.split(',')[1]}`;
-        }
-        
-        const imagePrompt = `PRESERVE THE EXACT PRODUCT from input image.
-${scene.imagePrompt}
-Product: ${productName || "Product"}
+Product: ${productName || "Fashion product"}
 ${productAnalysis?.core_feature ? `Feature: ${productAnalysis.core_feature}` : ''}
-Keep product identical, only change scene/environment.
-Egyptian market style, high-quality advertising photo.`;
 
-        const imagePayload = [
-          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
-          {
-            taskType: "imageInference",
-            taskUUID: imageTaskUUID,
-            positivePrompt: imagePrompt,
-            negativePrompt: "different product, wrong colors, wrong design, blurry, distorted, deformed, text, watermark",
-            width: 576,
-            height: 1024,
-            model: model || "runware:100@1",
-            numberResults: 1,
-            outputFormat: "WEBP",
-            CFGScale: 7,
-            steps: 25,
-            scheduler: "DPMSolverMultistepScheduler",
-            strength: 0.30,
-            inputImage: imageInput
-          }
-        ];
+Scene Description: ${scene.imagePrompt}
 
-        const imageResponse = await fetch(RUNWARE_API_URL, {
+Requirements:
+- Vertical 9:16 aspect ratio (for Instagram/TikTok Reels)
+- Professional advertising quality
+- Egyptian/MENA market appeal
+- High-end fashion aesthetic
+- Dynamic and engaging composition
+- No text or watermarks on the image
+- Perfect for social media marketing`;
+
+        const response = await fetch(LOVABLE_AI_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(imagePayload)
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3-pro-image-preview",
+            messages: [
+              {
+                role: "user",
+                content: imagePrompt
+              }
+            ]
+          })
         });
 
-        if (!imageResponse.ok) {
-          console.error(`Image generation failed for scene ${i + 1}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`Gemini API error for scene ${i + 1}:`, response.status, errorText);
+          
+          if (response.status === 429) {
+            throw new Error(language === 'ar' 
+              ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً"
+              : "Rate limit exceeded, please try again later");
+          }
+          if (response.status === 402) {
+            throw new Error(language === 'ar'
+              ? "الرصيد غير كافي، يرجى شحن الرصيد"
+              : "Insufficient credits, please top up");
+          }
           continue;
         }
 
-        const imageData = await imageResponse.json();
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
         
-        // Check for errors
-        if (imageData.errors && imageData.errors.length > 0) {
-          console.error(`Runware error for scene ${i + 1}:`, JSON.stringify(imageData.errors));
-          continue;
+        let imageUrl = null;
+        if (typeof content === 'string') {
+          if (content.includes('data:image')) {
+            imageUrl = content.match(/data:image\/[^;]+;base64,[^"'\s]+/)?.[0];
+          } else if (content.includes('http')) {
+            imageUrl = content.match(/https?:\/\/[^\s"']+\.(png|jpg|jpeg|webp|gif)/i)?.[0];
+          }
+        } else if (content?.image_url) {
+          imageUrl = content.image_url;
+        } else if (data.choices?.[0]?.message?.image_url) {
+          imageUrl = data.choices[0].message.image_url;
         }
 
-        const imageResult = imageData.data?.find((item: any) => item.taskType === "imageInference" && item.imageURL);
-        
-        if (imageResult?.imageURL) {
+        if (imageUrl) {
           generatedScenes.push({
-            imageUrl: imageResult.imageURL,
+            imageUrl,
             scene: i + 1,
             caption: scene.arabicCaption,
             hook: scene.arabicHook
@@ -263,6 +268,11 @@ Egyptian market style, high-quality advertising photo.`;
 
       } catch (sceneError) {
         console.error(`Error generating scene ${i + 1}:`, sceneError);
+        if (sceneError instanceof Error && 
+            (sceneError.message.includes("Rate limit") || 
+             sceneError.message.includes("credits"))) {
+          throw sceneError;
+        }
       }
     }
 
@@ -284,7 +294,7 @@ Egyptian market style, high-quality advertising photo.`;
         format: "9:16 vertical",
         totalScenes: generatedScenes.length,
         musicVibe: selectedStyle.musicVibe,
-        provider: "runware",
+        provider: "gemini",
         arabicContent: true,
         instructions: "حمّل الصور واجمعها في CapCut أو InShot وأضف حركة وموسيقى لعمل ريل فيرال! 🔥"
       }),
