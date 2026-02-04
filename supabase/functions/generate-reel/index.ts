@@ -24,7 +24,6 @@ serve(async (req) => {
       style, 
       productName,
       productAnalysis,
-      duration = 10,
       language = 'ar', 
       model
     } = await req.json();
@@ -42,15 +41,15 @@ serve(async (req) => {
     }
 
     // ============================================
-    // REELS STUDIO - 10-Second Video Generation
+    // REELS STUDIO - AI Storyboard Generator
+    // Generates 3 high-quality vertical images for Reel creation
     // Arabic content for Egyptian market
     // ============================================
 
-    // Reel video scenes with Arabic captions and motion
+    // Reel storyboard scenes with Arabic captions
     const reelStyles: Record<string, { 
       scenes: Array<{
         imagePrompt: string;
-        motionPrompt: string;
         arabicCaption: string;
         arabicHook: string;
       }>;
@@ -62,20 +61,17 @@ serve(async (req) => {
       unboxing: {
         scenes: [
           {
-            imagePrompt: "Luxury gift box with golden ribbon, product inside partially visible, dramatic spotlight, anticipation moment",
-            motionPrompt: "Box lid slowly opening with reveal lighting, anticipation build-up",
+            imagePrompt: "Luxury gift box with golden ribbon, product inside partially visible, dramatic spotlight, anticipation moment, vertical 9:16 format",
             arabicCaption: "الطرد وصل! 📦",
             arabicHook: "استنوا تشوفوا!"
           },
           {
-            imagePrompt: "Product emerging from elegant packaging, tissue paper, sparkle effects, excitement moment",
-            motionPrompt: "Product being lifted up dramatically, sparkle particle effects",
+            imagePrompt: "Product emerging from elegant packaging, tissue paper, sparkle effects, excitement moment, vertical 9:16 format",
             arabicCaption: "شوفوا الجمال! ✨",
             arabicHook: "مش هتصدقوا!"
           },
           {
-            imagePrompt: "Product hero shot, professional display, satisfied reveal, premium presentation",
-            motionPrompt: "Glamour product rotation, final showcase spin",
+            imagePrompt: "Product hero shot, professional display, satisfied reveal, premium presentation, vertical 9:16 format",
             arabicCaption: "اطلبوه دلوقتي! 🛒",
             arabicHook: "لينك في البايو!"
           }
@@ -88,20 +84,17 @@ serve(async (req) => {
       before_after: {
         scenes: [
           {
-            imagePrompt: "Before state: dim lighting, muted colors, problem visualization, dull atmosphere",
-            motionPrompt: "Slow fade showing problem state, building anticipation",
+            imagePrompt: "Before state: dim lighting, muted colors, problem visualization, dull atmosphere, vertical 9:16 format",
             arabicCaption: "قبل... 😔",
             arabicHook: "كنت كده!"
           },
           {
-            imagePrompt: "Transformation: product spotlight, magical glow transition, change happening",
-            motionPrompt: "Dramatic transformation effect, magical transition lighting",
+            imagePrompt: "Transformation: product spotlight, magical glow transition, change happening, vertical 9:16 format",
             arabicCaption: "التحول! ✨",
             arabicHook: "وبعدين...!"
           },
           {
-            imagePrompt: "After state: bright vibrant lighting, success colors, radiant result, premium feel",
-            motionPrompt: "Reveal final result, celebration lighting, success showcase",
+            imagePrompt: "After state: bright vibrant lighting, success colors, radiant result, premium feel, vertical 9:16 format",
             arabicCaption: "بعد! 😍🔥",
             arabicHook: "الفرق واضح!"
           }
@@ -114,20 +107,17 @@ serve(async (req) => {
       testimonial: {
         scenes: [
           {
-            imagePrompt: "Product with floating 5-star rating, trust badges, testimonial style, professional",
-            motionPrompt: "Stars appearing one by one animation, trust building",
+            imagePrompt: "Product with floating 5-star rating visual, trust badges, testimonial style, professional, vertical 9:16 format",
             arabicCaption: "⭐⭐⭐⭐⭐",
             arabicHook: "ألف بنت قالت!"
           },
           {
-            imagePrompt: "Product macro detail shot, quality close-up, premium materials visible",
-            motionPrompt: "Detailed zoom into quality features, texture showcase",
+            imagePrompt: "Product macro detail shot, quality close-up, premium materials visible, vertical 9:16 format",
             arabicCaption: "جودة مش عادية! 💎",
             arabicHook: "شوفي التفاصيل!"
           },
           {
-            imagePrompt: "Product with Order Now button, discount badge, urgency CTA design",
-            motionPrompt: "CTA button pulse animation, urgency motion",
+            imagePrompt: "Product with Order Now visual, discount badge, urgency CTA design, vertical 9:16 format",
             arabicCaption: "اطلبي قبل ما يخلص! ⏰",
             arabicHook: "العرض لفترة محدودة!"
           }
@@ -140,20 +130,17 @@ serve(async (req) => {
       showcase: {
         scenes: [
           {
-            imagePrompt: "Product front view, clean white studio, professional 3-point lighting setup",
-            motionPrompt: "Elegant product introduction, smooth reveal",
+            imagePrompt: "Product front view, clean white studio, professional 3-point lighting setup, vertical 9:16 format",
             arabicCaption: "المنتج الأكثر مبيعاً! 🔥",
             arabicHook: "الكل بيسأل عليه!"
           },
           {
-            imagePrompt: "Product 45-degree angle, rim lighting, depth dimension, premium feel",
-            motionPrompt: "Slow elegant rotation showing all angles",
+            imagePrompt: "Product 45-degree angle, rim lighting, depth dimension, premium feel, vertical 9:16 format",
             arabicCaption: "تصميم مميز! ✨",
             arabicHook: "شوفي من كل الزوايا!"
           },
           {
-            imagePrompt: "Product in full ad composition, promotional graphics, call to action",
-            motionPrompt: "Final glamour shot with promotional elements appearing",
+            imagePrompt: "Product in full ad composition, promotional graphics, call to action, vertical 9:16 format",
             arabicCaption: "متوفر دلوقتي! 🛒",
             arabicHook: "اللينك في البايو!"
           }
@@ -166,20 +153,17 @@ serve(async (req) => {
       trending: {
         scenes: [
           {
-            imagePrompt: "Product in TikTok viral style, bold neon RGB lighting, high energy aesthetic",
-            motionPrompt: "Fast dynamic zoom, TikTok style energy, quick cuts feel",
+            imagePrompt: "Product in TikTok viral style, bold neon RGB lighting, high energy aesthetic, vertical 9:16 format",
             arabicCaption: "🔥 الترند الجديد!",
             arabicHook: "لو مشفتيش ده!"
           },
           {
-            imagePrompt: "Product with dynamic effects, RGB color shifts, motion blur energy",
-            motionPrompt: "High energy camera movement, dynamic lighting changes",
+            imagePrompt: "Product with dynamic effects, RGB color shifts, motion blur energy, vertical 9:16 format",
             arabicCaption: "الكل بيتكلم عنه! 📣",
             arabicHook: "فيرال على تيك توك!"
           },
           {
-            imagePrompt: "Product with FOMO urgency graphics, countdown visual, limited stock alert",
-            motionPrompt: "Urgency countdown motion, FOMO inducing animation",
+            imagePrompt: "Product with FOMO urgency graphics, countdown visual, limited stock alert, vertical 9:16 format",
             arabicCaption: "⚡ هيخلص!",
             arabicHook: "احجزي دلوقتي!"
           }
@@ -193,12 +177,11 @@ serve(async (req) => {
 
     const selectedStyle = reelStyles[style] || reelStyles.showcase;
     
-    console.log(`Generating Reel videos for style: ${style}, scenes: ${selectedStyle.scenes.length}`);
+    console.log(`Generating Reel storyboard for style: ${style}, scenes: ${selectedStyle.scenes.length}`);
 
-    // Generate 10-second videos for each scene
-    const generatedVideos: Array<{ 
-      videoUrl: string; 
-      thumbnailUrl?: string;
+    // Generate 3 vertical images for the storyboard
+    const generatedScenes: Array<{ 
+      imageUrl: string; 
       scene: number;
       caption: string;
       hook: string;
@@ -208,9 +191,8 @@ serve(async (req) => {
       const scene = selectedStyle.scenes[i];
       
       try {
-        console.log(`Generating Reel video scene ${i + 1}...`);
+        console.log(`Generating Reel scene ${i + 1}...`);
 
-        // Step 1: Generate base image with product preservation
         const imageTaskUUID = crypto.randomUUID();
         
         // Prepare image input
@@ -224,7 +206,7 @@ ${scene.imagePrompt}
 Product: ${productName || "Product"}
 ${productAnalysis?.core_feature ? `Feature: ${productAnalysis.core_feature}` : ''}
 Keep product identical, only change scene/environment.
-Vertical 9:16 format, Egyptian market style.`;
+Egyptian market style, high-quality advertising photo.`;
 
         const imagePayload = [
           { taskType: "authentication", apiKey: RUNWARE_API_KEY },
@@ -232,7 +214,7 @@ Vertical 9:16 format, Egyptian market style.`;
             taskType: "imageInference",
             taskUUID: imageTaskUUID,
             positivePrompt: imagePrompt,
-            negativePrompt: "different product, wrong colors, wrong design, blurry, distorted, deformed",
+            negativePrompt: "different product, wrong colors, wrong design, blurry, distorted, deformed, text, watermark",
             width: 576,
             height: 1024,
             model: model || "runware:100@1",
@@ -241,7 +223,7 @@ Vertical 9:16 format, Egyptian market style.`;
             CFGScale: 7,
             steps: 25,
             scheduler: "DPMSolverMultistepScheduler",
-            strength: 0.25, // Low strength to preserve product
+            strength: 0.30,
             inputImage: imageInput
           }
         ];
@@ -258,78 +240,25 @@ Vertical 9:16 format, Egyptian market style.`;
         }
 
         const imageData = await imageResponse.json();
+        
+        // Check for errors
+        if (imageData.errors && imageData.errors.length > 0) {
+          console.error(`Runware error for scene ${i + 1}:`, JSON.stringify(imageData.errors));
+          continue;
+        }
+
         const imageResult = imageData.data?.find((item: any) => item.taskType === "imageInference" && item.imageURL);
         
-        if (!imageResult?.imageURL) {
-          console.error(`No image URL for scene ${i + 1}`);
-          continue;
-        }
-
-        console.log(`Scene ${i + 1} image generated, converting to 10s video...`);
-
-        // Step 2: Convert image to video using imageToVideo task
-        const videoTaskUUID = crypto.randomUUID();
-        
-        // Runware imageToVideo API format
-        const videoPayload = [
-          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
-          {
-            taskType: "imageToVideo",
-            taskUUID: videoTaskUUID,
-            inputImage: imageResult.imageURL,
-            promptText: scene.motionPrompt,
-            seed: Math.floor(Math.random() * 1000000000),
-            duration: 10,
-            ratio: "9:16"
-          }
-        ];
-
-        const videoResponse = await fetch(RUNWARE_API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(videoPayload)
-        });
-
-        const videoData = await videoResponse.json();
-        
-        // Check for errors in response
-        if (videoData.errors && videoData.errors.length > 0) {
-          console.error(`Video conversion failed for scene ${i + 1}:`, JSON.stringify(videoData.errors).substring(0, 200));
-          
-          // Fallback to image if video generation fails
-          generatedVideos.push({
-            videoUrl: imageResult.imageURL,
-            thumbnailUrl: imageResult.imageURL,
+        if (imageResult?.imageURL) {
+          generatedScenes.push({
+            imageUrl: imageResult.imageURL,
             scene: i + 1,
             caption: scene.arabicCaption,
             hook: scene.arabicHook
           });
-          continue;
-        }
-
-        const videoResult = videoData.data?.find((item: any) => 
-          item.taskType === "imageToVideo" && (item.videoURL || item.outputVideo || item.videoUrl)
-        );
-
-        if (videoResult?.videoURL || videoResult?.outputVideo || videoResult?.videoUrl) {
-          generatedVideos.push({
-            videoUrl: videoResult.videoURL || videoResult.outputVideo || videoResult.videoUrl,
-            thumbnailUrl: imageResult.imageURL,
-            scene: i + 1,
-            caption: scene.arabicCaption,
-            hook: scene.arabicHook
-          });
-          console.log(`Scene ${i + 1} video generated successfully`);
+          console.log(`Scene ${i + 1} generated successfully`);
         } else {
-          // Fallback to image
-          generatedVideos.push({
-            videoUrl: imageResult.imageURL,
-            thumbnailUrl: imageResult.imageURL,
-            scene: i + 1,
-            caption: scene.arabicCaption,
-            hook: scene.arabicHook
-          });
-          console.log(`Scene ${i + 1}: Using image as fallback, video data:`, JSON.stringify(videoData).substring(0, 300));
+          console.error(`No image URL for scene ${i + 1}`);
         }
 
       } catch (sceneError) {
@@ -337,28 +266,27 @@ Vertical 9:16 format, Egyptian market style.`;
       }
     }
 
-    if (generatedVideos.length === 0) {
+    if (generatedScenes.length === 0) {
       throw new Error(language === 'ar' 
-        ? "فشل توليد الفيديوهات - حاول مرة تانية"
-        : "Failed to generate videos - please try again");
+        ? "فشل توليد المشاهد - حاول مرة تانية"
+        : "Failed to generate scenes - please try again");
     }
 
-    console.log(`Successfully generated ${generatedVideos.length} Reel videos`);
+    console.log(`Successfully generated ${generatedScenes.length} Reel scenes`);
 
     return new Response(
       JSON.stringify({ 
-        videos: generatedVideos,
+        scenes: generatedScenes,
         caption: selectedStyle.captionAr,
         cta: selectedStyle.ctaAr,
         hashtags: selectedStyle.hashtags,
-        duration: "10s",
         style,
         format: "9:16 vertical",
-        totalScenes: generatedVideos.length,
+        totalScenes: generatedScenes.length,
         musicVibe: selectedStyle.musicVibe,
         provider: "runware",
         arabicContent: true,
-        instructions: "حمّل الفيديوهات واجمعها في CapCut أو InShot لعمل ريل فيرال 30 ثانية! 🔥"
+        instructions: "حمّل الصور واجمعها في CapCut أو InShot وأضف حركة وموسيقى لعمل ريل فيرال! 🔥"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
