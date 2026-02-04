@@ -19,7 +19,8 @@ serve(async (req) => {
   try {
     const { 
       productImage, 
-      productName, 
+      productName,
+      productAnalysis,
       ugcType = "lifestyle",
       model,
       language = 'ar' 
@@ -33,62 +34,62 @@ serve(async (req) => {
 
     // ============================================
     // UGC STUDIO - User Generated Content Style
-    // Realistic lifestyle photos for Egyptian market
-    // Using Runware with realistic models
+    // CRITICAL: Product must remain EXACTLY the same!
+    // Only add context/environment around it
     // ============================================
 
-    // UGC style types - realistic "influencer" style content
-    const ugcStyles: Record<string, {
-      prompts: string[];
+    // UGC context descriptions - focus on environment AROUND the product
+    const ugcContexts: Record<string, {
+      contexts: string[];
       nameAr: string;
       nameEn: string;
       description: string;
     }> = {
       lifestyle: {
-        prompts: [
-          `UGC lifestyle photo: Young Egyptian woman (20-30 years old) naturally posing with the product in a modern Cairo apartment. Casual home setting, natural window lighting, iPhone quality photo aesthetic. She's wearing casual modest clothing. Product clearly visible in her hand. Candid selfie style, authentic feel. Arabic social media influencer vibes.`,
-          `UGC lifestyle photo: Egyptian woman sitting on a cozy sofa, holding and showing the product to the camera. Warm living room lighting, home decor visible in background. Natural makeup, casual outfit. Instagram story quality, authentic UGC style. Real person feel, not overly polished.`,
-          `UGC lifestyle photo: Middle Eastern woman unboxing the product on her bed, excited expression. Soft bedroom lighting, cozy aesthetic. Phone camera quality, authentic influencer style. Product packaging visible. Cairo apartment vibes, relatable content.`
+        contexts: [
+          `Scene context: Young woman's hands holding the product in a cozy modern living room. Warm natural window light, home decor visible in soft bokeh. iPhone camera quality, authentic UGC feel.`,
+          `Scene context: Product placed on a stylish vanity table with makeup items around it. Warm bedroom lighting, mirror reflection. Influencer content style.`,
+          `Scene context: Product being held up against a clean, aesthetic background. Natural lighting, minimal setting. Instagram story quality.`
         ],
         nameAr: "لايف ستايل",
         nameEn: "Lifestyle",
         description: "Authentic home lifestyle photos"
       },
       review: {
-        prompts: [
-          `UGC product review photo: Egyptian woman showing the product close to camera, comparing before/after on her face or skin. Bathroom mirror selfie style, natural lighting. Real person, no heavy editing. Product clearly visible, review style content.`,
-          `UGC review photo: Young Arab woman holding the product next to her face, genuine smile. Vanity or dresser setup visible, warm lamp lighting. Authentic testimonial style, Instagram-worthy but real.`,
-          `UGC review photo: Egyptian influencer style shot, woman pointing at the product with excitement. Text overlay space for Arabic review quotes. Bright natural lighting, clean background.`
+        contexts: [
+          `Scene context: Product displayed next to 5-star rating graphic. Clean desk setup with laptop visible. Review content style, professional yet authentic.`,
+          `Scene context: Before/after comparison layout with product in center. Bright lighting, clean background. Testimonial style content.`,
+          `Scene context: Product on bathroom counter with skincare items. Mirror selfie style framing. Natural lighting, authentic review feel.`
         ],
         nameAr: "ريفيو",
         nameEn: "Review",
         description: "Authentic review style content"
       },
       unboxing: {
-        prompts: [
-          `UGC unboxing photo: Hands of Egyptian woman opening a package, product partially visible. Excitement moment captured. Home desk or bed setting. iPhone camera quality):, overhead angle. Arabic packaging visible if applicable.`,
-          `UGC unboxing photo: Young Arab woman with surprised happy expression, holding up the product from its box. Natural home lighting, genuine reaction. Instagram story moment capture.`,
-          `UGC unboxing photo: First impression shot - Egyptian girl looking at product for the first time. Package and tissue paper visible. Candid genuine moment, not posed.`
+        contexts: [
+          `Scene context: Product partially emerging from elegant packaging box. Tissue paper and ribbon visible. Excitement moment, hands reaching in.`,
+          `Scene context: Flatlay of product with its box and packaging materials arranged aesthetically. Top-down view, clean background.`,
+          `Scene context: Product just taken out of box, packaging visible. Natural home lighting, desk or bed surface.`
         ],
         nameAr: "أنبوكسينق",
         nameEn: "Unboxing",
         description: "Authentic unboxing moments"
       },
       selfie: {
-        prompts: [
-          `UGC selfie photo: Beautiful Egyptian woman taking a mirror selfie while holding/wearing the product. Modern bathroom or bedroom mirror. Casual outfit, natural makeup. Phone in hand, authentic selfie pose. Product prominently visible.`,
-          `UGC selfie photo: Young Arab woman front-facing camera selfie, product visible in shot):. Good natural lighting, casual home background. Instagram selfie quality, genuine smile.`,
-          `UGC selfie photo: Egyptian influencer style - woman showing off the product in a cute selfie pose. Ring light lighting, bedroom setup. Modern modest fashion, authentic social media content.`
+        contexts: [
+          `Scene context: Product held up in a mirror selfie frame. Modern bathroom or bedroom mirror visible. Ring light reflection. Casual setting.`,
+          `Scene context: Product shown at arm's length in selfie style. Blurred lifestyle background. Natural daylight.`,
+          `Scene context: Cute aesthetic selfie composition with product visible. Clean modern room background. Instagram worthy.`
         ],
         nameAr: "سيلفي",
         nameEn: "Selfie",
         description: "Natural selfie style photos"
       },
       tutorial: {
-        prompts: [
-          `UGC tutorial photo: Egyptian woman demonstrating how to use the product, step-by-step pose. Close-up of hands and product. Clean white or neutral background. Tutorial content style, educational feel.`,
-          `UGC how-to photo: Arab woman showing the product application or usage. Mirror or vanity setup. Natural lighting, instructional content style. Before/during/after sequence potential.`,
-          `UGC tutorial photo: Young Egyptian woman explaining the product, pointing or gesturing. Speaking to camera feel. Home setup with good lighting. Social media tutorial aesthetic.`
+        contexts: [
+          `Scene context: Product with step-by-step instruction graphics around it. Clean white background. Educational content style.`,
+          `Scene context: Product on a clean surface with numbered steps indicated. Bright professional lighting. Tutorial aesthetic.`,
+          `Scene context: Close-up of product with usage demonstration setup. Clear visibility, instructional feel.`
         ],
         nameAr: "توتوريال",
         nameEn: "Tutorial",
@@ -96,50 +97,62 @@ serve(async (req) => {
       }
     };
 
-    const selectedStyle = ugcStyles[ugcType] || ugcStyles.lifestyle;
+    const selectedContext = ugcContexts[ugcType] || ugcContexts.lifestyle;
 
-    console.log(`User ${authData?.userId} generating UGC content with Runware, type: ${ugcType}`);
+    console.log(`User ${authData?.userId} generating UGC content with Runware, type: ${ugcType}, hasProductImage: ${!!productImage}, hasAnalysis: ${!!productAnalysis}`);
 
-    // Generate multiple UGC images with different prompts
+    // Generate multiple UGC images
     const generatedImages: Array<{ imageUrl: string; type: string; typeAr: string }> = [];
 
-    for (let i = 0; i < selectedStyle.prompts.length; i++) {
-      const basePrompt = selectedStyle.prompts[i];
+    for (let i = 0; i < selectedContext.contexts.length; i++) {
+      const contextDescription = selectedContext.contexts[i];
       
-      // Build the full prompt
+      // Build prompt that PRESERVES the product completely
       const fullPrompt = productImage
-        ? `${basePrompt}
+        ? `PRODUCT PRESERVATION - UGC STYLE IMAGE:
 
-CRITICAL: Use the product from the provided image. Keep product design, colors, and branding exactly as shown.
+CRITICAL: The product from the input image MUST remain EXACTLY identical:
+- Keep exact same product shape and proportions
+- Keep exact same colors, patterns, design
+- Keep exact same branding and text if visible
+- DO NOT modify the product in any way
 
-Product Name: ${productName || "Fashion/Beauty Product"}
+ONLY ADD CONTEXT AROUND THE PRODUCT:
+${contextDescription}
+
+Product Name: ${productName || "Product"}
+${productAnalysis ? `
+Key Selling Points:
+- ${productAnalysis.core_feature || ''}
+- ${productAnalysis.benefits?.[0] || ''}
+` : ''}
 
 REQUIREMENTS:
-- Photorealistic quality, like a real iPhone photo
-- Egyptian/Middle Eastern woman model
-- Modest, appropriate styling for MENA market
-- Natural lighting, authentic UGC feel
-- NOT overly edited or artificial
-- Product must be clearly visible
-- Instagram/TikTok content style`
-        : `${basePrompt}
+- Product must look EXACTLY like the input image
+- Only add environmental context around it
+- Photorealistic quality
+- Natural lighting
+- UGC/influencer style authenticity
+- MENA market appropriate`
+        : `UGC Style Product Photography:
+
+${contextDescription}
 
 Product: ${productName || "Fashion or beauty product"}
+${productAnalysis ? `
+Focus on: ${productAnalysis.core_feature || ''}
+` : ''}
 
 REQUIREMENTS:
-- Photorealistic quality, like a real phone photo
-- Egyptian/Middle Eastern woman model
-- Modest, appropriate styling for MENA market
-- Natural lighting, authentic UGC feel
-- Instagram/TikTok content quality`;
+- Photorealistic quality
+- Natural authentic UGC feel
+- Egyptian/MENA market aesthetic
+- Instagram/TikTok content style`;
 
       try {
         console.log(`Generating UGC image ${i + 1}...`);
 
         const taskUUID = crypto.randomUUID();
-        
-        // Use realistic model for UGC content
-        const selectedModel = model || "civitai:43331@176425"; // Majic Mix Realistic
         
         const runwarePayload: any[] = [
           {
@@ -150,10 +163,10 @@ REQUIREMENTS:
             taskType: "imageInference",
             taskUUID,
             positivePrompt: fullPrompt,
-            negativePrompt: "cartoon, anime, illustration, painting, artificial, overly edited, heavy makeup, revealing clothing, inappropriate content, text, watermark, logo, ugly, deformed",
+            negativePrompt: "different product, changed product, modified product, wrong colors, wrong design, cartoon, anime, illustration, artificial, heavy editing, inappropriate, text, watermark, deformed",
             width: 1024,
             height: 1024,
-            model: selectedModel,
+            model: model || "civitai:43331@176425", // Majic Mix Realistic
             numberResults: 1,
             outputFormat: "WEBP",
             CFGScale: 7,
@@ -162,15 +175,16 @@ REQUIREMENTS:
           }
         ];
 
-        // If product image is provided, use image-to-image
+        // If product image is provided, use image-to-image with VERY LOW strength
         if (productImage) {
           if (productImage.startsWith('data:')) {
             const base64Data = productImage.split(',')[1];
             runwarePayload[1].inputImage = `data:image/png;base64,${base64Data}`;
-            runwarePayload[1].strength = 0.65;
+            // VERY LOW strength to keep product exactly the same
+            runwarePayload[1].strength = 0.20;
           } else if (productImage.startsWith('http')) {
             runwarePayload[1].inputImage = productImage;
-            runwarePayload[1].strength = 0.65;
+            runwarePayload[1].strength = 0.20;
           }
         }
 
@@ -196,8 +210,8 @@ REQUIREMENTS:
         if (imageResults.length > 0 && imageResults[0].imageURL) {
           generatedImages.push({
             imageUrl: imageResults[0].imageURL,
-            type: selectedStyle.nameEn,
-            typeAr: selectedStyle.nameAr
+            type: selectedContext.nameEn,
+            typeAr: selectedContext.nameAr
           });
           console.log(`UGC image ${i + 1} generated successfully`);
         }
@@ -221,10 +235,11 @@ REQUIREMENTS:
       JSON.stringify({ 
         images: generatedImages,
         ugcType,
-        typeName: language === 'ar' ? selectedStyle.nameAr : selectedStyle.nameEn,
-        description: selectedStyle.description,
+        typeName: language === 'ar' ? selectedContext.nameAr : selectedContext.nameEn,
+        description: selectedContext.description,
         count: generatedImages.length,
         provider: "runware",
+        productPreserved: !!productImage,
         tips: language === 'ar' 
           ? [
               "استخدم الصور في إعلانات الفيسبوك والانستجرام",

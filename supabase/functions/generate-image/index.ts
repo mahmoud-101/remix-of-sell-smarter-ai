@@ -27,7 +27,7 @@ serve(async (req) => {
   console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
-    const { prompt, style, productImage, language = 'ar', model } = await req.json();
+    const { prompt, style, productImage, productAnalysis, language = 'ar', model } = await req.json();
     const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
 
     if (!RUNWARE_API_KEY) {
@@ -37,91 +37,30 @@ serve(async (req) => {
     // ============================================
     // IMAGE STUDIO - Professional MENA E-commerce Ad Creatives
     // Using Runware AI Platform for Image Generation
+    // CRITICAL: Preserve original product appearance!
     // ============================================
 
-    // Professional Egyptian Fashion & Beauty e-commerce ad creative styles
-    const stylePrompts: Record<string, string> = {
-      lifestyle: `Professional Egyptian Fashion E-commerce Lifestyle Ad:
-- Product as hero with sharp focus, lifestyle context
-- Warm golden hour lighting with soft bokeh background  
-- Modern Egyptian woman lifestyle setting
-- Bold modern Arabic text overlay with neon glow effect
-- Price badge showing Egyptian Pounds (ج.م) in decorative circle
-- Discount splash with dynamic starburst shape
-- Instagram-ready 4K resolution, vibrant colors
-- Egyptian market appeal, trendy fashion mood`,
+    // Background/environment prompts ONLY - product stays exactly the same
+    const environmentPrompts: Record<string, string> = {
+      lifestyle: `Background setting: Warm cozy living room with soft golden sunlight, modern Egyptian home interior, elegant furniture hints in bokeh background. Professional product photography lighting.`,
 
-      flatlay: `Egyptian Fashion Flatlay Advertisement:
-- Bird's eye view product arrangement on marble or velvet surface
-- Fashion accessories arranged around main product
-- Scattered rose petals or gold confetti accents
-- Chunky bold Arabic display text with 3D drop shadow effect
-- Price display in elegant banner style
-- Promotional text in speech bubble or tag shape
-- Soft diffused lighting, Instagram aesthetic
-- Pastel pinks, golds, cream, rose gold color accents`,
+      flatlay: `Background setting: Clean marble or velvet surface, bird's eye flatlay composition with elegant props, scattered gold accents, professional studio lighting from above.`,
 
-      model: `Egyptian Fashion Model Advertisement:
-- Egyptian model showcasing fashion product
-- Product clearly visible and professionally styled
-- Professional studio lighting with beauty dish
-- Elegant Arabic text with brush stroke background
-- Bold decorative CTA button design
-- Price with strikethrough old price comparison
-- High-fashion editorial quality photography
-- Soft pinks, neutrals, champagne, bronze tones`,
+      model: `Background setting: Professional studio with beauty dish lighting, elegant gradient backdrop, high-fashion editorial atmosphere.`,
 
-      studio: `Egyptian Fashion Catalog Studio Ad:
-- Product hero shot on clean gradient backdrop
-- Professional product photography lighting setup
-- Floating elements or geometric shapes accent
-- Bold condensed Arabic text inside geometric shapes
-- Modern price tag design element
-- Feature icons with Arabic labels
-- Delivery badge with Egyptian messaging
-- White, soft gray, with accent color pops`,
+      studio: `Background setting: Clean gradient studio backdrop, professional 3-point lighting setup, floating geometric accent shapes, modern product photography.`,
 
-      minimal: `Egyptian Luxury Fashion Minimal Ad:
-- Product with generous negative space
-- Ultra-clean luxury brand presentation
-- Subtle gradient or solid elegant backdrop
-- Thin elegant Arabic serif text with gold foil effect
-- Understated elegant price format
-- Single line Arabic tagline
-- Premium high-end brand aesthetic
-- Cream, black, gold, champagne color palette`,
+      minimal: `Background setting: Ultra-clean white or cream backdrop with generous negative space, subtle shadows, luxury brand aesthetic lighting.`,
 
-      streetwear: `Egyptian Streetwear Urban Fashion Ad:
-- Urban trendy product presentation
-- Graffiti or urban texture backgrounds
-- Bold dynamic angles and composition
-- Graffiti-style Arabic text with spray paint effect
-- Street art style price tag
-- Urban vibe Egyptian messaging
-- Neon accents with bold contrasts
-- Electric colors, black, white, neon pink and green`,
+      streetwear: `Background setting: Urban textured wall, graffiti art hints in background, neon color accents, street photography style.`,
 
-      vintage: `Egyptian Vintage Fashion Retro Ad:
-- Retro-inspired product styling
-- Vintage film grain and warm nostalgic tones
-- Classic elegant composition
-- Retro Arabic display text with vintage badge effect
-- Price in classic oval frame design
-- Vintage charm decorative elements
-- Sepia, warm browns, dusty rose, gold tones`,
+      vintage: `Background setting: Nostalgic warm-toned setting with vintage film aesthetic, sepia undertones, classic elegant props.`,
 
-      glam: `Egyptian Glam Fashion Luxury Ad:
-- High-end glamorous product shot
-- Sparkle and shimmer visual effects
-- Luxury velvet or silk backgrounds
-- Glamorous Arabic script with glitter fill effect
-- Price in luxury gold frame design
-- Glamour messaging with Egyptian flair
-- Rose gold, champagne, deep purple, black palette`,
+      glam: `Background setting: Luxurious velvet or silk backdrop with sparkle effects, glamorous lighting with rim light, rose gold and champagne accents.`,
     };
 
     // Randomly select 3 different styles for variety
-    const styleKeys = Object.keys(stylePrompts);
+    const styleKeys = Object.keys(environmentPrompts);
     const shuffledStyles = styleKeys.sort(() => Math.random() - 0.5);
     const selectedStyles = style ? [style, ...shuffledStyles.filter(s => s !== style).slice(0, 2)] : shuffledStyles.slice(0, 3);
 
@@ -141,38 +80,63 @@ serve(async (req) => {
     const styleVariations = selectedStyles.map((styleKey) => ({
       name: styleKey,
       nameAr: styleNamesAr[styleKey] || styleKey,
-      prompt: stylePrompts[styleKey as keyof typeof stylePrompts] || stylePrompts.lifestyle
+      prompt: environmentPrompts[styleKey as keyof typeof environmentPrompts] || environmentPrompts.lifestyle
     }));
 
-    console.log(`User ${authData?.userId} generating ${styleVariations.length} images with Runware, styles: ${selectedStyles.join(', ')}, hasProductImage: ${!!productImage}`);
+    console.log(`User ${authData?.userId} generating ${styleVariations.length} images with Runware, styles: ${selectedStyles.join(', ')}, hasProductImage: ${!!productImage}, hasAnalysis: ${!!productAnalysis}`);
 
     // Generate images using Runware API
     const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string }> = [];
 
     for (const variation of styleVariations) {
+      // Build prompt that PRESERVES the product and only changes the environment
       const fullPrompt = productImage 
-        ? `Professional e-commerce advertisement photo. ${variation.prompt}
+        ? `PRODUCT PRESERVATION IMAGE-TO-IMAGE GENERATION:
 
-Product description: ${prompt}
+CRITICAL INSTRUCTION: The product in the input image MUST remain EXACTLY identical in the output:
+- Same product shape, silhouette, and proportions
+- Same colors, patterns, and design details  
+- Same branding, logos, and text if visible
+- Same material appearance and texture
 
-IMPORTANT REQUIREMENTS:
-- Keep the original product design exactly as shown
-- Create professional advertising composition
-- Add attractive Arabic text overlays (no diacritics)
-- Include Egyptian Pound pricing (ج.م)
-- Make it Instagram-ready and eye-catching
-- Egyptian market appeal with local dialect phrases`
-        : `${variation.prompt}
+DO NOT:
+- Change the product design in any way
+- Add new elements to the product
+- Alter the product's colors or patterns
+- Modify the product's shape or size
+
+ONLY CHANGE THE BACKGROUND/ENVIRONMENT:
+${variation.prompt}
+
+Product Info: ${prompt}
+${productAnalysis ? `
+Marketing Context:
+- Core Feature: ${productAnalysis.core_feature || ''}
+- Key Benefits: ${productAnalysis.benefits?.slice(0, 2).join(', ') || ''}
+` : ''}
+
+OUTPUT REQUIREMENTS:
+- Product must look EXACTLY like the input image
+- Only the background/environment should change
+- Professional e-commerce quality
+- Sharp focus on product
+- 4K resolution advertising style`
+        : `Professional e-commerce product photography:
+
+${variation.prompt}
 
 Product: ${prompt}
+${productAnalysis ? `
+Marketing Focus:
+- Highlight: ${productAnalysis.core_feature || ''}
+- Benefits: ${productAnalysis.benefits?.slice(0, 2).join(', ') || ''}
+` : ''}
 
 REQUIREMENTS:
 - Professional 4K quality e-commerce advertisement
-- Eye-catching Arabic text overlays (modern, no diacritics)
-- Egyptian Pound pricing display (ج.م)
-- Egyptian dialect phrases like "اطلبي دلوقتي", "توصيل مجاني"
-- Instagram-ready vibrant colors
-- Professional product photography style`;
+- Sharp product focus with attractive background
+- Egyptian market appeal
+- Instagram-ready composition`;
 
       try {
         console.log(`Generating ${variation.name} style with Runware...`);
@@ -189,20 +153,24 @@ REQUIREMENTS:
 
         if (productImage && productImage.startsWith('data:')) {
           // Image-to-image generation with uploaded product image
+          // CRITICAL: Low strength to preserve product, only change background
           const imageBase64 = productImage.split(',')[1];
           
           runwarePayload.push({
             taskType: "imageInference",
             taskUUID,
             positivePrompt: fullPrompt,
+            negativePrompt: "change product, modify product, different product, altered product, wrong colors, wrong design, distorted product, deformed product, blurry product",
             width: 1024,
             height: 1024,
             model: model || "runware:100@1",
             numberResults: 1,
             outputFormat: "WEBP",
-            CFGScale: 1,
-            scheduler: "FlowMatchEulerDiscreteScheduler",
-            strength: 0.75,
+            CFGScale: 7,
+            scheduler: "DPMSolverMultistepScheduler",
+            steps: 25,
+            // VERY LOW strength to preserve original product - only change environment
+            strength: 0.25,
             inputImage: `data:image/png;base64,${imageBase64}`
           });
         } else if (productImage && productImage.startsWith('http')) {
@@ -211,14 +179,16 @@ REQUIREMENTS:
             taskType: "imageInference",
             taskUUID,
             positivePrompt: fullPrompt,
+            negativePrompt: "change product, modify product, different product, altered product, wrong colors, wrong design, distorted product, deformed product, blurry product",
             width: 1024,
             height: 1024,
             model: model || "runware:100@1",
             numberResults: 1,
             outputFormat: "WEBP",
-            CFGScale: 1,
-            scheduler: "FlowMatchEulerDiscreteScheduler",
-            strength: 0.75,
+            CFGScale: 7,
+            scheduler: "DPMSolverMultistepScheduler",
+            steps: 25,
+            strength: 0.25,
             inputImage: productImage
           });
         } else {
@@ -227,14 +197,15 @@ REQUIREMENTS:
             taskType: "imageInference",
             taskUUID,
             positivePrompt: fullPrompt,
+            negativePrompt: "blurry, low quality, distorted, ugly, bad composition",
             width: 1024,
             height: 1024,
             model: model || "runware:100@1",
             numberResults: 1,
             outputFormat: "WEBP",
-            CFGScale: 1,
-            steps: 4,
-            scheduler: "FlowMatchEulerDiscreteScheduler"
+            CFGScale: 7,
+            steps: 25,
+            scheduler: "DPMSolverMultistepScheduler"
           });
         }
 
@@ -302,7 +273,8 @@ REQUIREMENTS:
         mode: productImage ? "edit" : "generate",
         styles: selectedStyles,
         count: generatedImages.length,
-        provider: "runware"
+        provider: "runware",
+        productPreserved: !!productImage
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
