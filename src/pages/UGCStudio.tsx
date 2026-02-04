@@ -81,7 +81,7 @@ export default function UGCStudio() {
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
-    images: Array<{ imageUrl: string; type: string; typeAr: string }>;
+    images: Array<{ imageUrl: string; scene: number; caption: string; type: string; typeAr: string }>;
     tips: string[];
   } | null>(null);
 

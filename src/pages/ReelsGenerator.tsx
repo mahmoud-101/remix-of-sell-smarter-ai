@@ -81,7 +81,7 @@ export default function ReelsGenerator() {
   
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
-    scenes: Array<{ imageUrl: string; scene: number; description: string }>;
+    scenes: Array<{ imageUrl: string; scene: number; caption: string; hook: string }>;
     caption: string;
     hashtags: string[];
     instructions: string;
