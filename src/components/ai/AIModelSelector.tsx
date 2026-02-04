@@ -9,26 +9,98 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Zap, Brain, Image as ImageIcon, Star } from "lucide-react";
+import { Sparkles, Zap, Brain, Image as ImageIcon, Star, Video, User } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export type ToolType = "image" | "reels" | "ads" | "product" | "seo" | "analysis";
+export type ToolType = "image" | "reels" | "ads" | "product" | "seo" | "analysis" | "ugc" | "video";
 
 export interface AIModel {
   id: string;
   name: string;
   nameAr: string;
-  provider: "lovable" | "openrouter";
-  category: "fast" | "balanced" | "pro" | "image";
+  provider: "lovable" | "openrouter" | "runware";
+  category: "fast" | "balanced" | "pro" | "image" | "video" | "ugc";
   description: string;
   descriptionAr: string;
   bestFor: ToolType[];
-  icon: "zap" | "brain" | "sparkles" | "image" | "star";
+  icon: "zap" | "brain" | "sparkles" | "image" | "star" | "video" | "user";
 }
 
 // All available models
 export const AI_MODELS: AIModel[] = [
-  // Lovable AI Gateway Models
+  // ==========================================
+  // RUNWARE MODELS - Image & Video Generation
+  // ==========================================
+  {
+    id: "runware:100@1",
+    name: "Runware Flux",
+    nameAr: "رانوير فلكس",
+    provider: "runware",
+    category: "image",
+    description: "Fast & high quality image generation",
+    descriptionAr: "توليد صور سريع وعالي الجودة",
+    bestFor: ["image", "ugc"],
+    icon: "image",
+  },
+  {
+    id: "runware:101@1",
+    name: "Runware SDXL",
+    nameAr: "رانوير SDXL",
+    provider: "runware",
+    category: "image",
+    description: "Stable Diffusion XL - detailed images",
+    descriptionAr: "صور تفصيلية عالية الدقة",
+    bestFor: ["image"],
+    icon: "image",
+  },
+  {
+    id: "civitai:4201@130072",
+    name: "Realistic Vision",
+    nameAr: "الرؤية الواقعية",
+    provider: "runware",
+    category: "image",
+    description: "Ultra-realistic photo generation",
+    descriptionAr: "توليد صور واقعية للغاية",
+    bestFor: ["image", "ugc"],
+    icon: "image",
+  },
+  {
+    id: "civitai:43331@176425",
+    name: "Majic Mix Realistic",
+    nameAr: "ماجيك ميكس",
+    provider: "runware",
+    category: "image",
+    description: "Best for fashion & portrait",
+    descriptionAr: "الأفضل للأزياء والبورتريه",
+    bestFor: ["image", "ugc"],
+    icon: "image",
+  },
+  {
+    id: "civitai:112902@447712",
+    name: "epiCRealism",
+    nameAr: "إبيك ريالزم",
+    provider: "runware",
+    category: "image",
+    description: "Photorealistic with epic details",
+    descriptionAr: "صور واقعية بتفاصيل مذهلة",
+    bestFor: ["image"],
+    icon: "star",
+  },
+  {
+    id: "runware:video@1",
+    name: "Runware Video",
+    nameAr: "رانوير فيديو",
+    provider: "runware",
+    category: "video",
+    description: "Image-to-video generation",
+    descriptionAr: "تحويل الصور لفيديو",
+    bestFor: ["reels", "video"],
+    icon: "video",
+  },
+
+  // ==========================================
+  // LOVABLE AI GATEWAY MODELS
+  // ==========================================
   {
     id: "google/gemini-2.5-flash-lite",
     name: "Gemini Flash Lite",
@@ -140,7 +212,9 @@ export const AI_MODELS: AIModel[] = [
     icon: "star",
   },
 
-  // OpenRouter Models
+  // ==========================================
+  // OPENROUTER MODELS
+  // ==========================================
   {
     id: "anthropic/claude-3.5-sonnet",
     name: "Claude 3.5 Sonnet",
@@ -245,8 +319,10 @@ export const AI_MODELS: AIModel[] = [
 // Get recommended model for a tool
 export const getRecommendedModel = (toolType: ToolType): string => {
   const recommendations: Record<ToolType, string> = {
-    image: "google/gemini-3-pro-image-preview",
-    reels: "anthropic/claude-3.5-sonnet",
+    image: "runware:100@1",
+    reels: "runware:video@1",
+    video: "runware:video@1",
+    ugc: "civitai:43331@176425",
     ads: "google/gemini-3-flash-preview",
     product: "google/gemini-2.5-pro",
     seo: "google/gemini-2.5-flash",
@@ -257,12 +333,20 @@ export const getRecommendedModel = (toolType: ToolType): string => {
 
 // Get models suitable for a specific tool
 export const getModelsForTool = (toolType: ToolType): AIModel[] => {
-  // For image generation, only return image-capable models
+  // For image generation, return image-capable models (Runware + Lovable)
   if (toolType === "image") {
     return AI_MODELS.filter(m => m.category === "image");
   }
-  // For text-based tools, return all non-image models
-  return AI_MODELS.filter(m => m.category !== "image");
+  // For video/reels, return video models
+  if (toolType === "reels" || toolType === "video") {
+    return AI_MODELS.filter(m => m.category === "video" || m.category === "image");
+  }
+  // For UGC, return realistic image models
+  if (toolType === "ugc") {
+    return AI_MODELS.filter(m => m.category === "image" || m.category === "ugc");
+  }
+  // For text-based tools, return all non-image/video models
+  return AI_MODELS.filter(m => !["image", "video", "ugc"].includes(m.category));
 };
 
 interface AIModelSelectorProps {
@@ -283,6 +367,7 @@ export function AIModelSelector({
   const availableModels = getModelsForTool(toolType);
 
   // Group models by provider
+  const runwareModels = availableModels.filter(m => m.provider === "runware");
   const lovableModels = availableModels.filter(m => m.provider === "lovable");
   const openrouterModels = availableModels.filter(m => m.provider === "openrouter");
 
@@ -293,6 +378,8 @@ export function AIModelSelector({
       case "sparkles": return <Sparkles className="w-3 h-3" />;
       case "image": return <ImageIcon className="w-3 h-3" />;
       case "star": return <Star className="w-3 h-3" />;
+      case "video": return <Video className="w-3 h-3" />;
+      case "user": return <User className="w-3 h-3" />;
       default: return <Sparkles className="w-3 h-3" />;
     }
   };
@@ -303,6 +390,8 @@ export function AIModelSelector({
       case "balanced": return "bg-blue-500/10 text-blue-600 border-blue-500/20";
       case "pro": return "bg-purple-500/10 text-purple-600 border-purple-500/20";
       case "image": return "bg-pink-500/10 text-pink-600 border-pink-500/20";
+      case "video": return "bg-rose-500/10 text-rose-600 border-rose-500/20";
+      case "ugc": return "bg-orange-500/10 text-orange-600 border-orange-500/20";
       default: return "bg-gray-500/10 text-gray-600 border-gray-500/20";
     }
   };
@@ -313,6 +402,8 @@ export function AIModelSelector({
       balanced: { ar: "متوازن", en: "Balanced" },
       pro: { ar: "متقدم", en: "Pro" },
       image: { ar: "صور", en: "Image" },
+      video: { ar: "فيديو", en: "Video" },
+      ugc: { ar: "UGC", en: "UGC" },
     };
     return isRTL ? labels[category]?.ar : labels[category]?.en;
   };
@@ -349,63 +440,98 @@ export function AIModelSelector({
           </SelectValue>
         </SelectTrigger>
         <SelectContent className="max-h-[300px]">
-          {/* Lovable AI Models */}
-          <SelectGroup>
-            <SelectLabel className="flex items-center gap-2 text-primary">
-              <Sparkles className="w-4 h-4" />
-              Lovable AI
-            </SelectLabel>
-            {lovableModels.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                <div className="flex items-center gap-2 py-1">
-                  {getIcon(model.icon)}
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span>{isRTL ? model.nameAr : model.name}</span>
-                      <Badge variant="outline" className={`text-[10px] px-1 py-0 ${getCategoryColor(model.category)}`}>
-                        {getCategoryLabel(model.category)}
-                      </Badge>
-                      {model.id === recommendedModel && (
-                        <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      )}
+          {/* Runware Models (Top Priority) */}
+          {runwareModels.length > 0 && (
+            <SelectGroup>
+              <SelectLabel className="flex items-center gap-2 text-rose-600">
+                <Video className="w-4 h-4" />
+                Runware AI
+              </SelectLabel>
+              {runwareModels.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex items-center gap-2 py-1">
+                    {getIcon(model.icon)}
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span>{isRTL ? model.nameAr : model.name}</span>
+                        <Badge variant="outline" className={`text-[10px] px-1 py-0 ${getCategoryColor(model.category)}`}>
+                          {getCategoryLabel(model.category)}
+                        </Badge>
+                        {model.id === recommendedModel && (
+                          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {isRTL ? model.descriptionAr : model.description}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {isRTL ? model.descriptionAr : model.description}
-                    </span>
                   </div>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectGroup>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
+
+          {/* Lovable AI Models */}
+          {lovableModels.length > 0 && (
+            <SelectGroup>
+              <SelectLabel className="flex items-center gap-2 text-primary mt-2">
+                <Sparkles className="w-4 h-4" />
+                Lovable AI
+              </SelectLabel>
+              {lovableModels.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex items-center gap-2 py-1">
+                    {getIcon(model.icon)}
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span>{isRTL ? model.nameAr : model.name}</span>
+                        <Badge variant="outline" className={`text-[10px] px-1 py-0 ${getCategoryColor(model.category)}`}>
+                          {getCategoryLabel(model.category)}
+                        </Badge>
+                        {model.id === recommendedModel && (
+                          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {isRTL ? model.descriptionAr : model.description}
+                      </span>
+                    </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
 
           {/* OpenRouter Models */}
-          <SelectGroup>
-            <SelectLabel className="flex items-center gap-2 text-orange-600 mt-2">
-              <Zap className="w-4 h-4" />
-              OpenRouter
-            </SelectLabel>
-            {openrouterModels.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                <div className="flex items-center gap-2 py-1">
-                  {getIcon(model.icon)}
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span>{isRTL ? model.nameAr : model.name}</span>
-                      <Badge variant="outline" className={`text-[10px] px-1 py-0 ${getCategoryColor(model.category)}`}>
-                        {getCategoryLabel(model.category)}
-                      </Badge>
-                      {model.id === recommendedModel && (
-                        <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                      )}
+          {openrouterModels.length > 0 && (
+            <SelectGroup>
+              <SelectLabel className="flex items-center gap-2 text-orange-600 mt-2">
+                <Zap className="w-4 h-4" />
+                OpenRouter
+              </SelectLabel>
+              {openrouterModels.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  <div className="flex items-center gap-2 py-1">
+                    {getIcon(model.icon)}
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span>{isRTL ? model.nameAr : model.name}</span>
+                        <Badge variant="outline" className={`text-[10px] px-1 py-0 ${getCategoryColor(model.category)}`}>
+                          {getCategoryLabel(model.category)}
+                        </Badge>
+                        {model.id === recommendedModel && (
+                          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {isRTL ? model.descriptionAr : model.description}
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {isRTL ? model.descriptionAr : model.description}
-                    </span>
                   </div>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectGroup>
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          )}
         </SelectContent>
       </Select>
 

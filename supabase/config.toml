@@ -24,6 +24,9 @@ verify_jwt = false
 [functions.generate-reel]
 verify_jwt = false
 
+[functions.generate-ugc]
+verify_jwt = false
+
 [functions.product-photo-prompt]
 verify_jwt = false
 
@@ -43,4 +46,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.generate-product-content]
+verify_jwt = false
+
+[functions.firecrawl-scrape]
 verify_jwt = false

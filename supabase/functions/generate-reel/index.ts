@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
+const RUNWARE_API_URL = "https://api.runware.ai/v1";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,11 +17,11 @@ serve(async (req) => {
   console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
-    const { imageUrl, style, productName, duration = 5, language = 'ar' } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const { imageUrl, style, productName, duration = 5, language = 'ar', model, generateVideo = false } = await req.json();
+    const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!RUNWARE_API_KEY) {
+      throw new Error("RUNWARE_API_KEY is not configured");
     }
 
     if (!imageUrl) {
@@ -27,18 +29,15 @@ serve(async (req) => {
     }
 
     // ============================================
-    // REELS STUDIO - AI Storyboard Generator
-    // Specialized for MENA Arabic Market
-    // Generates 3 scene images for Reels/TikTok
-    // Using Lovable AI with Gemini Pro Image
+    // REELS STUDIO - Image-to-Video & Storyboard Generator
+    // Using Runware AI for MENA Arabic Market
     // ============================================
 
     const langInstruction = language === 'ar'
-      ? `استخدم اللهجة المصرية العامية (مش فصحى ولا خليجي). أمثلة: "دلوقتي" مش "الآن"، "عشان" مش "لأن"، "كده" مش "هكذا"، "بتاعي" مش "الخاص بي"، "إيه" مش "ماذا"، "ازاي" مش "كيف".`
+      ? `استخدم اللهجة المصرية العامية (مش فصحى ولا خليجي). أمثلة: "دلوقتي" مش "الآن"، "عشان" مش "لأن".`
       : "Use English for all outputs.";
 
-    // 🎬 Arabic Market Specialized Reels Prompts
-    // Designed for Egyptian market - MUST USE EGYPTIAN DIALECT
+    // Style prompts for different reel types
     const stylePrompts: Record<string, { 
       scenes: string[]; 
       captionAr: string; 
@@ -46,164 +45,161 @@ serve(async (req) => {
       hookAr: string;
       ctaAr: string;
       musicVibe: string;
+      motionPrompt: string;
     }> = {
       unboxing: {
         scenes: [
-          `مشهد 1 - الإثارة: علبة هدية فاخرة مغلفة بربطة ساتان ذهبية، إضاءة درامية من فوق، خلفية بيج كريمية، إيد بناتي بمانيكير فرنسي بتلمس العلبة بحماس، نص عربي متحرك "افتحي معايا 📦"`,
-          `مشهد 2 - الكشف: لحظة فتح العلبة، المنتج بيظهر مع تأثير sparkle وإضاءة ناعمة، إيد بترفع المنتج ببطء، خلفية ضبابية بوكيه، نص عربي "أخيراً وصل! 🤩"`,
-          `مشهد 3 - البطل: المنتج Hero shot بزاوية 45 درجة، إضاءة استوديو احترافية، خلفية gradient وردي لذهبي، CTA عربي كبير "اطلبي دلوقتي - كود FIRST10 💕"`
+          `Scene 1 - Excitement: Luxury gift box with golden satin ribbon, dramatic top lighting, creamy beige background, feminine hand with French manicure touching box excitedly, animated Arabic text "افتحي معايا 📦"`,
+          `Scene 2 - Reveal: Box opening moment, product appearing with sparkle effect and soft lighting, hand slowly lifting product, bokeh background blur, Arabic text "أخيراً وصل! 🤩"`,
+          `Scene 3 - Hero: Product hero shot at 45 degree angle, professional studio lighting, pink to gold gradient background, large Arabic CTA "اطلبي دلوقتي - كود FIRST10 💕"`
         ],
         captionAr: "📦 أنبوكسينق! لما الطرد يوصل وتكوني مستنياه من زمان 😍✨\n\nالمنتج ده غيّر حياتي والله 🙈\n\n💜 اطلبيه بكود LOVE10",
         captionEn: "📦 Unboxing time! When your order finally arrives 😍✨",
         hookAr: "استني تشوفي اللي جوا! 👀",
         ctaAr: "اطلبي دلوقتي - توصيل سريع 🚚",
-        musicVibe: "Upbeat Arabic pop, trendy sound"
+        musicVibe: "Upbeat Arabic pop, trendy sound",
+        motionPrompt: "Slow zoom in, gentle product rotation, sparkle particles floating, smooth camera movement revealing details"
       },
       before_after: {
         scenes: [
-          `مشهد 1 - قبل: تصوير "المشكلة" - إضاءة خافتة باردة، ألوان باهتة، شكل حزين/مضايق، نص عربي كبير "قبل 😔" مع فلتر رمادي، المنتج مش ظاهر`,
-          `مشهد 2 - التحول: لحظة السحر - إيد ماسكة المنتج، تأثير sparkle متحرك، إضاءة بتتحول من باردة لدافية، نص عربي "اللحظة السحرية ✨🪄"`,
-          `مشهد 3 - بعد: النتيجة المبهرة - إضاءة ذهبية دافية، ألوان نابضة، ابتسامة واثقة، المنتج بارز، نص عربي "بعد 🔥😍" مع CTA`
+          `Scene 1 - Before: Problem state - dim cold lighting, faded colors, sad/frustrated look, large Arabic text "قبل 😔" with gray filter, product not visible`,
+          `Scene 2 - Transformation: Magic moment - hand holding product, animated sparkle effect, lighting transitioning from cold to warm, Arabic text "اللحظة السحرية ✨🪄"`,
+          `Scene 3 - After: Amazing result - warm golden lighting, vibrant colors, confident smile, product prominent, Arabic text "بعد 🔥😍" with CTA`
         ],
         captionAr: "🔄 التحول الحقيقي! مش هتصدقي الفرق 😱\n\nقبل كنت تعبانة... دلوقتي شوفي النتيجة 💫\n\n💜 اللينك في البايو",
         captionEn: "🔄 Real transformation! Can't believe the difference 😱",
         hookAr: "الفرق صادم! 😱",
         ctaAr: "جربي بنفسك - ضمان استرجاع 💯",
-        musicVibe: "Dramatic reveal, trending audio"
+        musicVibe: "Dramatic reveal, trending audio",
+        motionPrompt: "Split screen transition, dramatic lighting change, before fading to after, product emerging with glow effect"
       },
       testimonial: {
         scenes: [
-          `مشهد 1 - المنتج البطل: المنتج بزاوية أمامية مع 5 نجوم ذهبية كبيرة، شارات ثقة بالعربي "الأكتر مبيعاً ⭐", "٢٥٠٠+ بنت سعيدة", خلفية gradient احترافية`,
-          `مشهد 2 - التفاصيل: تصوير macro للتفاصيل والجودة، إيد بناتي بتعرض المنتج، نص عربي "جودة عالية 💎", "صناعة فاخرة", إضاءة ناعمة`,
-          `مشهد 3 - الطلب: تصميم call-to-action احترافي، المنتج مع زر "اطلبي دلوقتي 🛒", badge توصيل مجاني، كود خصم، ألوان جذابة`
+          `Scene 1 - Product Hero: Product front angle with 5 large golden stars, Arabic trust badges "الأكتر مبيعاً ⭐", "٢٥٠٠+ بنت سعيدة", professional gradient background`,
+          `Scene 2 - Details: Macro detail shot showing quality, feminine hand presenting product, Arabic text "جودة عالية 💎", "صناعة فاخرة", soft lighting`,
+          `Scene 3 - Order: Professional call-to-action design, product with "اطلبي دلوقتي 🛒" button, free shipping badge, discount code, attractive colors`
         ],
         captionAr: "⭐ لما ألف بنت تقول إنه الأحسن... لازم تجربيه!\n\nتقييم 5 نجوم من عميلاتنا الحلوين 🥰\n\n🛒 اطلبي دلوقتي - شحن ببلاش",
         captionEn: "⭐ When 1000+ girls say it's the best... you gotta try it!",
         hookAr: "شوفي ليه الكل بيحبه! 💕",
         ctaAr: "اطلبي دلوقتي - العرض محدود ⏰",
-        musicVibe: "Confident, empowering Arabic"
+        musicVibe: "Confident, empowering Arabic",
+        motionPrompt: "Rotating product showcase, stars appearing one by one, zoom on details, confident product presentation"
       },
       showcase: {
         scenes: [
-          `مشهد 1 - البورتريه: المنتج بزاوية أمامية كلاسيكية، خلفية استوديو نضيفة بيضا أو بيج، إضاءة احترافية soft box، ظلال ناعمة، جودة catalog 4K`,
-          `مشهد 2 - الزاوية: المنتج بزاوية 45 درجة بيوري العمق والأبعاد، إضاءة rim light خلفية، تفاصيل واضحة، خلفية gradient ناعم`,
-          `مشهد 3 - الإعلان: تصميم إعلاني كامل، المنتج مع نص عربي "متوفر دلوقتي 🔥", شارة سعر، CTA "اطلبي دلوقتي", خلفية جذابة gradient`
+          `Scene 1 - Portrait: Product classic front angle, clean white/beige studio background, professional soft box lighting, subtle shadows, 4K catalog quality`,
+          `Scene 2 - Angle: Product at 45 degree angle showing depth and dimensions, rim light behind, clear details, soft gradient background`,
+          `Scene 3 - Ad: Full advertising design, product with Arabic text "متوفر دلوقتي 🔥", price badge, CTA "اطلبي دلوقتي", attractive gradient background`
         ],
         captionAr: "✨ المنتج اللي الكل بيسأل عليه!\n\nجودة عالية • توصيل سريع • ضمان استرجاع\n\n🛒 اللينك في البايو",
         captionEn: "✨ The product everyone's asking about!",
         hookAr: "أحلى منتج هتشوفيه النهارده! ✨",
         ctaAr: "متوفر دلوقتي - الكمية محدودة 🔥",
-        musicVibe: "Elegant, premium feel"
+        musicVibe: "Elegant, premium feel",
+        motionPrompt: "Smooth 360 rotation, gentle lighting sweep, professional product photography motion, elegant transitions"
       },
       trending: {
         scenes: [
-          `مشهد 1 - الفايرال: المنتج بأسلوب TikTok ترند، ألوان نيون bold، تأثيرات حركة سريعة، نص عربي كبير "الترند بتاع الموسم! 🔥", خلفية ملونة ديناميكية`,
-          `مشهد 2 - الزوم: تأثير zoom in ديناميكي على المنتج، إضاءة ملونة RGB، طاقة عالية، نص عربي "الكل بيجري عليه! 💜🔥", حركة سريعة`,
-          `مشهد 3 - الـ FOMO: تصميم urgency، المنتج مع "آخر كمية! ⚠️", timer تنازلي، نص "اطلبي قبل ما يخلص 🏃‍♀️", ألوان نارية حمرا وبرتقالي`
+          `Scene 1 - Viral: Product in TikTok trend style, bold neon colors, fast motion effects, large Arabic text "الترند بتاع الموسم! 🔥", dynamic colorful background`,
+          `Scene 2 - Zoom: Dynamic zoom in effect on product, RGB colored lighting, high energy, Arabic text "الكل بيجري عليه! 💜🔥", fast movement`,
+          `Scene 3 - FOMO: Urgency design, product with "آخر كمية! ⚠️", countdown timer, text "اطلبي قبل ما يخلص 🏃‍♀️", fiery red and orange colors`
         ],
         captionAr: "🔥 الترند اللي كسر التيك توك!\n\nلو مش عندك... إنتِ مش على الموضة 💅\n\n⚡ لينك الطلب في البايو - هيخلص!",
         captionEn: "🔥 The trend that broke TikTok!",
         hookAr: "لو مشفتيش ده قبل كده! 🤯",
         ctaAr: "احجزي قبل ما يخلص! ⚡",
-        musicVibe: "Viral TikTok sound, high energy"
+        musicVibe: "Viral TikTok sound, high energy",
+        motionPrompt: "Fast zoom pulses, shake effects, neon glow animations, high energy rapid transitions, TikTok style edits"
       }
     };
 
     const selectedStyle = stylePrompts[style] || stylePrompts.showcase;
     
-    console.log(`User ${authData?.userId} generating Arabic Reel storyboard, style: ${style}, scenes: ${selectedStyle.scenes.length}`);
+    console.log(`User ${authData?.userId} generating Reel with Runware, style: ${style}, generateVideo: ${generateVideo}`);
 
-    // Generate multiple scene images with Arabic-specialized prompts
+    // Generate scene images using Runware
     const sceneImages: Array<{ imageUrl: string; scene: number; description: string }> = [];
-    
+
     for (let i = 0; i < selectedStyle.scenes.length; i++) {
-      // Arabic Market Specialized Prompt
-      const scenePrompt = `أنت مصمم إعلانات محترف متخصص في السوق العربي والمصري.
+      const sceneDescription = selectedStyle.scenes[i];
+      
+      // Build prompt for scene generation
+      const scenePrompt = `Professional e-commerce social media reel scene.
 
-مهمتك: إنشاء مشهد ${i + 1} لإعلان ريلز/تيك توك احترافي.
+PRODUCT IMAGE: Use the provided product image as reference. Keep product design exactly as shown.
 
-⚠️ تعليمات حرجة:
-1. حافظ على المنتج الأصلي بالضبط - لا تغيره أبداً
-2. استخدم نفس الألوان والشكل والتفاصيل من الصورة المرفقة
-3. المنتج هو البطل - يجب أن يكون واضحاً ومركزياً
+SCENE ${i + 1} DESCRIPTION:
+${sceneDescription}
 
-📝 وصف المشهد:
-${selectedStyle.scenes[i]}
-
-🎯 معلومات المنتج:
-الاسم: ${productName || "المنتج المميز"}
-
-📐 المواصفات التقنية:
-- Format: 9:16 (عمودي للريلز/تيك توك)
-- Resolution: 4K عالي الجودة
-- Style: إعلان سوشيال ميديا احترافي للسوق العربي
-- النص العربي يجب أن يكون من اليمين لليسار
-- استخدم خطوط عربية جميلة وواضحة
-- الألوان: ذهبي، وردي، بنفسجي، كريمي (ألوان السوق العربي)
-
-🚫 ممنوع:
-- لا تغير المنتج الأصلي
-- لا تستخدم نص إنجليزي
-- لا تستخدم صور غير لائقة`;
+REQUIREMENTS:
+- Vertical format 9:16 for Reels/TikTok
+- Professional advertising quality
+- Arabic text overlays (modern fonts, no diacritics)
+- Egyptian market appeal
+- Product must be clearly visible and prominent
+- ${productName ? `Product: ${productName}` : 'Fashion/Beauty product'}
+- High engagement social media style`;
 
       try {
-        console.log(`Generating Arabic scene ${i + 1}/${selectedStyle.scenes.length}...`);
+        console.log(`Generating scene ${i + 1} with Runware...`);
+
+        const taskUUID = crypto.randomUUID();
         
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
+        const runwarePayload: any[] = [
+          {
+            taskType: "authentication",
+            apiKey: RUNWARE_API_KEY
           },
-          body: JSON.stringify({
-            model: "google/gemini-3-pro-image-preview",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: scenePrompt },
-                  { type: "image_url", image_url: { url: imageUrl } }
-                ]
-              }
-            ],
-            modalities: ["image", "text"]
-          })
+          {
+            taskType: "imageInference",
+            taskUUID,
+            positivePrompt: scenePrompt,
+            width: 576,  // 9:16 aspect ratio
+            height: 1024,
+            model: model || "runware:100@1",
+            numberResults: 1,
+            outputFormat: "WEBP",
+            CFGScale: 1,
+            steps: 4,
+            scheduler: "FlowMatchEulerDiscreteScheduler",
+            // If product image is provided, use it as input
+            ...(imageUrl && !imageUrl.startsWith('data:') && { inputImage: imageUrl, strength: 0.7 }),
+          }
+        ];
+
+        // Handle base64 image
+        if (imageUrl && imageUrl.startsWith('data:')) {
+          const base64Data = imageUrl.split(',')[1];
+          runwarePayload[1].inputImage = `data:image/png;base64,${base64Data}`;
+          runwarePayload[1].strength = 0.7;
+        }
+
+        const response = await fetch(RUNWARE_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(runwarePayload)
         });
 
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Scene ${i + 1} generation error:`, response.status, errorText);
-          
-          if (response.status === 402) {
-            throw new Error(language === 'ar' 
-              ? "رصيد الـ AI انتهى - يرجى إضافة رصيد"
-              : "AI quota exceeded - please add credits");
-          }
-          if (response.status === 429) {
-            throw new Error(language === 'ar'
-              ? "الطلبات كثيرة - حاول مرة تانية بعد شوية"
-              : "Rate limit exceeded - please try again in a moment");
-          }
-          continue; // Try next scene
+          continue;
         }
 
         const data = await response.json();
-        const generatedImage = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        const imageResults = data.data?.filter((item: any) => item.taskType === "imageInference") || [];
         
-        if (generatedImage) {
+        if (imageResults.length > 0 && imageResults[0].imageURL) {
           sceneImages.push({
-            imageUrl: generatedImage,
+            imageUrl: imageResults[0].imageURL,
             scene: i + 1,
-            description: selectedStyle.scenes[i]
+            description: sceneDescription
           });
-          console.log(`Arabic scene ${i + 1} generated successfully`);
+          console.log(`Scene ${i + 1} generated successfully`);
         }
       } catch (sceneError) {
         console.error(`Error generating scene ${i + 1}:`, sceneError);
-        if (sceneError instanceof Error && 
-            (sceneError.message.includes("quota") || sceneError.message.includes("Rate limit") || sceneError.message.includes("رصيد"))) {
-          throw sceneError;
-        }
       }
     }
 
@@ -213,11 +209,50 @@ ${selectedStyle.scenes[i]}
         : "No scenes were generated - please try again");
     }
 
-    console.log(`Successfully generated ${sceneImages.length} Arabic scenes for user ${authData?.userId}`);
+    // Generate video from first scene if requested
+    let videoUrl = null;
+    if (generateVideo && sceneImages.length > 0) {
+      try {
+        console.log("Generating video from first scene...");
+        
+        const videoTaskUUID = crypto.randomUUID();
+        const videoPayload = [
+          {
+            taskType: "authentication",
+            apiKey: RUNWARE_API_KEY
+          },
+          {
+            taskType: "imageToVideo",
+            taskUUID: videoTaskUUID,
+            inputImage: sceneImages[0].imageUrl,
+            motionPrompt: selectedStyle.motionPrompt,
+            duration: duration,
+            aspectRatio: "9:16"
+          }
+        ];
 
-    // Generate Arabic-specialized caption and hashtags
-    const caption = language === 'ar' ? selectedStyle.captionAr : selectedStyle.captionEn;
-    
+        const videoResponse = await fetch(RUNWARE_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(videoPayload)
+        });
+
+        if (videoResponse.ok) {
+          const videoData = await videoResponse.json();
+          const videoResult = videoData.data?.find((item: any) => item.taskType === "imageToVideo");
+          if (videoResult?.videoURL) {
+            videoUrl = videoResult.videoURL;
+            console.log("Video generated successfully");
+          }
+        }
+      } catch (videoError) {
+        console.error("Video generation error:", videoError);
+        // Don't throw - video is optional
+      }
+    }
+
+    console.log(`Successfully generated ${sceneImages.length} scenes for user ${authData?.userId}`);
+
     // Arabic hashtags optimized for MENA market
     const hashtagsAr = [
       "#تسوق_اونلاين",
@@ -226,32 +261,16 @@ ${selectedStyle.scenes[i]}
       "#ستايل",
       "#fashion",
       "#fyp",
-      "#fypシ",
       "#viral",
       "#reels",
-      "#تيك_توك",
-      "#انستجرام",
       style === "unboxing" ? "#انبوكسينق" : "",
-      style === "unboxing" ? "#فتح_الطرد" : "",
       style === "before_after" ? "#قبل_وبعد" : "",
-      style === "before_after" ? "#تحول" : "",
-      style === "testimonial" ? "#تجربتي" : "",
       style === "testimonial" ? "#ريفيو" : "",
       style === "trending" ? "#ترند" : "",
-      style === "trending" ? "#ترند_مصر" : "",
     ].filter(Boolean);
 
     const hashtagsEn = [
-      "#shopping",
-      "#fashion",
-      "#style",
-      "#trending",
-      "#viral",
-      "#fyp",
-      "#reels",
-      "#tiktok",
-      "#egypt",
-      "#mena",
+      "#shopping", "#fashion", "#style", "#trending", "#viral", "#fyp", "#reels",
       style === "unboxing" ? "#unboxing" : "",
       style === "before_after" ? "#beforeafter" : "",
       style === "testimonial" ? "#review" : "",
@@ -261,16 +280,17 @@ ${selectedStyle.scenes[i]}
     return new Response(
       JSON.stringify({ 
         scenes: sceneImages,
-        caption,
+        caption: language === 'ar' ? selectedStyle.captionAr : selectedStyle.captionEn,
         hashtags: language === 'ar' ? hashtagsAr : hashtagsEn,
         duration: `${duration}s`,
         style,
         format: "Storyboard",
         totalScenes: sceneImages.length,
-        // Arabic market extras
-        hook: language === 'ar' ? selectedStyle.hookAr : selectedStyle.hookAr,
-        cta: language === 'ar' ? selectedStyle.ctaAr : selectedStyle.ctaAr,
+        hook: selectedStyle.hookAr,
+        cta: selectedStyle.ctaAr,
         musicVibe: selectedStyle.musicVibe,
+        videoUrl,
+        provider: "runware",
         instructions: language === 'ar' 
           ? "حمّل المشاهد واستخدمها في VN أو InShot أو CapCut عشان تعمل ريل فيرال! 🔥"
           : "Download scenes and use in VN, InShot, or CapCut to create a viral Reel! 🔥"

@@ -57,6 +57,7 @@ const ShopifyCallback = lazyWithRetry(() => import("./pages/ShopifyCallback"), "
 const ReelsGenerator = lazyWithRetry(() => import("./pages/ReelsGenerator"), "ReelsGenerator");
 const ImageStudio = lazyWithRetry(() => import("./pages/ImageStudio"), "ImageStudio");
 const AdsCopy = lazyWithRetry(() => import("./pages/AdsCopy"), "AdsCopy");
+const UGCStudio = lazyWithRetry(() => import("./pages/UGCStudio"), "UGCStudio");
 
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
@@ -196,6 +197,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <AdsCopy />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/ugc"
+          element={
+            <ProtectedRoute>
+              <UGCStudio />
             </ProtectedRoute>
           }
         />
