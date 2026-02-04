@@ -1,4 +1,6 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+const serve = (handler: (req: Request) => Promise<Response>) => {
+  Deno.serve(handler);
+};
 import { validateAuth, corsHeaders } from "../_shared/auth.ts";
 
 const systemPrompt = `أنت خبير عالمي في تصوير المنتجات وكتابة برومبتات لتوليد صور احترافية للإعلانات والمتاجر الإلكترونية.
