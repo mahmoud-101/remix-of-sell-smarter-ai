@@ -267,19 +267,20 @@ Vertical 9:16 format, Egyptian market style.`;
 
         console.log(`Scene ${i + 1} image generated, converting to 10s video...`);
 
-        // Step 2: Convert image to 10-second video
+        // Step 2: Convert image to video using imageToVideo task
         const videoTaskUUID = crypto.randomUUID();
         
+        // Runware imageToVideo API format
         const videoPayload = [
           { taskType: "authentication", apiKey: RUNWARE_API_KEY },
           {
             taskType: "imageToVideo",
             taskUUID: videoTaskUUID,
             inputImage: imageResult.imageURL,
-            motionPrompt: scene.motionPrompt,
-            duration: 10, // 10 seconds
-            aspectRatio: "9:16",
-            CFGScale: 7
+            promptText: scene.motionPrompt,
+            seed: Math.floor(Math.random() * 1000000000),
+            duration: 10,
+            ratio: "9:16"
           }
         ];
 
@@ -289,11 +290,13 @@ Vertical 9:16 format, Egyptian market style.`;
           body: JSON.stringify(videoPayload)
         });
 
-        if (!videoResponse.ok) {
-          const errorText = await videoResponse.text();
-          console.error(`Video conversion failed for scene ${i + 1}:`, errorText.substring(0, 200));
+        const videoData = await videoResponse.json();
+        
+        // Check for errors in response
+        if (videoData.errors && videoData.errors.length > 0) {
+          console.error(`Video conversion failed for scene ${i + 1}:`, JSON.stringify(videoData.errors).substring(0, 200));
           
-          // Fallback to image
+          // Fallback to image if video generation fails
           generatedVideos.push({
             videoUrl: imageResult.imageURL,
             thumbnailUrl: imageResult.imageURL,
@@ -304,14 +307,13 @@ Vertical 9:16 format, Egyptian market style.`;
           continue;
         }
 
-        const videoData = await videoResponse.json();
         const videoResult = videoData.data?.find((item: any) => 
-          item.taskType === "imageToVideo" && (item.videoURL || item.outputVideo)
+          item.taskType === "imageToVideo" && (item.videoURL || item.outputVideo || item.videoUrl)
         );
 
-        if (videoResult?.videoURL || videoResult?.outputVideo) {
+        if (videoResult?.videoURL || videoResult?.outputVideo || videoResult?.videoUrl) {
           generatedVideos.push({
-            videoUrl: videoResult.videoURL || videoResult.outputVideo,
+            videoUrl: videoResult.videoURL || videoResult.outputVideo || videoResult.videoUrl,
             thumbnailUrl: imageResult.imageURL,
             scene: i + 1,
             caption: scene.arabicCaption,
@@ -327,7 +329,7 @@ Vertical 9:16 format, Egyptian market style.`;
             caption: scene.arabicCaption,
             hook: scene.arabicHook
           });
-          console.log(`Scene ${i + 1}: Using image as fallback`);
+          console.log(`Scene ${i + 1}: Using image as fallback, video data:`, JSON.stringify(videoData).substring(0, 300));
         }
 
       } catch (sceneError) {
