@@ -8,7 +8,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Validate authentication
   const { data: authData, error: authError } = await validateAuth(req);
   if (authError) {
     return authError;
@@ -23,10 +22,9 @@ serve(async (req) => {
       style, 
       productName,
       productAnalysis,
-      duration = 5, 
+      duration = 10,
       language = 'ar', 
-      model, 
-      generateVideo = false 
+      model
     } = await req.json();
     
     const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
@@ -35,7 +33,6 @@ serve(async (req) => {
       throw new Error("RUNWARE_API_KEY is not configured");
     }
 
-    // Use productImage if provided, otherwise fall back to imageUrl
     const sourceImage = productImage || imageUrl;
 
     if (!sourceImage) {
@@ -43,235 +40,321 @@ serve(async (req) => {
     }
 
     // ============================================
-    // REELS STUDIO - Video Storyboard Generation
-    // CRITICAL: Product must remain EXACTLY the same across all scenes!
+    // REELS STUDIO - 10-Second Video Generation
+    // Arabic content for Egyptian market
     // ============================================
 
-    // Scene contexts for different reel types - only describe environment changes
-    const styleContexts: Record<string, { 
-      sceneContexts: string[]; 
-      captionAr: string; 
-      captionEn: string;
-      hookAr: string;
+    // Reel video scenes with Arabic captions and motion
+    const reelStyles: Record<string, { 
+      scenes: Array<{
+        imagePrompt: string;
+        motionPrompt: string;
+        arabicCaption: string;
+        arabicHook: string;
+      }>;
+      captionAr: string;
       ctaAr: string;
       musicVibe: string;
+      hashtags: string[];
     }> = {
       unboxing: {
-        sceneContexts: [
-          "Scene 1 Context: Product inside an elegant gift box with golden ribbon, dramatic spotlight lighting, luxury unboxing moment",
-          "Scene 2 Context: Product being revealed from tissue paper, sparkle effects around, warm lighting, excitement moment",
-          "Scene 3 Context: Product hero shot on gradient background, professional studio lighting, final reveal"
+        scenes: [
+          {
+            imagePrompt: "Luxury gift box with golden ribbon, product inside partially visible, dramatic spotlight, anticipation moment",
+            motionPrompt: "Box lid slowly opening with reveal lighting, anticipation build-up",
+            arabicCaption: "الطرد وصل! 📦",
+            arabicHook: "استنوا تشوفوا!"
+          },
+          {
+            imagePrompt: "Product emerging from elegant packaging, tissue paper, sparkle effects, excitement moment",
+            motionPrompt: "Product being lifted up dramatically, sparkle particle effects",
+            arabicCaption: "شوفوا الجمال! ✨",
+            arabicHook: "مش هتصدقوا!"
+          },
+          {
+            imagePrompt: "Product hero shot, professional display, satisfied reveal, premium presentation",
+            motionPrompt: "Glamour product rotation, final showcase spin",
+            arabicCaption: "اطلبوه دلوقتي! 🛒",
+            arabicHook: "لينك في البايو!"
+          }
         ],
         captionAr: "📦 أنبوكسينق! لما الطرد يوصل 😍✨\n\n💜 اطلبيه بكود LOVE10",
-        captionEn: "📦 Unboxing time! 😍✨",
-        hookAr: "استني تشوفي اللي جوا! 👀",
         ctaAr: "اطلبي دلوقتي - توصيل سريع 🚚",
-        musicVibe: "Upbeat Arabic pop"
+        musicVibe: "Upbeat Arabic pop",
+        hashtags: ["#انبوكسينق", "#تسوق_اونلاين", "#مصر", "#fyp"]
       },
       before_after: {
-        sceneContexts: [
-          "Scene 1 Context: Product in dim, neutral 'before' setting, muted colors, problem visualization backdrop",
-          "Scene 2 Context: Product in spotlight during transformation, magical glow effect, transition moment",
-          "Scene 3 Context: Product in bright, vibrant 'after' setting, success visualization, radiant lighting"
+        scenes: [
+          {
+            imagePrompt: "Before state: dim lighting, muted colors, problem visualization, dull atmosphere",
+            motionPrompt: "Slow fade showing problem state, building anticipation",
+            arabicCaption: "قبل... 😔",
+            arabicHook: "كنت كده!"
+          },
+          {
+            imagePrompt: "Transformation: product spotlight, magical glow transition, change happening",
+            motionPrompt: "Dramatic transformation effect, magical transition lighting",
+            arabicCaption: "التحول! ✨",
+            arabicHook: "وبعدين...!"
+          },
+          {
+            imagePrompt: "After state: bright vibrant lighting, success colors, radiant result, premium feel",
+            motionPrompt: "Reveal final result, celebration lighting, success showcase",
+            arabicCaption: "بعد! 😍🔥",
+            arabicHook: "الفرق واضح!"
+          }
         ],
         captionAr: "🔄 التحول الحقيقي! 😱\n\n💜 اللينك في البايو",
-        captionEn: "🔄 Real transformation! 😱",
-        hookAr: "الفرق صادم! 😱",
         ctaAr: "جربي بنفسك 💯",
-        musicVibe: "Dramatic reveal"
+        musicVibe: "Dramatic reveal",
+        hashtags: ["#قبل_وبعد", "#تحول", "#مصر", "#viral"]
       },
       testimonial: {
-        sceneContexts: [
-          "Scene 1 Context: Product with floating 5-star rating graphics, trust badges around, professional gradient",
-          "Scene 2 Context: Macro close-up focus on product, quality details highlighted, soft lighting",
-          "Scene 3 Context: Product with 'Order Now' button graphic, discount badge, call-to-action design"
+        scenes: [
+          {
+            imagePrompt: "Product with floating 5-star rating, trust badges, testimonial style, professional",
+            motionPrompt: "Stars appearing one by one animation, trust building",
+            arabicCaption: "⭐⭐⭐⭐⭐",
+            arabicHook: "ألف بنت قالت!"
+          },
+          {
+            imagePrompt: "Product macro detail shot, quality close-up, premium materials visible",
+            motionPrompt: "Detailed zoom into quality features, texture showcase",
+            arabicCaption: "جودة مش عادية! 💎",
+            arabicHook: "شوفي التفاصيل!"
+          },
+          {
+            imagePrompt: "Product with Order Now button, discount badge, urgency CTA design",
+            motionPrompt: "CTA button pulse animation, urgency motion",
+            arabicCaption: "اطلبي قبل ما يخلص! ⏰",
+            arabicHook: "العرض لفترة محدودة!"
+          }
         ],
         captionAr: "⭐ لما ألف بنت تقول إنه الأحسن!\n\n🛒 شحن ببلاش",
-        captionEn: "⭐ 1000+ happy customers!",
-        hookAr: "شوفي ليه الكل بيحبه! 💕",
         ctaAr: "اطلبي دلوقتي ⏰",
-        musicVibe: "Confident music"
+        musicVibe: "Confident music",
+        hashtags: ["#ريفيو", "#تجربتي", "#مصر", "#trending"]
       },
       showcase: {
-        sceneContexts: [
-          "Scene 1 Context: Product front view on clean white studio backdrop, professional 3-point lighting",
-          "Scene 2 Context: Product at 45-degree angle with rim lighting, depth and dimension emphasized",
-          "Scene 3 Context: Product in full advertising composition with promotional graphics around"
+        scenes: [
+          {
+            imagePrompt: "Product front view, clean white studio, professional 3-point lighting setup",
+            motionPrompt: "Elegant product introduction, smooth reveal",
+            arabicCaption: "المنتج الأكثر مبيعاً! 🔥",
+            arabicHook: "الكل بيسأل عليه!"
+          },
+          {
+            imagePrompt: "Product 45-degree angle, rim lighting, depth dimension, premium feel",
+            motionPrompt: "Slow elegant rotation showing all angles",
+            arabicCaption: "تصميم مميز! ✨",
+            arabicHook: "شوفي من كل الزوايا!"
+          },
+          {
+            imagePrompt: "Product in full ad composition, promotional graphics, call to action",
+            motionPrompt: "Final glamour shot with promotional elements appearing",
+            arabicCaption: "متوفر دلوقتي! 🛒",
+            arabicHook: "اللينك في البايو!"
+          }
         ],
         captionAr: "✨ المنتج اللي الكل بيسأل عليه!\n\n🛒 اللينك في البايو",
-        captionEn: "✨ The product everyone wants!",
-        hookAr: "أحلى منتج هتشوفيه! ✨",
         ctaAr: "متوفر دلوقتي 🔥",
-        musicVibe: "Elegant, premium"
+        musicVibe: "Elegant premium",
+        hashtags: ["#منتج", "#تسوق", "#مصر", "#fyp"]
       },
       trending: {
-        sceneContexts: [
-          "Scene 1 Context: Product in viral TikTok style setting, bold neon RGB lighting, dynamic energy",
-          "Scene 2 Context: Product with zoom effect background, high energy colorful lights, motion blur",
-          "Scene 3 Context: Product with FOMO urgency graphics, countdown timer, limited stock alert design"
+        scenes: [
+          {
+            imagePrompt: "Product in TikTok viral style, bold neon RGB lighting, high energy aesthetic",
+            motionPrompt: "Fast dynamic zoom, TikTok style energy, quick cuts feel",
+            arabicCaption: "🔥 الترند الجديد!",
+            arabicHook: "لو مشفتيش ده!"
+          },
+          {
+            imagePrompt: "Product with dynamic effects, RGB color shifts, motion blur energy",
+            motionPrompt: "High energy camera movement, dynamic lighting changes",
+            arabicCaption: "الكل بيتكلم عنه! 📣",
+            arabicHook: "فيرال على تيك توك!"
+          },
+          {
+            imagePrompt: "Product with FOMO urgency graphics, countdown visual, limited stock alert",
+            motionPrompt: "Urgency countdown motion, FOMO inducing animation",
+            arabicCaption: "⚡ هيخلص!",
+            arabicHook: "احجزي دلوقتي!"
+          }
         ],
         captionAr: "🔥 الترند اللي كسر التيك توك!\n\n⚡ هيخلص!",
-        captionEn: "🔥 TikTok viral trend!",
-        hookAr: "لو مشفتيش ده! 🤯",
         ctaAr: "احجزي قبل ما يخلص! ⚡",
-        musicVibe: "Viral TikTok sound"
+        musicVibe: "Viral TikTok sound",
+        hashtags: ["#ترند", "#تيك_توك", "#فيرال", "#مصر"]
       }
     };
 
-    const selectedStyle = styleContexts[style] || styleContexts.showcase;
+    const selectedStyle = reelStyles[style] || reelStyles.showcase;
     
-    console.log(`Generating Reel scenes for style: ${style}, hasProductImage: ${!!sourceImage}, hasAnalysis: ${!!productAnalysis}`);
+    console.log(`Generating Reel videos for style: ${style}, scenes: ${selectedStyle.scenes.length}`);
 
-    // Generate scene images using Runware - PRESERVING the product
-    const sceneImages: Array<{ imageUrl: string; scene: number; description: string }> = [];
+    // Generate 10-second videos for each scene
+    const generatedVideos: Array<{ 
+      videoUrl: string; 
+      thumbnailUrl?: string;
+      scene: number;
+      caption: string;
+      hook: string;
+    }> = [];
 
-    for (let i = 0; i < selectedStyle.sceneContexts.length; i++) {
-      const sceneContext = selectedStyle.sceneContexts[i];
+    for (let i = 0; i < selectedStyle.scenes.length; i++) {
+      const scene = selectedStyle.scenes[i];
       
-      // Build prompt that PRESERVES the product
-      const scenePrompt = `PRODUCT PRESERVATION - REEL SCENE GENERATION:
-
-CRITICAL: The product from the input image MUST remain EXACTLY identical:
-- Keep exact same product shape, design, and proportions
-- Keep exact same colors, patterns, and branding
-- DO NOT modify the product in any way
-
-ONLY CHANGE THE SCENE CONTEXT:
-${sceneContext}
-
-Product: ${productName || "Fashion product"}
-${productAnalysis ? `
-Marketing Hook: ${productAnalysis.core_feature || ''}
-` : ''}
-
-REQUIREMENTS:
-- Product must look EXACTLY like the input image
-- Only the background/scene context should change
-- Vertical 9:16 format for social media
-- Professional lighting
-- Egyptian market appeal`;
-
       try {
-        console.log(`Generating scene ${i + 1}...`);
+        console.log(`Generating Reel video scene ${i + 1}...`);
 
-        const taskUUID = crypto.randomUUID();
+        // Step 1: Generate base image with product preservation
+        const imageTaskUUID = crypto.randomUUID();
         
-        const runwarePayload: any[] = [
+        // Prepare image input
+        let imageInput = sourceImage;
+        if (sourceImage.startsWith('data:')) {
+          imageInput = `data:image/png;base64,${sourceImage.split(',')[1]}`;
+        }
+        
+        const imagePrompt = `PRESERVE THE EXACT PRODUCT from input image.
+${scene.imagePrompt}
+Product: ${productName || "Product"}
+${productAnalysis?.core_feature ? `Feature: ${productAnalysis.core_feature}` : ''}
+Keep product identical, only change scene/environment.
+Vertical 9:16 format, Egyptian market style.`;
+
+        const imagePayload = [
+          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
           {
-            taskType: "authentication",
-            apiKey: RUNWARE_API_KEY
+            taskType: "imageInference",
+            taskUUID: imageTaskUUID,
+            positivePrompt: imagePrompt,
+            negativePrompt: "different product, wrong colors, wrong design, blurry, distorted, deformed",
+            width: 576,
+            height: 1024,
+            model: model || "runware:100@1",
+            numberResults: 1,
+            outputFormat: "WEBP",
+            CFGScale: 7,
+            steps: 25,
+            scheduler: "DPMSolverMultistepScheduler",
+            strength: 0.25, // Low strength to preserve product
+            inputImage: imageInput
           }
         ];
 
-        // Prepare the image input
-        let imageInput = sourceImage;
-        if (sourceImage.startsWith('data:')) {
-          const base64Data = sourceImage.split(',')[1];
-          imageInput = `data:image/png;base64,${base64Data}`;
-        }
-
-        // Image-to-image with VERY LOW strength to preserve product
-        runwarePayload.push({
-          taskType: "imageInference",
-          taskUUID,
-          positivePrompt: scenePrompt,
-          negativePrompt: "different product, changed product, modified product, wrong colors, wrong design, blurry, distorted, deformed",
-          width: 576,
-          height: 1024,
-          model: model || "runware:100@1",
-          numberResults: 1,
-          outputFormat: "WEBP",
-          CFGScale: 7,
-          steps: 25,
-          scheduler: "DPMSolverMultistepScheduler",
-          // VERY LOW strength to preserve product
-          strength: 0.25,
-          inputImage: imageInput
-        });
-
-        console.log(`Calling Runware API for scene ${i + 1}...`);
-
-        const response = await fetch(RUNWARE_API_URL, {
+        const imageResponse = await fetch(RUNWARE_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(runwarePayload)
+          body: JSON.stringify(imagePayload)
         });
 
-        const responseText = await response.text();
-        console.log(`Runware response status: ${response.status}`);
-
-        if (!response.ok) {
-          console.error(`Runware API error: ${response.status} - ${responseText.substring(0, 200)}`);
+        if (!imageResponse.ok) {
+          console.error(`Image generation failed for scene ${i + 1}`);
           continue;
         }
 
-        const data = JSON.parse(responseText);
+        const imageData = await imageResponse.json();
+        const imageResult = imageData.data?.find((item: any) => item.taskType === "imageInference" && item.imageURL);
         
-        // Extract image from response
-        if (data.data && Array.isArray(data.data)) {
-          const imageResult = data.data.find((item: any) => item.taskType === "imageInference" && item.imageURL);
-          if (imageResult?.imageURL) {
-            sceneImages.push({
-              imageUrl: imageResult.imageURL,
-              scene: i + 1,
-              description: sceneContext
-            });
-            console.log(`Scene ${i + 1} generated successfully`);
-          }
+        if (!imageResult?.imageURL) {
+          console.error(`No image URL for scene ${i + 1}`);
+          continue;
         }
+
+        console.log(`Scene ${i + 1} image generated, converting to 10s video...`);
+
+        // Step 2: Convert image to 10-second video
+        const videoTaskUUID = crypto.randomUUID();
+        
+        const videoPayload = [
+          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
+          {
+            taskType: "imageToVideo",
+            taskUUID: videoTaskUUID,
+            inputImage: imageResult.imageURL,
+            motionPrompt: scene.motionPrompt,
+            duration: 10, // 10 seconds
+            aspectRatio: "9:16",
+            CFGScale: 7
+          }
+        ];
+
+        const videoResponse = await fetch(RUNWARE_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(videoPayload)
+        });
+
+        if (!videoResponse.ok) {
+          const errorText = await videoResponse.text();
+          console.error(`Video conversion failed for scene ${i + 1}:`, errorText.substring(0, 200));
+          
+          // Fallback to image
+          generatedVideos.push({
+            videoUrl: imageResult.imageURL,
+            thumbnailUrl: imageResult.imageURL,
+            scene: i + 1,
+            caption: scene.arabicCaption,
+            hook: scene.arabicHook
+          });
+          continue;
+        }
+
+        const videoData = await videoResponse.json();
+        const videoResult = videoData.data?.find((item: any) => 
+          item.taskType === "imageToVideo" && (item.videoURL || item.outputVideo)
+        );
+
+        if (videoResult?.videoURL || videoResult?.outputVideo) {
+          generatedVideos.push({
+            videoUrl: videoResult.videoURL || videoResult.outputVideo,
+            thumbnailUrl: imageResult.imageURL,
+            scene: i + 1,
+            caption: scene.arabicCaption,
+            hook: scene.arabicHook
+          });
+          console.log(`Scene ${i + 1} video generated successfully`);
+        } else {
+          // Fallback to image
+          generatedVideos.push({
+            videoUrl: imageResult.imageURL,
+            thumbnailUrl: imageResult.imageURL,
+            scene: i + 1,
+            caption: scene.arabicCaption,
+            hook: scene.arabicHook
+          });
+          console.log(`Scene ${i + 1}: Using image as fallback`);
+        }
+
       } catch (sceneError) {
         console.error(`Error generating scene ${i + 1}:`, sceneError);
       }
     }
 
-    // If Runware failed, fallback to instructions
-    if (sceneImages.length === 0) {
-      console.log("Scene generation failed, returning manual instructions");
-      
-      return new Response(
-        JSON.stringify({ 
-          scenes: selectedStyle.sceneContexts.map((desc, i) => ({
-            scene: i + 1,
-            description: desc,
-            instruction: `مشهد ${i + 1}: ${desc}`
-          })),
-          caption: language === 'ar' ? selectedStyle.captionAr : selectedStyle.captionEn,
-          hashtags: ["#تسوق_اونلاين", "#تسوق_مصر", "#fyp", "#viral"],
-          duration: `${duration}s`,
-          style,
-          format: "Instructions",
-          totalScenes: 3,
-          hook: selectedStyle.hookAr,
-          cta: selectedStyle.ctaAr,
-          musicVibe: selectedStyle.musicVibe,
-          provider: "instructions",
-          message: language === 'ar' 
-            ? "تعذر توليد المشاهد. استخدم الأوصاف لإنشائها يدوياً."
-            : "Scene generation unavailable. Use descriptions to create manually."
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (generatedVideos.length === 0) {
+      throw new Error(language === 'ar' 
+        ? "فشل توليد الفيديوهات - حاول مرة تانية"
+        : "Failed to generate videos - please try again");
     }
 
-    console.log(`Successfully generated ${sceneImages.length} scenes`);
+    console.log(`Successfully generated ${generatedVideos.length} Reel videos`);
 
     return new Response(
       JSON.stringify({ 
-        scenes: sceneImages,
-        caption: language === 'ar' ? selectedStyle.captionAr : selectedStyle.captionEn,
-        hashtags: ["#تسوق_اونلاين", "#تسوق_مصر", "#fyp", "#viral", "#reels"],
-        duration: `${duration}s`,
-        style,
-        format: "Storyboard",
-        totalScenes: sceneImages.length,
-        hook: selectedStyle.hookAr,
+        videos: generatedVideos,
+        caption: selectedStyle.captionAr,
         cta: selectedStyle.ctaAr,
+        hashtags: selectedStyle.hashtags,
+        duration: "10s",
+        style,
+        format: "9:16 vertical",
+        totalScenes: generatedVideos.length,
         musicVibe: selectedStyle.musicVibe,
         provider: "runware",
-        productPreserved: true,
-        instructions: language === 'ar' 
-          ? "حمّل المشاهد واستخدمها في CapCut أو InShot لعمل ريل فيرال! 🔥"
-          : "Download scenes and use in CapCut or InShot to create a viral Reel! 🔥"
+        arabicContent: true,
+        instructions: "حمّل الفيديوهات واجمعها في CapCut أو InShot لعمل ريل فيرال 30 ثانية! 🔥"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

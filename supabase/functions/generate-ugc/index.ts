@@ -8,7 +8,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Validate authentication
   const { data: authData, error: authError } = await validateAuth(req);
   if (authError) {
     return authError;
@@ -23,7 +22,8 @@ serve(async (req) => {
       productAnalysis,
       ugcType = "lifestyle",
       model,
-      language = 'ar' 
+      language = 'ar',
+      outputType = 'video' // Default to video now
     } = await req.json();
     
     const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
@@ -33,140 +33,177 @@ serve(async (req) => {
     }
 
     // ============================================
-    // UGC STUDIO - User Generated Content Style
-    // CRITICAL: Product must remain EXACTLY the same!
-    // Only add context/environment around it
+    // UGC STUDIO - User Generated Content Videos
+    // Generates 10-second videos for social media
     // ============================================
 
-    // UGC context descriptions - focus on environment AROUND the product
-    const ugcContexts: Record<string, {
-      contexts: string[];
+    // UGC video scene descriptions - Arabic market focused
+    const ugcScenes: Record<string, {
+      scenes: Array<{
+        imagePrompt: string;
+        motionPrompt: string;
+        arabicCaption: string;
+      }>;
       nameAr: string;
       nameEn: string;
       description: string;
     }> = {
       lifestyle: {
-        contexts: [
-          `Scene context: Young woman's hands holding the product in a cozy modern living room. Warm natural window light, home decor visible in soft bokeh. iPhone camera quality, authentic UGC feel.`,
-          `Scene context: Product placed on a stylish vanity table with makeup items around it. Warm bedroom lighting, mirror reflection. Influencer content style.`,
-          `Scene context: Product being held up against a clean, aesthetic background. Natural lighting, minimal setting. Instagram story quality.`
+        scenes: [
+          {
+            imagePrompt: `UGC lifestyle photo: Product held naturally in hands against cozy home background, warm natural lighting, authentic feel`,
+            motionPrompt: "Gentle hand movement showing product, soft camera pan, natural motion",
+            arabicCaption: "شوفي الجمال ده! 😍"
+          },
+          {
+            imagePrompt: `UGC lifestyle: Product on stylish vanity table with makeup items, warm bedroom lighting, influencer aesthetic`,
+            motionPrompt: "Slow zoom into product details, soft lighting changes",
+            arabicCaption: "لازم يكون عندك! ✨"
+          },
+          {
+            imagePrompt: `UGC lifestyle: Product in aesthetic flatlay arrangement, clean modern background, Instagram worthy`,
+            motionPrompt: "Elegant slow rotation reveal, professional product showcase",
+            arabicCaption: "اطلبيه دلوقتي! 🛒"
+          }
         ],
         nameAr: "لايف ستايل",
         nameEn: "Lifestyle",
-        description: "Authentic home lifestyle photos"
+        description: "فيديوهات لايف ستايل أصلية"
       },
       review: {
-        contexts: [
-          `Scene context: Product displayed next to 5-star rating graphic. Clean desk setup with laptop visible. Review content style, professional yet authentic.`,
-          `Scene context: Before/after comparison layout with product in center. Bright lighting, clean background. Testimonial style content.`,
-          `Scene context: Product on bathroom counter with skincare items. Mirror selfie style framing. Natural lighting, authentic review feel.`
+        scenes: [
+          {
+            imagePrompt: `Product review style: Product with 5-star rating visual, clean professional background, testimonial feel`,
+            motionPrompt: "Stars animation appearing, product highlight zoom",
+            arabicCaption: "⭐⭐⭐⭐⭐ الكل بيحبه!"
+          },
+          {
+            imagePrompt: `Before/after comparison layout with product in center, transformation visual, bright lighting`,
+            motionPrompt: "Side to side comparison motion, reveal transition",
+            arabicCaption: "الفرق واضح! 🔥"
+          },
+          {
+            imagePrompt: `Product close-up showing quality details, professional macro shot, premium feel`,
+            motionPrompt: "Detailed zoom into product features, quality showcase",
+            arabicCaption: "جودة عالية جداً 💎"
+          }
         ],
         nameAr: "ريفيو",
         nameEn: "Review",
-        description: "Authentic review style content"
+        description: "فيديوهات ريفيو وتقييم"
       },
       unboxing: {
-        contexts: [
-          `Scene context: Product partially emerging from elegant packaging box. Tissue paper and ribbon visible. Excitement moment, hands reaching in.`,
-          `Scene context: Flatlay of product with its box and packaging materials arranged aesthetically. Top-down view, clean background.`,
-          `Scene context: Product just taken out of box, packaging visible. Natural home lighting, desk or bed surface.`
+        scenes: [
+          {
+            imagePrompt: `Elegant gift box with product inside, luxury packaging, dramatic lighting, anticipation moment`,
+            motionPrompt: "Box lid slowly opening, reveal anticipation, dramatic lighting",
+            arabicCaption: "الطرد وصل! 📦😍"
+          },
+          {
+            imagePrompt: `Product emerging from tissue paper, sparkle effects, excitement moment capture`,
+            motionPrompt: "Product being lifted up, sparkle effects, excitement motion",
+            arabicCaption: "شوفوا الجمال! ✨"
+          },
+          {
+            imagePrompt: `Product hero shot after unboxing, professional display, satisfied reveal`,
+            motionPrompt: "Final product showcase, slow glamour rotation",
+            arabicCaption: "يستاهل كل قرش! 💜"
+          }
         ],
         nameAr: "أنبوكسينق",
         nameEn: "Unboxing",
-        description: "Authentic unboxing moments"
+        description: "فيديوهات فتح الطرود"
       },
       selfie: {
-        contexts: [
-          `Scene context: Product held up in a mirror selfie frame. Modern bathroom or bedroom mirror visible. Ring light reflection. Casual setting.`,
-          `Scene context: Product shown at arm's length in selfie style. Blurred lifestyle background. Natural daylight.`,
-          `Scene context: Cute aesthetic selfie composition with product visible. Clean modern room background. Instagram worthy.`
+        scenes: [
+          {
+            imagePrompt: `Mirror selfie style with product visible, modern bathroom/bedroom, ring light lighting`,
+            motionPrompt: "Selfie angle adjustment, product highlight movement",
+            arabicCaption: "سيلفي مع الحب الجديد! 📸"
+          },
+          {
+            imagePrompt: `Front-facing selfie composition with product, casual aesthetic, natural daylight`,
+            motionPrompt: "Gentle face turn showing product angle, natural movement",
+            arabicCaption: "أنا وصاحبي الجديد! 💕"
+          },
+          {
+            imagePrompt: `Aesthetic selfie with product in cute pose, clean modern background, Instagram style`,
+            motionPrompt: "Cute pose transition, product focus shift",
+            arabicCaption: "لازم تجربوه! 🔥"
+          }
         ],
         nameAr: "سيلفي",
         nameEn: "Selfie",
-        description: "Natural selfie style photos"
+        description: "فيديوهات سيلفي طبيعية"
       },
       tutorial: {
-        contexts: [
-          `Scene context: Product with step-by-step instruction graphics around it. Clean white background. Educational content style.`,
-          `Scene context: Product on a clean surface with numbered steps indicated. Bright professional lighting. Tutorial aesthetic.`,
-          `Scene context: Close-up of product with usage demonstration setup. Clear visibility, instructional feel.`
+        scenes: [
+          {
+            imagePrompt: `Tutorial style: Hands demonstrating product step 1, clean white background, instructional`,
+            motionPrompt: "Step-by-step demonstration motion, instructional pace",
+            arabicCaption: "الخطوة الأولى... 1️⃣"
+          },
+          {
+            imagePrompt: `Tutorial step 2: Product application/usage demonstration, clear visibility`,
+            motionPrompt: "Continued demonstration, usage showcase",
+            arabicCaption: "كده بالظبط! 2️⃣"
+          },
+          {
+            imagePrompt: `Tutorial result: Final result showcase, success visual, satisfied completion`,
+            motionPrompt: "Final reveal, success showcase, celebration",
+            arabicCaption: "النتيجة النهائية! ✅"
+          }
         ],
         nameAr: "توتوريال",
         nameEn: "Tutorial",
-        description: "How-to tutorial style"
+        description: "فيديوهات تعليمية"
       }
     };
 
-    const selectedContext = ugcContexts[ugcType] || ugcContexts.lifestyle;
+    const selectedType = ugcScenes[ugcType] || ugcScenes.lifestyle;
 
-    console.log(`User ${authData?.userId} generating UGC content with Runware, type: ${ugcType}, hasProductImage: ${!!productImage}, hasAnalysis: ${!!productAnalysis}`);
+    console.log(`User ${authData?.userId} generating UGC videos, type: ${ugcType}, scenes: ${selectedType.scenes.length}`);
 
-    // Generate multiple UGC images
-    const generatedImages: Array<{ imageUrl: string; type: string; typeAr: string }> = [];
+    // Generate videos for each scene
+    const generatedVideos: Array<{ 
+      videoUrl: string; 
+      thumbnailUrl?: string;
+      scene: number;
+      caption: string;
+      type: string;
+      typeAr: string;
+    }> = [];
 
-    for (let i = 0; i < selectedContext.contexts.length; i++) {
-      const contextDescription = selectedContext.contexts[i];
+    for (let i = 0; i < selectedType.scenes.length; i++) {
+      const scene = selectedType.scenes[i];
       
-      // Build prompt that PRESERVES the product completely
-      const fullPrompt = productImage
-        ? `PRODUCT PRESERVATION - UGC STYLE IMAGE:
-
-CRITICAL: The product from the input image MUST remain EXACTLY identical:
-- Keep exact same product shape and proportions
-- Keep exact same colors, patterns, design
-- Keep exact same branding and text if visible
-- DO NOT modify the product in any way
-
-ONLY ADD CONTEXT AROUND THE PRODUCT:
-${contextDescription}
-
-Product Name: ${productName || "Product"}
-${productAnalysis ? `
-Key Selling Points:
-- ${productAnalysis.core_feature || ''}
-- ${productAnalysis.benefits?.[0] || ''}
-` : ''}
-
-REQUIREMENTS:
-- Product must look EXACTLY like the input image
-- Only add environmental context around it
-- Photorealistic quality
-- Natural lighting
-- UGC/influencer style authenticity
-- MENA market appropriate`
-        : `UGC Style Product Photography:
-
-${contextDescription}
-
-Product: ${productName || "Fashion or beauty product"}
-${productAnalysis ? `
-Focus on: ${productAnalysis.core_feature || ''}
-` : ''}
-
-REQUIREMENTS:
-- Photorealistic quality
-- Natural authentic UGC feel
-- Egyptian/MENA market aesthetic
-- Instagram/TikTok content style`;
-
       try {
-        console.log(`Generating UGC image ${i + 1}...`);
+        console.log(`Generating UGC video scene ${i + 1}...`);
 
-        const taskUUID = crypto.randomUUID();
+        // Step 1: Generate base image first
+        const imageTaskUUID = crypto.randomUUID();
         
-        const runwarePayload: any[] = [
-          {
-            taskType: "authentication",
-            apiKey: RUNWARE_API_KEY
-          },
+        const imagePrompt = productImage
+          ? `PRESERVE THE EXACT PRODUCT from input image.
+${scene.imagePrompt}
+Product: ${productName || "Product"}
+${productAnalysis?.core_feature ? `Key feature: ${productAnalysis.core_feature}` : ''}
+Keep product identical, only change context/environment.
+Egyptian/MENA market style, authentic UGC aesthetic.`
+          : `${scene.imagePrompt}
+Product: ${productName || "Fashion product"}
+Egyptian/MENA market style, authentic UGC aesthetic.`;
+
+        const imagePayload: any[] = [
+          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
           {
             taskType: "imageInference",
-            taskUUID,
-            positivePrompt: fullPrompt,
-            negativePrompt: "different product, changed product, modified product, wrong colors, wrong design, cartoon, anime, illustration, artificial, heavy editing, inappropriate, text, watermark, deformed",
-            width: 1024,
+            taskUUID: imageTaskUUID,
+            positivePrompt: imagePrompt,
+            negativePrompt: "different product, wrong colors, cartoon, anime, artificial, text, watermark, deformed",
+            width: 576,
             height: 1024,
-            model: model || "civitai:43331@176425", // Majic Mix Realistic
+            model: model || "civitai:43331@176425",
             numberResults: 1,
             outputFormat: "WEBP",
             CFGScale: 7,
@@ -175,84 +212,133 @@ REQUIREMENTS:
           }
         ];
 
-        // If product image is provided, use image-to-image with VERY LOW strength
+        // Add input image for image-to-image if provided
         if (productImage) {
-          if (productImage.startsWith('data:')) {
-            const base64Data = productImage.split(',')[1];
-            runwarePayload[1].inputImage = `data:image/png;base64,${base64Data}`;
-            // VERY LOW strength to keep product exactly the same
-            runwarePayload[1].strength = 0.20;
-          } else if (productImage.startsWith('http')) {
-            runwarePayload[1].inputImage = productImage;
-            runwarePayload[1].strength = 0.20;
-          }
+          const imageInput = productImage.startsWith('data:') 
+            ? `data:image/png;base64,${productImage.split(',')[1]}`
+            : productImage;
+          imagePayload[1].inputImage = imageInput;
+          imagePayload[1].strength = 0.25; // Low strength to preserve product
         }
 
-        const response = await fetch(RUNWARE_API_URL, {
+        // Generate image
+        const imageResponse = await fetch(RUNWARE_API_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(runwarePayload)
+          body: JSON.stringify(imagePayload)
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`UGC image ${i + 1} error:`, response.status, errorText);
-          
-          if (response.status === 402) {
-            throw new Error("Runware credits exhausted");
-          }
+        if (!imageResponse.ok) {
+          console.error(`Image generation failed for scene ${i + 1}`);
           continue;
         }
 
-        const data = await response.json();
-        const imageResults = data.data?.filter((item: any) => item.taskType === "imageInference") || [];
+        const imageData = await imageResponse.json();
+        const imageResult = imageData.data?.find((item: any) => item.taskType === "imageInference" && item.imageURL);
         
-        if (imageResults.length > 0 && imageResults[0].imageURL) {
-          generatedImages.push({
-            imageUrl: imageResults[0].imageURL,
-            type: selectedContext.nameEn,
-            typeAr: selectedContext.nameAr
+        if (!imageResult?.imageURL) {
+          console.error(`No image URL in response for scene ${i + 1}`);
+          continue;
+        }
+
+        console.log(`Image generated for scene ${i + 1}, converting to video...`);
+
+        // Step 2: Convert image to 10-second video
+        const videoTaskUUID = crypto.randomUUID();
+        
+        const videoPayload = [
+          { taskType: "authentication", apiKey: RUNWARE_API_KEY },
+          {
+            taskType: "imageToVideo",
+            taskUUID: videoTaskUUID,
+            inputImage: imageResult.imageURL,
+            motionPrompt: scene.motionPrompt,
+            duration: 10, // 10 seconds as requested
+            aspectRatio: "9:16", // Vertical for social media
+            CFGScale: 7
+          }
+        ];
+
+        const videoResponse = await fetch(RUNWARE_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(videoPayload)
+        });
+
+        if (!videoResponse.ok) {
+          const errorText = await videoResponse.text();
+          console.error(`Video generation failed for scene ${i + 1}:`, errorText);
+          
+          // If video fails, still return the image as fallback
+          generatedVideos.push({
+            videoUrl: imageResult.imageURL,
+            thumbnailUrl: imageResult.imageURL,
+            scene: i + 1,
+            caption: scene.arabicCaption,
+            type: selectedType.nameEn,
+            typeAr: selectedType.nameAr
           });
-          console.log(`UGC image ${i + 1} generated successfully`);
+          continue;
         }
-      } catch (imageError) {
-        console.error(`Error generating UGC image ${i + 1}:`, imageError);
-        if (imageError instanceof Error && imageError.message.includes("credits")) {
-          throw imageError;
+
+        const videoData = await videoResponse.json();
+        const videoResult = videoData.data?.find((item: any) => 
+          item.taskType === "imageToVideo" && (item.videoURL || item.outputVideo)
+        );
+
+        if (videoResult?.videoURL || videoResult?.outputVideo) {
+          generatedVideos.push({
+            videoUrl: videoResult.videoURL || videoResult.outputVideo,
+            thumbnailUrl: imageResult.imageURL,
+            scene: i + 1,
+            caption: scene.arabicCaption,
+            type: selectedType.nameEn,
+            typeAr: selectedType.nameAr
+          });
+          console.log(`Video ${i + 1} generated successfully`);
+        } else {
+          // Fallback to image if video conversion failed
+          generatedVideos.push({
+            videoUrl: imageResult.imageURL,
+            thumbnailUrl: imageResult.imageURL,
+            scene: i + 1,
+            caption: scene.arabicCaption,
+            type: selectedType.nameEn,
+            typeAr: selectedType.nameAr
+          });
+          console.log(`Scene ${i + 1}: Using image as fallback (video conversion unavailable)`);
         }
+
+      } catch (sceneError) {
+        console.error(`Error generating scene ${i + 1}:`, sceneError);
       }
     }
 
-    if (generatedImages.length === 0) {
+    if (generatedVideos.length === 0) {
       throw new Error(language === 'ar' 
-        ? "فشل توليد صور UGC - حاول مرة تانية"
-        : "Failed to generate UGC images - please try again");
+        ? "فشل توليد الفيديوهات - حاول مرة تانية"
+        : "Failed to generate videos - please try again");
     }
 
-    console.log(`Successfully generated ${generatedImages.length} UGC images for user ${authData?.userId}`);
+    console.log(`Successfully generated ${generatedVideos.length} UGC videos for user ${authData?.userId}`);
 
     return new Response(
       JSON.stringify({ 
-        images: generatedImages,
+        videos: generatedVideos,
         ugcType,
-        typeName: language === 'ar' ? selectedContext.nameAr : selectedContext.nameEn,
-        description: selectedContext.description,
-        count: generatedImages.length,
+        typeName: language === 'ar' ? selectedType.nameAr : selectedType.nameEn,
+        description: selectedType.description,
+        count: generatedVideos.length,
+        duration: "10s",
+        format: "9:16 vertical",
         provider: "runware",
-        productPreserved: !!productImage,
-        tips: language === 'ar' 
-          ? [
-              "استخدم الصور في إعلانات الفيسبوك والانستجرام",
-              "أضف نص عربي بخط جميل",
-              "انشرها كمحتوى حقيقي من عميلة",
-              "استخدمها في الستوريز والريلز"
-            ]
-          : [
-              "Use in Facebook & Instagram ads",
-              "Add Arabic text overlays",
-              "Post as authentic customer content",
-              "Perfect for stories and reels"
-            ]
+        arabicContent: true,
+        tips: [
+          "الفيديوهات جاهزة للنشر على انستجرام وتيك توك",
+          "أضف موسيقى ترند من التطبيق",
+          "استخدم الكابشنز العربية المقترحة",
+          "انشر في أوقات الذروة (8-10 مساءً)"
+        ]
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
