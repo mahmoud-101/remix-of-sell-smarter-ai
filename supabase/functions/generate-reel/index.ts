@@ -17,20 +17,39 @@ serve(async (req) => {
   console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
-    const { imageUrl, style, productName, duration = 5, language = 'ar', model, generateVideo = false } = await req.json();
+    const { 
+      imageUrl, 
+      productImage,
+      style, 
+      productName,
+      productAnalysis,
+      duration = 5, 
+      language = 'ar', 
+      model, 
+      generateVideo = false 
+    } = await req.json();
+    
     const RUNWARE_API_KEY = Deno.env.get("RUNWARE_API_KEY");
 
     if (!RUNWARE_API_KEY) {
       throw new Error("RUNWARE_API_KEY is not configured");
     }
 
-    if (!imageUrl) {
-      throw new Error("Image URL is required");
+    // Use productImage if provided, otherwise fall back to imageUrl
+    const sourceImage = productImage || imageUrl;
+
+    if (!sourceImage) {
+      throw new Error(language === 'ar' ? "صورة المنتج مطلوبة" : "Product image is required");
     }
 
-    // Style prompts for different reel types
-    const stylePrompts: Record<string, { 
-      scenes: string[]; 
+    // ============================================
+    // REELS STUDIO - Video Storyboard Generation
+    // CRITICAL: Product must remain EXACTLY the same across all scenes!
+    // ============================================
+
+    // Scene contexts for different reel types - only describe environment changes
+    const styleContexts: Record<string, { 
+      sceneContexts: string[]; 
       captionAr: string; 
       captionEn: string;
       hookAr: string;
@@ -38,10 +57,10 @@ serve(async (req) => {
       musicVibe: string;
     }> = {
       unboxing: {
-        scenes: [
-          "Luxury gift box with golden ribbon, dramatic lighting, elegant presentation, product reveal moment",
-          "Hand opening box, sparkle effects, soft warm lighting, product emerging beautifully",
-          "Product hero shot, professional studio lighting, gradient background, premium feel"
+        sceneContexts: [
+          "Scene 1 Context: Product inside an elegant gift box with golden ribbon, dramatic spotlight lighting, luxury unboxing moment",
+          "Scene 2 Context: Product being revealed from tissue paper, sparkle effects around, warm lighting, excitement moment",
+          "Scene 3 Context: Product hero shot on gradient background, professional studio lighting, final reveal"
         ],
         captionAr: "📦 أنبوكسينق! لما الطرد يوصل 😍✨\n\n💜 اطلبيه بكود LOVE10",
         captionEn: "📦 Unboxing time! 😍✨",
@@ -50,10 +69,10 @@ serve(async (req) => {
         musicVibe: "Upbeat Arabic pop"
       },
       before_after: {
-        scenes: [
-          "Before state - dim lighting, neutral colors, problem visualization",
-          "Transformation moment - product in spotlight, magical transition effect",
-          "After state - bright warm lighting, vibrant colors, success visualization"
+        sceneContexts: [
+          "Scene 1 Context: Product in dim, neutral 'before' setting, muted colors, problem visualization backdrop",
+          "Scene 2 Context: Product in spotlight during transformation, magical glow effect, transition moment",
+          "Scene 3 Context: Product in bright, vibrant 'after' setting, success visualization, radiant lighting"
         ],
         captionAr: "🔄 التحول الحقيقي! 😱\n\n💜 اللينك في البايو",
         captionEn: "🔄 Real transformation! 😱",
@@ -62,10 +81,10 @@ serve(async (req) => {
         musicVibe: "Dramatic reveal"
       },
       testimonial: {
-        scenes: [
-          "Product with 5 golden stars, trust badges, professional gradient background",
-          "Macro detail shot of product quality, soft lighting, premium feel",
-          "Call-to-action design, product with order button, discount badge"
+        sceneContexts: [
+          "Scene 1 Context: Product with floating 5-star rating graphics, trust badges around, professional gradient",
+          "Scene 2 Context: Macro close-up focus on product, quality details highlighted, soft lighting",
+          "Scene 3 Context: Product with 'Order Now' button graphic, discount badge, call-to-action design"
         ],
         captionAr: "⭐ لما ألف بنت تقول إنه الأحسن!\n\n🛒 شحن ببلاش",
         captionEn: "⭐ 1000+ happy customers!",
@@ -74,10 +93,10 @@ serve(async (req) => {
         musicVibe: "Confident music"
       },
       showcase: {
-        scenes: [
-          "Product front angle, clean white studio background, professional lighting",
-          "Product at 45 degree angle, rim lighting, depth and dimension",
-          "Full advertising design, product with promotional elements"
+        sceneContexts: [
+          "Scene 1 Context: Product front view on clean white studio backdrop, professional 3-point lighting",
+          "Scene 2 Context: Product at 45-degree angle with rim lighting, depth and dimension emphasized",
+          "Scene 3 Context: Product in full advertising composition with promotional graphics around"
         ],
         captionAr: "✨ المنتج اللي الكل بيسأل عليه!\n\n🛒 اللينك في البايو",
         captionEn: "✨ The product everyone wants!",
@@ -86,10 +105,10 @@ serve(async (req) => {
         musicVibe: "Elegant, premium"
       },
       trending: {
-        scenes: [
-          "Product in viral TikTok style, bold neon colors, dynamic energy",
-          "Dynamic zoom effect, RGB lighting, high energy motion",
-          "FOMO urgency design, countdown timer, limited stock alert"
+        sceneContexts: [
+          "Scene 1 Context: Product in viral TikTok style setting, bold neon RGB lighting, dynamic energy",
+          "Scene 2 Context: Product with zoom effect background, high energy colorful lights, motion blur",
+          "Scene 3 Context: Product with FOMO urgency graphics, countdown timer, limited stock alert design"
         ],
         captionAr: "🔥 الترند اللي كسر التيك توك!\n\n⚡ هيخلص!",
         captionEn: "🔥 TikTok viral trend!",
@@ -99,49 +118,76 @@ serve(async (req) => {
       }
     };
 
-    const selectedStyle = stylePrompts[style] || stylePrompts.showcase;
+    const selectedStyle = styleContexts[style] || styleContexts.showcase;
     
-    console.log(`Generating Reel scenes for style: ${style}`);
+    console.log(`Generating Reel scenes for style: ${style}, hasProductImage: ${!!sourceImage}, hasAnalysis: ${!!productAnalysis}`);
 
-    // Generate scene images using Runware
+    // Generate scene images using Runware - PRESERVING the product
     const sceneImages: Array<{ imageUrl: string; scene: number; description: string }> = [];
 
-    for (let i = 0; i < selectedStyle.scenes.length; i++) {
-      const sceneDescription = selectedStyle.scenes[i];
+    for (let i = 0; i < selectedStyle.sceneContexts.length; i++) {
+      const sceneContext = selectedStyle.sceneContexts[i];
       
-      // Build prompt for scene generation
-      const scenePrompt = `Professional e-commerce social media advertisement photo.
-${sceneDescription}
+      // Build prompt that PRESERVES the product
+      const scenePrompt = `PRODUCT PRESERVATION - REEL SCENE GENERATION:
+
+CRITICAL: The product from the input image MUST remain EXACTLY identical:
+- Keep exact same product shape, design, and proportions
+- Keep exact same colors, patterns, and branding
+- DO NOT modify the product in any way
+
+ONLY CHANGE THE SCENE CONTEXT:
+${sceneContext}
+
 Product: ${productName || "Fashion product"}
-Style: Modern, Instagram-ready, high quality, 9:16 vertical format
-Egyptian market appeal, Arabic design elements`;
+${productAnalysis ? `
+Marketing Hook: ${productAnalysis.core_feature || ''}
+` : ''}
+
+REQUIREMENTS:
+- Product must look EXACTLY like the input image
+- Only the background/scene context should change
+- Vertical 9:16 format for social media
+- Professional lighting
+- Egyptian market appeal`;
 
       try {
         console.log(`Generating scene ${i + 1}...`);
 
         const taskUUID = crypto.randomUUID();
         
-        // Runware API call - text to image (simpler approach)
-        const runwarePayload = [
+        const runwarePayload: any[] = [
           {
             taskType: "authentication",
             apiKey: RUNWARE_API_KEY
-          },
-          {
-            taskType: "imageInference",
-            taskUUID,
-            positivePrompt: scenePrompt,
-            negativePrompt: "blurry, low quality, distorted, ugly, bad anatomy",
-            width: 576,
-            height: 1024,
-            model: model || "runware:100@1",
-            numberResults: 1,
-            outputFormat: "WEBP",
-            CFGScale: 7,
-            steps: 20,
-            scheduler: "DPMSolverMultistepScheduler"
           }
         ];
+
+        // Prepare the image input
+        let imageInput = sourceImage;
+        if (sourceImage.startsWith('data:')) {
+          const base64Data = sourceImage.split(',')[1];
+          imageInput = `data:image/png;base64,${base64Data}`;
+        }
+
+        // Image-to-image with VERY LOW strength to preserve product
+        runwarePayload.push({
+          taskType: "imageInference",
+          taskUUID,
+          positivePrompt: scenePrompt,
+          negativePrompt: "different product, changed product, modified product, wrong colors, wrong design, blurry, distorted, deformed",
+          width: 576,
+          height: 1024,
+          model: model || "runware:100@1",
+          numberResults: 1,
+          outputFormat: "WEBP",
+          CFGScale: 7,
+          steps: 25,
+          scheduler: "DPMSolverMultistepScheduler",
+          // VERY LOW strength to preserve product
+          strength: 0.25,
+          inputImage: imageInput
+        });
 
         console.log(`Calling Runware API for scene ${i + 1}...`);
 
@@ -153,10 +199,9 @@ Egyptian market appeal, Arabic design elements`;
 
         const responseText = await response.text();
         console.log(`Runware response status: ${response.status}`);
-        console.log(`Runware response for scene ${i + 1}: ${responseText.substring(0, 500)}`);
 
         if (!response.ok) {
-          console.error(`Runware API error: ${response.status} - ${responseText}`);
+          console.error(`Runware API error: ${response.status} - ${responseText.substring(0, 200)}`);
           continue;
         }
 
@@ -169,28 +214,23 @@ Egyptian market appeal, Arabic design elements`;
             sceneImages.push({
               imageUrl: imageResult.imageURL,
               scene: i + 1,
-              description: sceneDescription
+              description: sceneContext
             });
-            console.log(`Scene ${i + 1} generated successfully: ${imageResult.imageURL.substring(0, 50)}...`);
-          } else {
-            console.log(`No image found in response for scene ${i + 1}. Data keys: ${Object.keys(data.data[0] || {}).join(', ')}`);
+            console.log(`Scene ${i + 1} generated successfully`);
           }
-        } else {
-          console.log(`Unexpected response format for scene ${i + 1}. Keys: ${Object.keys(data).join(', ')}`);
         }
       } catch (sceneError) {
         console.error(`Error generating scene ${i + 1}:`, sceneError);
       }
     }
 
-    // If Runware failed, fallback to a simple placeholder response
+    // If Runware failed, fallback to instructions
     if (sceneImages.length === 0) {
-      console.log("Runware generation failed, returning instructions for manual creation");
+      console.log("Scene generation failed, returning manual instructions");
       
-      // Return helpful response instead of error
       return new Response(
         JSON.stringify({ 
-          scenes: selectedStyle.scenes.map((desc, i) => ({
+          scenes: selectedStyle.sceneContexts.map((desc, i) => ({
             scene: i + 1,
             description: desc,
             instruction: `مشهد ${i + 1}: ${desc}`
@@ -206,11 +246,8 @@ Egyptian market appeal, Arabic design elements`;
           musicVibe: selectedStyle.musicVibe,
           provider: "instructions",
           message: language === 'ar' 
-            ? "تعذر توليد الصور تلقائياً. استخدم الوصف أعلاه لإنشاء المشاهد يدوياً."
-            : "Auto-generation unavailable. Use descriptions above to create scenes manually.",
-          instructions: language === 'ar' 
-            ? "حمّل صورة المنتج واستخدم الأوصاف لإنشاء المشاهد في CapCut أو InShot"
-            : "Upload product image and use descriptions to create scenes in CapCut or InShot"
+            ? "تعذر توليد المشاهد. استخدم الأوصاف لإنشائها يدوياً."
+            : "Scene generation unavailable. Use descriptions to create manually."
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -218,17 +255,11 @@ Egyptian market appeal, Arabic design elements`;
 
     console.log(`Successfully generated ${sceneImages.length} scenes`);
 
-    // Arabic hashtags
-    const hashtagsAr = [
-      "#تسوق_اونلاين", "#تسوق_مصر", "#موضة_مصرية", "#ستايل",
-      "#fyp", "#viral", "#reels"
-    ];
-
     return new Response(
       JSON.stringify({ 
         scenes: sceneImages,
         caption: language === 'ar' ? selectedStyle.captionAr : selectedStyle.captionEn,
-        hashtags: hashtagsAr,
+        hashtags: ["#تسوق_اونلاين", "#تسوق_مصر", "#fyp", "#viral", "#reels"],
         duration: `${duration}s`,
         style,
         format: "Storyboard",
@@ -237,9 +268,10 @@ Egyptian market appeal, Arabic design elements`;
         cta: selectedStyle.ctaAr,
         musicVibe: selectedStyle.musicVibe,
         provider: "runware",
+        productPreserved: true,
         instructions: language === 'ar' 
-          ? "حمّل المشاهد واستخدمها في VN أو InShot أو CapCut عشان تعمل ريل فيرال! 🔥"
-          : "Download scenes and use in VN, InShot, or CapCut to create a viral Reel! 🔥"
+          ? "حمّل المشاهد واستخدمها في CapCut أو InShot لعمل ريل فيرال! 🔥"
+          : "Download scenes and use in CapCut or InShot to create a viral Reel! 🔥"
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
