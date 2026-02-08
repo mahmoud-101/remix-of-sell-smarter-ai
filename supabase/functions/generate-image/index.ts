@@ -19,7 +19,7 @@ serve(async (req) => {
   console.log(`Authenticated user: ${authData?.userId}`);
 
   try {
-    const { prompt, style, productImage, productAnalysis, language = 'ar', model } = await req.json();
+    const { prompt, style, productImage, inspirationImage, productAnalysis, language = 'ar' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     if (!LOVABLE_API_KEY) {
@@ -28,7 +28,7 @@ serve(async (req) => {
 
     // ============================================
     // IMAGE STUDIO - Professional MENA E-commerce Ad Creatives
-    // Using Lovable AI Gateway with Gemini Image Generation
+    // With optional Inspiration Image feature
     // ============================================
 
     // Style prompts for different ad types
@@ -55,20 +55,156 @@ serve(async (req) => {
       glam: "جلام"
     };
 
-    // Select 3 different styles for variety
-    const styleKeys = Object.keys(stylePrompts);
-    const shuffledStyles = styleKeys.sort(() => Math.random() - 0.5);
-    const selectedStyles = style ? [style, ...shuffledStyles.filter(s => s !== style).slice(0, 2)] : shuffledStyles.slice(0, 3);
+    const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string; type?: string }> = [];
 
-    console.log(`User ${authData?.userId} generating ${selectedStyles.length} images with Gemini, styles: ${selectedStyles.join(', ')}`);
+    // ============================================
+    // MODE 1: Inspiration Image Mode (2 images)
+    // ============================================
+    if (inspirationImage) {
+      console.log(`User ${authData?.userId} generating with inspiration image - 2 outputs`);
 
-    const generatedImages: Array<{ imageUrl: string; angle: string; angleAr: string }> = [];
+      // Image 1: Capture the "vibe/spirit" of inspiration with product
+      const vibePrompt = `Analyze this inspiration image and create a NEW image for this product: ${prompt || "Fashion product"}
 
-    for (const styleKey of selectedStyles) {
-      const stylePrompt = stylePrompts[styleKey] || stylePrompts.lifestyle;
-      
-      // Build comprehensive prompt for Gemini image generation
-      const imagePrompt = `Generate a professional e-commerce product advertisement image.
+Take the MOOD, ATMOSPHERE, COLOR PALETTE, and AESTHETIC FEELING from the inspiration image.
+Create a completely new professional product photography that captures the same VIBE and SPIRIT.
+
+Requirements:
+- Professional 4K quality e-commerce advertisement
+- Same mood/atmosphere as inspiration (lighting, colors, feeling)
+- Egyptian/MENA market appeal
+- Vertical 9:16 format for social media
+- High-end luxury fashion aesthetic
+- The product must be the main focus
+- No text or watermarks`;
+
+      // Image 2: Product swap - place product in inspiration scene
+      const swapPrompt = `Look at this inspiration image and REPLACE the main subject/product with: ${prompt || "Fashion product"}
+
+Keep the EXACT same:
+- Background and environment
+- Lighting and shadows
+- Composition and framing
+- Overall scene setup
+
+But replace the main product/item with the new product while maintaining:
+- Natural integration with the scene
+- Proper lighting on the product
+- Realistic shadows and reflections
+- Professional quality result
+
+Requirements:
+- Professional 4K quality
+- Seamless product integration
+- Vertical 9:16 format
+- No text or watermarks`;
+
+      const inspirationPrompts = [
+        { prompt: vibePrompt, type: "vibe", angle: "inspiration-vibe", angleAr: "روح الإلهام" },
+        { prompt: swapPrompt, type: "swap", angle: "product-swap", angleAr: "تبديل المنتج" }
+      ];
+
+      for (const item of inspirationPrompts) {
+        try {
+          console.log(`Generating ${item.type} with inspiration...`);
+
+          const response = await fetch(LOVABLE_AI_URL, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3-pro-image-preview",
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "text", text: item.prompt },
+                    { type: "image_url", image_url: { url: inspirationImage } },
+                    ...(productImage ? [{ type: "image_url", image_url: { url: productImage } }] : [])
+                  ]
+                }
+              ],
+              modalities: ["image", "text"]
+            })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Gemini API error for ${item.type}:`, response.status, errorText);
+            
+            if (response.status === 429) {
+              throw new Error(language === 'ar' 
+                ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً"
+                : "Rate limit exceeded, please try again later");
+            }
+            if (response.status === 402) {
+              throw new Error(language === 'ar'
+                ? "الرصيد غير كافي، يرجى شحن الرصيد"
+                : "Insufficient credits, please top up");
+            }
+            continue;
+          }
+
+          const data = await response.json();
+          console.log(`Gemini response for ${item.type}:`, JSON.stringify(data).substring(0, 300));
+
+          // Extract image from response
+          const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+          
+          if (imageUrl) {
+            generatedImages.push({
+              imageUrl,
+              angle: item.angle,
+              angleAr: item.angleAr,
+              type: item.type
+            });
+            console.log(`Successfully generated ${item.type}`);
+          } else {
+            // Fallback: check other response formats
+            const content = data.choices?.[0]?.message?.content;
+            if (typeof content === 'string' && content.includes('data:image')) {
+              const extractedUrl = content.match(/data:image\/[^;]+;base64,[^"'\s]+/)?.[0];
+              if (extractedUrl) {
+                generatedImages.push({
+                  imageUrl: extractedUrl,
+                  angle: item.angle,
+                  angleAr: item.angleAr,
+                  type: item.type
+                });
+                console.log(`Successfully generated ${item.type} (fallback extraction)`);
+              }
+            }
+          }
+        } catch (itemError) {
+          console.error(`Error generating ${item.type}:`, itemError);
+          if (itemError instanceof Error && 
+              (itemError.message.includes("Rate limit") || 
+               itemError.message.includes("credits") ||
+               itemError.message.includes("حد الطلبات") ||
+               itemError.message.includes("الرصيد"))) {
+            throw itemError;
+          }
+        }
+      }
+    } 
+    // ============================================
+    // MODE 2: Standard Mode (3 style variations)
+    // ============================================
+    else {
+      // Select 3 different styles for variety
+      const styleKeys = Object.keys(stylePrompts);
+      const shuffledStyles = styleKeys.sort(() => Math.random() - 0.5);
+      const selectedStyles = style ? [style, ...shuffledStyles.filter(s => s !== style).slice(0, 2)] : shuffledStyles.slice(0, 3);
+
+      console.log(`User ${authData?.userId} generating ${selectedStyles.length} images with Gemini, styles: ${selectedStyles.join(', ')}`);
+
+      for (const styleKey of selectedStyles) {
+        const stylePrompt = stylePrompts[styleKey] || stylePrompts.lifestyle;
+        
+        // Build comprehensive prompt for Gemini image generation
+        const imagePrompt = `Generate a professional e-commerce product advertisement image.
 
 Product: ${prompt || "Fashion product"}
 ${productAnalysis?.core_feature ? `Key Feature: ${productAnalysis.core_feature}` : ''}
@@ -85,70 +221,57 @@ Requirements:
 - High-end luxury fashion aesthetic
 - No text or watermarks on the image`;
 
-      try {
-        console.log(`Generating ${styleKey} style with Gemini...`);
+        try {
+          console.log(`Generating ${styleKey} style with Gemini...`);
 
-        const response = await fetch(LOVABLE_AI_URL, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3-pro-image-preview",
-            messages: [
-              {
-                role: "user",
-                content: imagePrompt
-              }
-            ]
-          })
-        });
+          const messageContent = productImage 
+            ? [
+                { type: "text", text: imagePrompt },
+                { type: "image_url", image_url: { url: productImage } }
+              ]
+            : imagePrompt;
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error(`Gemini API error for ${styleKey}:`, response.status, errorText);
-          
-          if (response.status === 429) {
-            throw new Error(language === 'ar' 
-              ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً"
-              : "Rate limit exceeded, please try again later");
-          }
-          if (response.status === 402) {
-            throw new Error(language === 'ar'
-              ? "الرصيد غير كافي، يرجى شحن الرصيد"
-              : "Insufficient credits, please top up");
-          }
-          continue;
-        }
+          const response = await fetch(LOVABLE_AI_URL, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3-pro-image-preview",
+              messages: [
+                {
+                  role: "user",
+                  content: messageContent
+                }
+              ],
+              modalities: ["image", "text"]
+            })
+          });
 
-        const data = await response.json();
-        console.log(`Gemini response for ${styleKey}:`, JSON.stringify(data).substring(0, 500));
-
-        // Extract image from Gemini response
-        // Gemini image generation returns base64 or URL in the response
-        const content = data.choices?.[0]?.message?.content;
-        
-        if (content) {
-          // Check if response contains image data
-          let imageUrl = null;
-          
-          // Handle different response formats
-          if (typeof content === 'string') {
-            // Check for base64 image data
-            if (content.includes('data:image')) {
-              imageUrl = content.match(/data:image\/[^;]+;base64,[^"'\s]+/)?.[0];
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Gemini API error for ${styleKey}:`, response.status, errorText);
+            
+            if (response.status === 429) {
+              throw new Error(language === 'ar' 
+                ? "تم تجاوز حد الطلبات، حاول مرة أخرى لاحقاً"
+                : "Rate limit exceeded, please try again later");
             }
-            // Check for URL
-            else if (content.includes('http')) {
-              imageUrl = content.match(/https?:\/\/[^\s"']+\.(png|jpg|jpeg|webp|gif)/i)?.[0];
+            if (response.status === 402) {
+              throw new Error(language === 'ar'
+                ? "الرصيد غير كافي، يرجى شحن الرصيد"
+                : "Insufficient credits, please top up");
             }
-          } else if (content.image_url) {
-            imageUrl = content.image_url;
-          } else if (data.choices?.[0]?.message?.image_url) {
-            imageUrl = data.choices[0].message.image_url;
+            continue;
           }
 
+          const data = await response.json();
+          console.log(`Gemini response for ${styleKey}:`, JSON.stringify(data).substring(0, 300));
+
+          // Extract image from Gemini response (new format with images array)
+          const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+          
           if (imageUrl) {
             generatedImages.push({
               imageUrl,
@@ -157,18 +280,29 @@ Requirements:
             });
             console.log(`Successfully generated ${styleKey} style`);
           } else {
-            console.log(`No image URL found in response for ${styleKey}, content preview:`, 
-              typeof content === 'string' ? content.substring(0, 200) : JSON.stringify(content).substring(0, 200));
+            // Fallback: check other response formats
+            const content = data.choices?.[0]?.message?.content;
+            if (typeof content === 'string' && content.includes('data:image')) {
+              const extractedUrl = content.match(/data:image\/[^;]+;base64,[^"'\s]+/)?.[0];
+              if (extractedUrl) {
+                generatedImages.push({
+                  imageUrl: extractedUrl,
+                  angle: styleKey,
+                  angleAr: styleNamesAr[styleKey] || styleKey
+                });
+                console.log(`Successfully generated ${styleKey} style (fallback extraction)`);
+              }
+            }
           }
-        }
-      } catch (styleError) {
-        console.error(`Error generating ${styleKey} style:`, styleError);
-        if (styleError instanceof Error && 
-            (styleError.message.includes("Rate limit") || 
-             styleError.message.includes("credits") ||
-             styleError.message.includes("حد الطلبات") ||
-             styleError.message.includes("الرصيد"))) {
-          throw styleError;
+        } catch (styleError) {
+          console.error(`Error generating ${styleKey} style:`, styleError);
+          if (styleError instanceof Error && 
+              (styleError.message.includes("Rate limit") || 
+               styleError.message.includes("credits") ||
+               styleError.message.includes("حد الطلبات") ||
+               styleError.message.includes("الرصيد"))) {
+            throw styleError;
+          }
         }
       }
     }
@@ -186,10 +320,13 @@ Requirements:
         images: generatedImages,
         imageUrl: generatedImages[0]?.imageUrl,
         description: language === 'ar' 
-          ? `إعلانات أزياء مصرية بـ ${generatedImages.length} أنماط مختلفة`
-          : `Egyptian fashion ads with ${generatedImages.length} different styles`,
-        mode: productImage ? "edit" : "generate",
-        styles: selectedStyles,
+          ? inspirationImage 
+            ? `صورتين: روح الإلهام + تبديل المنتج`
+            : `إعلانات أزياء مصرية بـ ${generatedImages.length} أنماط مختلفة`
+          : inspirationImage
+            ? `2 images: Inspiration vibe + Product swap`
+            : `Egyptian fashion ads with ${generatedImages.length} different styles`,
+        mode: inspirationImage ? "inspiration" : (productImage ? "edit" : "generate"),
         count: generatedImages.length,
         provider: "gemini"
       }),
