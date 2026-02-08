@@ -51,13 +51,9 @@ const History = lazyWithRetry(() => import("./pages/History"), "History");
 const Settings = lazyWithRetry(() => import("./pages/Settings"), "Settings");
 const Billing = lazyWithRetry(() => import("./pages/Billing"), "Billing");
 
-// Shopify MVP support
-const SyncedProducts = lazyWithRetry(() => import("./pages/SyncedProducts"), "SyncedProducts");
-const ShopifyCallback = lazyWithRetry(() => import("./pages/ShopifyCallback"), "ShopifyCallback");
-const ReelsGenerator = lazyWithRetry(() => import("./pages/ReelsGenerator"), "ReelsGenerator");
+// Core Studios
 const ImageStudio = lazyWithRetry(() => import("./pages/ImageStudio"), "ImageStudio");
 const AdsCopy = lazyWithRetry(() => import("./pages/AdsCopy"), "AdsCopy");
-const UGCStudio = lazyWithRetry(() => import("./pages/UGCStudio"), "UGCStudio");
 
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "NotFound");
 
@@ -166,24 +162,6 @@ function AppRoutes() {
         />
 
         <Route
-          path="/dashboard/synced-products"
-          element={
-            <ProtectedRoute>
-              <SyncedProducts />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/dashboard/reels"
-          element={
-            <ProtectedRoute>
-              <ReelsGenerator />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="/dashboard/images"
           element={
             <ProtectedRoute>
@@ -200,17 +178,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-
-        <Route
-          path="/dashboard/ugc"
-          element={
-            <ProtectedRoute>
-              <UGCStudio />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route path="/shopify/callback" element={<ShopifyCallback />} />
 
         <Route 
           path="/dashboard/billing"
