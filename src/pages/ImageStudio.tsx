@@ -107,10 +107,13 @@ export default function ImageStudio() {
   const { toast } = useToast();
   const { saveToHistory } = useHistory();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inspirationInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [productImage, setProductImage] = useState<string | null>(null);
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [inspirationImage, setInspirationImage] = useState<string | null>(null);
+  const [inspirationImageFile, setInspirationImageFile] = useState<File | null>(null);
   const [productName, setProductName] = useState("");
   const [productDescription, setProductDescription] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
@@ -123,7 +126,7 @@ export default function ImageStudio() {
   const [analysisOpen, setAnalysisOpen] = useState(true);
   
   const [loading, setLoading] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<Array<{ imageUrl: string; angle: string; angleAr: string }>>([]);
+  const [generatedImages, setGeneratedImages] = useState<Array<{ imageUrl: string; angle: string; angleAr: string; type?: string }>>([]); 
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,6 +163,44 @@ export default function ImageStudio() {
     setProductImageFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleInspirationUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: isRTL ? "ملف غير صالح" : "Invalid file",
+        description: isRTL ? "يرجى رفع صورة" : "Please upload an image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: isRTL ? "الملف كبير جداً" : "File too large",
+        description: isRTL ? "الحد الأقصى 10MB" : "Maximum size is 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInspirationImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setInspirationImage(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeInspirationImage = () => {
+    setInspirationImage(null);
+    setInspirationImageFile(null);
+    if (inspirationInputRef.current) {
+      inspirationInputRef.current.value = "";
     }
   };
 
@@ -340,6 +381,7 @@ export default function ImageStudio() {
           prompt,
           style,
           productImage,
+          inspirationImage,
           analysis: currentAnalysis,
         },
       });
@@ -559,6 +601,63 @@ export default function ImageStudio() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Inspiration Image Upload (Optional) */}
+            <Card className="border-dashed border-accent/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="w-5 h-5 text-accent" />
+                  {isRTL ? "صورة الإلهام (اختياري)" : "Inspiration Image (Optional)"}
+                </CardTitle>
+                <CardDescription>
+                  {isRTL 
+                    ? "ارفع صورة إلهام لتوليد صورتين: واحدة بروح الإلهام وواحدة بتبديل المنتج"
+                    : "Upload inspiration image to generate 2 images: one with vibe, one with product swap"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {inspirationImage ? (
+                  <div className="relative group">
+                    <img 
+                      src={inspirationImage} 
+                      alt="Inspiration" 
+                      className="w-full h-48 object-contain rounded-lg border bg-accent/5"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 end-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={removeInspirationImage}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                    <Badge className="absolute bottom-2 start-2 bg-accent text-accent-foreground">
+                      {isRTL ? "صورة إلهام" : "Inspiration"}
+                    </Badge>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => inspirationInputRef.current?.click()}
+                    className="border-2 border-dashed border-accent/30 rounded-lg p-6 text-center cursor-pointer hover:border-accent/60 hover:bg-accent/5 transition-colors"
+                  >
+                    <Lightbulb className="w-8 h-8 mx-auto mb-2 text-accent" />
+                    <p className="font-medium mb-1 text-sm">
+                      {isRTL ? "اضغط لرفع صورة إلهام" : "Click to upload inspiration"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isRTL ? "صورة تحبها وعايز نفس الستايل" : "An image whose style you love"}
+                    </p>
+                  </div>
+                )}
+                <input
+                  ref={inspirationInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleInspirationUpload}
                   className="hidden"
                 />
               </CardContent>
