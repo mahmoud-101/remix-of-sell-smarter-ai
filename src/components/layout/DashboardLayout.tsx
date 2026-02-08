@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FileText,
   Megaphone,
-  Video,
   ImageIcon,
   History,
   Settings,
@@ -12,8 +11,6 @@ import {
   LogOut,
   Globe,
   CreditCard,
-  ShoppingBag,
-  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,13 +29,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { t, isRTL, language, setLanguage } = useLanguage();
 
   // 4 Core Studios for Fashion & Beauty E-commerce
+  // 3 Core Studios for Fashion & Beauty E-commerce
   const navItems = [
     { icon: FileText, label: isRTL ? "استوديو المنتجات" : "Product Studio", path: "/dashboard" },
     { icon: Megaphone, label: isRTL ? "استوديو الإعلانات" : "Ads Studio", path: "/dashboard/ads-copy" },
-    { icon: Video, label: isRTL ? "استوديو الريلز" : "Reels Studio", path: "/dashboard/reels" },
     { icon: ImageIcon, label: isRTL ? "استوديو الصور" : "Image Studio", path: "/dashboard/images" },
-    { icon: User, label: isRTL ? "استوديو UGC" : "UGC Studio", path: "/dashboard/ugc" },
-    { icon: ShoppingBag, label: isRTL ? "منتجات المتجر" : "Store Products", path: "/dashboard/synced-products" },
     { icon: History, label: t("navigation.history"), path: "/dashboard/history" },
   ];
 
